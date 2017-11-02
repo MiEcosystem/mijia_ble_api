@@ -184,12 +184,12 @@ typedef enum {
 // gatts characteristic
 // default:  no authentication ; no encrption; configurable authorization
 typedef struct {
-    mible_uuid_t chat_uuid_type;
+    mible_uuid_t char_uuid;
     uint8_t char_property; // See TYPE mible_gatts_char_property for details
-    uint8_t* value;
-    uint8_t value_len;
-    BOOLEAN is_variable;
-    uint16_t* p_char_handle;
+    uint8_t* p_value;   // initail characteristic  
+    uint8_t value_len; 
+    BOOLEAN is_variable;  
+  	uint16_t char_handle; //  [OUT]
     // [out] a pointer to a 16-bit word where the assigned handle will be stored.
     BOOLEAN rd_author;
     // read authorization. Enabel or Disable MIBLE_GATTS_READ_PERMIT_REQ event
@@ -198,9 +198,7 @@ typedef struct {
 } mible_gatts_char_t;
 
 typedef struct {
-    uint16_t* cccd_value;
-    // cccd is a 2 BYTE value
-    uint16_t* p_cccd_handle;
+    uint16_t cccd_handle; //  [OUT]
     // [out] a pointer to a 16-bit word where the assigned handle will be stored.
 } mible_gatts_cccd_t;
 

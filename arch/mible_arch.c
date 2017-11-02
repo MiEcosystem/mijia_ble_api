@@ -232,8 +232,7 @@ mible_gap_update_conn_params(uint16_t conn_handle,
  * 			[IN] p_srv_uuid: a pointer to service uuid
  * 			[IN] max_att_records: max attribute records,the service handle
  * range must bigger than this value.
- * 			[OUT] p_srv_handle: pointer to a 16-bit word where the
- * assigned handle will be stored.
+ * 			[OUT] srv_handle: where the assigned handle will be stored.
  * @return  MI_SUCCESS             Successfully added a service declaration.
  *          MI_ERR_INVAILD_ADDR    Invalid pointer supplied.
  *          MI_ERR_INVAILD_PARAM   Invalid parameter(s) supplied.
@@ -243,7 +242,7 @@ mible_gap_update_conn_params(uint16_t conn_handle,
 mible_status_t mible_gatts_add_service(mible_gatts_service_t srv_type,
     mible_uuid_t* p_srv_uuid,
     uint8_t max_att_records,
-    uint16_t* p_srv_handle)
+    uint16_t srv_handle)
 {
     return MI_SUCCESS;
 }
@@ -252,18 +251,19 @@ mible_status_t mible_gatts_add_service(mible_gatts_service_t srv_type,
  * @brief	Add a characteristic and descriptor to a service
  * @param   [IN] srv_handle: handle of service to which the characteristic
  *belongs
- *			[IN/OUT] char_param: characteristic parameters, see TYPE
+ *			[IN/OUT] p_char_param: pointer to characteristic parameters, see TYPE
  *mible_char_t for details
- * 			[IN/OUT] desc_param: descriptor parameters, see TYPE
+ * 			[IN/OUT] p_desc_param: pointer to descriptor parameters, see TYPE
  *mible_desc_t for details
  * @return  MI_SUCCESS             Successfully added a characteristic.
  *          MI_ERR_INVAILD_ADDR    Invalid pointer supplied.
  *          MI_ERR_INVAILD_PARAM   Invalid parameter(s) supplied.
  *          MI_ERR_NO_MEM	       Not enough memory to complete operation.
+ * @note    if there is no descriptor , set desc_param to NULL 
  * */
 mible_status_t mible_gatts_add_char_and_desc(uint16_t srv_handle,
-    mible_gatts_char_t char_param,
-    mible_gatts_desc_t desc_param)
+    mible_gatts_char_t *p_char_param,
+    mible_gatts_desc_t *p_desc_param)
 {
     return MI_SUCCESS;
 }
@@ -494,7 +494,7 @@ mible_status_t mible_gattc_write_cmd(uint16_t conn_handle, uint16_t handle,
 
 /*
  * @brief 	Create a timer.
- * @param 	[OUT] timer_id: timer id which can uniquely identify the timer.
+ * @param 	[OUT] p_timer_id: a pointer to timer id which can uniquely identify the timer.
  * 			[IN] timeout_handler: a pointer to a function which can be
  * called when the timer expires.
  * 			[IN] mode: repeated or single shot.
@@ -504,7 +504,7 @@ mible_status_t mible_gattc_write_cmd(uint16_t conn_handle, uint16_t handle,
  * timer is running.
  *
  * */
-mible_status_t mible_timer_create(void* timer_id,
+mible_status_t mible_timer_create(void* p_timer_id,
     mible_timer_handler timeout_handler,
     mible_timer_mode mode)
 {
