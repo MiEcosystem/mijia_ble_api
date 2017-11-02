@@ -172,20 +172,20 @@ typedef struct {
 } mible_uuid_t;
 
 typedef enum {
-    MIBLE_BROADCAST,
-    MIBLE_READ,
-    MIBLE_WRITE_WITHOUT_RESP,
-    MIBLE_WRITE,
-    MIBLE_NOTIFY,
-    MIBLE_INDICATE,
-    MIBLE_AUTH_SIGNED_WRITE,
+    MIBLE_BROADCAST=0x01,
+    MIBLE_READ=0x02,
+    MIBLE_WRITE_WITHOUT_RESP=0x04,
+    MIBLE_WRITE=0x08,
+    MIBLE_NOTIFY=0x10,
+    MIBLE_INDICATE=0x20,
+    MIBLE_AUTH_SIGNED_WRITE=0x40,
 } mible_gatts_char_property;
 
 // gatts characteristic
 // default:  no authentication ; no encrption; configurable authorization
 typedef struct {
     mible_uuid_t chat_uuid_type;
-    mible_gatts_char_property char_property;
+    uint8_t char_property; // See TYPE mible_gatts_char_property for details
     uint8_t* value;
     uint8_t value_len;
     BOOLEAN is_variable;
@@ -342,9 +342,9 @@ typedef enum {
 } mible_timer_mode;
 
 typedef enum {
-    MI_SUCCESS,
-    MI_ERR_INTERNAL,
-    MI_ERR_NO_EVENT,
+    MI_SUCCESS=0x00,
+    MI_ERR_INTERNAL=0x01,
+    MI_ERR_NO_EVENT=0x02,
     MI_ERR_NO_MEM,
     MI_ERR_INVAILD_ADDR, // Invalid pointer supplied
     MI_ERR_INVAILD_PARAM, // Invalid parameter(s) supplied.
