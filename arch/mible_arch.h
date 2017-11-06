@@ -41,7 +41,7 @@ mible_status_t mible_gap_scan_start(mible_gap_scan_type_t scan_type,
 
 mible_status_t mible_gap_scan_stop(void);
 
-mible_status_t mible_gap_adv_start(mible_gap_adv_param_t adv_param);
+mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_adv_param);
 
 mible_status_t mible_gap_adv_stop(void);
 

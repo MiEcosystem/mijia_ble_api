@@ -30,12 +30,12 @@ typedef bool BOOLEAN;
 
 #ifdef MI_LOG_ENABLED
 
-/* 
-  Log error   level    :1
-  Log warning level    :2
-  Log info    level    :3
-  Log debug   level    :4
-*/
+/**
+ * Log error   level    :1
+ * Log warning level    :2
+ * Log info    level    :3
+ * Log debug   level    :4
+ */
 
 #define MI_LOG_LEVEL              4
 #define MI_LOG_COLORS_ENABLE      1
@@ -47,11 +47,48 @@ typedef bool BOOLEAN;
 #define MI_LOG_WARNING(...)                   MI_LOG_INTERNAL_WARNING( __VA_ARGS__)
 #define MI_LOG_INFO(...)                      MI_LOG_INTERNAL_INFO( __VA_ARGS__)
 #define MI_LOG_DEBUG(...)                     MI_LOG_INTERNAL_DEBUG( __VA_ARGS__)
-#else
+#else // MI_LOG_ENABLED
 #define MI_LOG_ERROR(...)
 #define MI_LOG_WARNING(...)
 #define MI_LOG_INFO(...)
 #define MI_LOG_DEBUG(...)
 #endif // MI_LOG_ENABLED
 
-#endif
+
+#ifdef MI_ASSERT
+
+#define MI_ERR_HANDLER(ERR_CODE)                                     \
+    do                                                                 \
+    {                                                                  \
+        MI_LOG_ERROR((ERR_CODE), __LINE__, (uint8_t*) __FILE__);       \
+    } while (0)
+
+#define MI_ERR_CHECK(ERR_CODE)                            \
+    do                                                      \
+    {                                                       \
+        const uint32_t LOCAL_ERR_CODE = (ERR_CODE);         \
+        if (LOCAL_ERR_CODE != 0)                            \
+        {                                                   \
+            MI_ERR_HANDLER(LOCAL_ERR_CODE);               \
+        }                                                   \
+    } while (0)
+
+#define MI_ERR_TEST(ERR_CODE, EXPECT)
+    do                                                      \
+    {                                                       \
+        const uint32_t LOCAL_ERR_CODE = (ERR_CODE);         \
+        if (LOCAL_ERR_CODE != (EXPECT))                     \
+        {                                                   \
+            MI_ERR_HANDLER(LOCAL_ERR_CODE);               \
+        }                                                   \
+    } while (0)
+#else // MI_ASSERT
+
+#define MI_ERR_CHECK(ERR_CODE)
+#define MI_ERR_TEST(ERR_CODE)
+
+#endif // MI_ASSERT
+
+
+
+#endif // MIBLE_PORT_H__
