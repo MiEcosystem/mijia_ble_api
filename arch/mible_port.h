@@ -28,4 +28,29 @@
 
 typedef bool BOOLEAN;
 
+#ifdef MI_LOG_ENABLED
+
+/* 
+  Log error   level    :1
+  Log warning level    :2
+  Log info    level    :3
+  Log debug   level    :4
+*/
+
+#define MI_LOG_LEVEL              4
+#define MI_LOG_COLORS_ENABLE      0
+
+#include "mible_log_internal.h"
+
+#define MI_LOG_ERROR(...)                     MI_LOG_INTERNAL_ERROR(__VA_ARGS__)
+#define MI_LOG_WARNING(...)                   MI_LOG_INTERNAL_WARNING( __VA_ARGS__)
+#define MI_LOG_INFO(...)                      MI_LOG_INTERNAL_INFO( __VA_ARGS__)
+#define MI_LOG_DEBUG(...)                     MI_LOG_INTERNAL_DEBUG( __VA_ARGS__)
+#else
+#define MI_LOG_ERROR(...)
+#define MI_LOG_WARNING(...)
+#define MI_LOG_INFO(...)
+#define MI_LOG_DEBUG(...)
+#endif // MI_LOG_ENABLED
+
 #endif

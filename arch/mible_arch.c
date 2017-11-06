@@ -36,12 +36,16 @@ void mible_gap_event_callback(mible_gap_evt_t evt,
 {
     switch (evt) {
     case MIBLE_GAP_EVT_CONNECTED:
+		// mible_std_server_gap_evt_connected(param->connect); 
         break;
     case MIBLE_GAP_EVT_DISCONNET:
+		// mible_std_server_gap_evt_disconnected(param->disconnect);
         break;
-    case MIBLE_GAP_EVT_ADV_AND_SCAN_REPORT:
-        break;
-    case MIBLE_GAP_EVT_CONN_PARAMS_UPDARED:
+    case MIBLE_GAP_EVT_ADV_REPORT:
+        // mible_std_server_gap_evt_scan_report(param->report); 
+		break;
+    case MIBLE_GAP_EVT_CONN_PARAM_UPDATED:
+		// mible_std_server_gap_evt_conn_params_updated(param->update_conn);
         break;
     }
 }
@@ -60,12 +64,15 @@ void mible_gatts_event_callback(mible_gatts_evt_t evt,
 {
     switch (evt) {
     case MIBLE_GATTS_EVT_WRITE:
+		// mible_std_server_gatts_evt_write(param->write);
         break;
 
     case MIBLE_GATTS_EVT_READ_PERMIT_REQ:
+		// mible_std_server_gatts_evt_read_permit_req(param->read);
         break;
 
     case MIBLE_GATTS_EVT_WRITE_PERMIT_REQ:
+		// mible_std_server_gatts_evt_write_permit_req(param->write);
         break;
     }
 }
@@ -93,7 +100,8 @@ void mible_gattc_event_callback(mible_gattc_evt_t evt,
         break;
     case MIBLE_GATTC_EVT_WRITE_RESP:
         break;
-    default:;
+    default:
+		;
     }
 }
 
@@ -121,7 +129,7 @@ mible_status_t mible_gap_address_get(mible_addr_t* p_mac) { return MI_SUCCESS; }
  * @note 	Other default scanning parameters : public address, no
  * whitelist.
  * 	        The scan response is given through
- * MIBLE_GAP_EVT_ADV_AND_SCAN_REPORT event
+ * MIBLE_GAP_EVT_ADV_REPORT event
  */
 mible_status_t mible_gap_scan_start(mible_gap_scan_type_t scan_type,
     mible_gap_scan_param_t scan_param)
@@ -216,8 +224,7 @@ mible_status_t mible_gap_disconnect(uint16_t conn_handle) { return MI_SUCCESS; }
  * @note  	This function can be used by both central role and peripheral
  *role.
  * */
-mible_status_t
-mible_gap_update_conn_params(uint16_t conn_handle,
+mible_status_t mible_gap_update_conn_params(uint16_t conn_handle,
     mible_gap_conn_param_t conn_params)
 {
     return MI_SUCCESS;
@@ -284,7 +291,6 @@ mible_status_t mible_gatts_add_char_and_desc(uint16_t srv_handle,
  *          MIBLE_ERR_ATT_INVAILD_HANDLE     Attribute not found.
  *          MIBLE_ERR_GATT_INVAILD_ATT_TYPE  Attributes are not modifiable by
  *the application.
- *
  * */
 mible_status_t mible_gatts_value_set(uint16_t srv_handle, uint16_t char_handle,
     uint8_t offset, uint8_t* p_value,
@@ -627,3 +633,17 @@ mible_status_t mible_ecb128_encrypt(const uint8_t* key,
 {
     return MI_SUCCESS;
 }
+
+
+/*
+ * @brief 	Post a task to a task quene, which can be executed in a right place(maybe a task in RTOS or while(1) in the main function).
+ * @param 	[IN] handler: a pointer to function 
+ * 			[IN] param: function parameters 
+ * @return 	MI_SUCCESS 				Successfully put the handler to quene.		
+ * 			MI_ERR_NO_MEM			The task quene is full. 
+ * 			MI_ERR_INVAILD_PARAM    Handler is NULL
+ * */
+mible_status_t mible_task_post(mible_handler_t handler, void *param)
+{
+	return MI_SUCCESS;	
+} 

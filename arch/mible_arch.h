@@ -120,4 +120,5 @@ mible_status_t mible_rand_num_generater(uint8_t* p_buf, uint8_t len);
 mible_status_t mible_ecb128_encrypt(const uint8_t* key,
     const uint8_t* plaintext, uint8_t plen,
     uint8_t* ciphertext);
+mible_status_t mible_task_post(mible_handler_t handler, void *param);
 #endif

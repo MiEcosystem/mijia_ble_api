@@ -134,7 +134,6 @@ typedef struct {
 typedef struct {
     uint16_t conn_handle;
     mible_gap_disconnect_reason_t reason;
-    mible_gap_role_t role;
 } mible_gap_disconnect_t;
 
 typedef struct {
@@ -152,8 +151,8 @@ typedef union {
 typedef enum {
     MIBLE_GAP_EVT_CONNECTED, /**< Generated when a connection is established.*/
     MIBLE_GAP_EVT_DISCONNET, /**< Generated when a connection is terminated.*/
-    MIBLE_GAP_EVT_CONN_PARAMS_UPDARED, /**< */
-    MIBLE_GAP_EVT_ADV_AND_SCAN_REPORT
+    MIBLE_GAP_EVT_CONN_PARAM_UPDATED, /**< */
+    MIBLE_GAP_EVT_ADV_REPORT  
 } mible_gap_evt_t;
 
 /*GATTS related*/
@@ -189,7 +188,7 @@ typedef struct {
     uint8_t* p_value;   // initail characteristic  
     uint8_t value_len; 
     BOOLEAN is_variable;  
-  	uint16_t char_handle; //  [OUT]
+  	uint16_t char_value_handle; //  [OUT] *** characteristic value handle 
     // [out] a pointer to a 16-bit word where the assigned handle will be stored.
     BOOLEAN rd_author;
     // read authorization. Enabel or Disable MIBLE_GATTS_READ_PERMIT_REQ event
@@ -224,7 +223,7 @@ typedef enum {
  * */
 typedef struct {
     uint16_t conn_handle;
-    uint16_t char_handle;
+    uint16_t value_handle;
     uint8_t* buf;
     uint8_t len;
     uint8_t offset;
@@ -235,7 +234,7 @@ typedef struct {
  * */
 typedef struct {
     uint16_t conn_handle;
-    uint16_t char_handle;
+    uint16_t value_handle;  // char value handle 
 } mible_gatts_read_t;
 
 /*
@@ -358,5 +357,7 @@ typedef enum {
     MIBLE_ERR_GATT_INVAILD_ATT_TYPE,
     MIBLE_ERR_UNKNOWN, // other ble stack errors
 } mible_status_t;
+
+typedef void (*mible_handler_t) (void* arg);
 
 #endif
