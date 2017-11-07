@@ -23,8 +23,8 @@
 
 /**
  *@brief    This function is MIBLE GAP related event callback function.
- *@param    [IN] evt : GAP EVENT
- *			[IN] param : callback parameters corresponding to evt
+ *@param    [in] evt : GAP EVENT
+ *			[in] param : callback parameters corresponding to evt
  *@return   Void
  *@note     You should support this function in your own ble stack .
  *          Make sure when the corresponding event occurs, be able to call this
@@ -51,8 +51,8 @@ void mible_gap_event_callback(mible_gap_evt_t evt,
 }
 /**
  *@brief    This function is MIBLE GATTS related event callback function.
- *@param    [IN] evt : GATTS EVENT
- *			[IN] param : callback parameters corresponding to evt
+ *@param    [in] evt : GATTS EVENT
+ *			[in] param : callback parameters corresponding to evt
  *@return   Void
  *@note     You should support this function in your own ble stack .
             Make sure when the corresponding event occurs, be able to call this
@@ -78,8 +78,8 @@ void mible_gatts_event_callback(mible_gatts_evt_t evt,
 }
 /**
  *@brief    This function is MIBLE GATTC related event callback function.
- *@param    [IN] evt : GATTC EVENT
- *			[IN] param : callback parameters corresponding to evt
+ *@param    [in] evt : GATTC EVENT
+ *			[in] param : callback parameters corresponding to evt
  *@return   Void
  *@note     You should support this function in your own ble stack .
             Make sure when the corresponding event occurs, be able to call this
@@ -107,19 +107,19 @@ void mible_gattc_event_callback(mible_gattc_evt_t evt,
 
 /*
  * @brief 	Get BLE mac address.
- * @param 	[OUT] p_mac: pointer to data
+ * @param 	[out] p_mac: pointer to data
  * @return  MI_SUCCESS			The requested mac address were written to
  * p_mac
  *          MI_ERR_INTERNAL     No mac address found.
  * */
-mible_status_t mible_gap_address_get(mible_addr_t* p_mac) { return MI_SUCCESS; }
+mible_status_t mible_gap_address_get(mible_addr_t mac) { return MI_SUCCESS; }
 
 /* GAP related function.  You should complement these functions. */
 
 /*
  * @brief	Start scanning
- * @param 	[IN] scan_type:	passive or active scaning
- * 			[IN] scan_param: scan parameters including interval, windows
+ * @param 	[in] scan_type:	passive or active scaning
+ * 			[in] scan_param: scan parameters including interval, windows
  * and timeout
  * @return  MI_SUCCESS             Successfully initiated scanning procedure.
  *          MI_ERR_INVAILD_STATE   Has initiated scanning procedure.
@@ -147,7 +147,7 @@ mible_status_t mible_gap_scan_stop(void) { return MI_SUCCESS; }
 
 /*
  * @brief	Start advertising
- * @param 	[IN] adv_param : advertising parameters, see TYPE
+ * @param 	[in] p_adv_param : pointer to advertising parameters, see
  * mible_gap_adv_param_t for details
  * @return  MI_SUCCESS             Successfully initiated advertising procedure.
  *          MI_ERR_INVAILD_STATE   Initiated connectable advertising procedure
@@ -174,9 +174,9 @@ mible_status_t mible_gap_adv_stop(void) { return MI_SUCCESS; }
 
 /*
  * @brief  	Create a Direct connection
- * @param   [IN] scan_param : scanning parameters, see TYPE
+ * @param   [in] scan_param : scanning parameters, see TYPE
  * mible_gap_scan_param_t for details.
- * 			[IN] conn_param : connection parameters, see TYPE
+ * 			[in] conn_param : connection parameters, see TYPE
  * mible_gap_connect_t for details.
  * @return  MI_SUCCESS             Successfully initiated connection procedure.
  *          MI_ERR_INVAILD_STATE   Initiated connection procedure in connected
@@ -200,7 +200,7 @@ mible_status_t mible_gap_connect(mible_gap_scan_param_t scan_param,
 
 /*
  * @brief	Disconnect from peer
- * @param 	[IN] conn_handle: the connection handle
+ * @param 	[in] conn_handle: the connection handle
  * @return  MI_SUCCESS             Successfully disconnected.
  *          MI_ERR_INVAILD_STATE   Not in connnection.
  *          MIBLE_ERR_INVAILD_CONN_HANDLE
@@ -211,8 +211,8 @@ mible_status_t mible_gap_disconnect(uint16_t conn_handle) { return MI_SUCCESS; }
 
 /*
  * @brief	Update the connection parameters.
- * @param  	[IN] conn_handle: the connection handle.
- *			[IN] conn_params: the connection parameters.
+ * @param  	[in] conn_handle: the connection handle.
+ *			[in] conn_params: the connection parameters.
  * @return  MI_SUCCESS             The Connection Update procedure has been
  *started successfully.
  *          MI_ERR_INVAILD_STATE   Initiated this procedure in disconnected
@@ -248,12 +248,12 @@ mible_status_t mible_gatts_service_init(mible_gatts_db_t *mible_service_database
 
 /*
  * @brief	Set characteristic value
- * @param	[IN] srv_handle: service handle
- *			[IN] char_handle: characteristic handle
- *			[IN] offset: the offset from which the attribute value has
+ * @param	[in] srv_handle: service handle
+ *			[in] char_handle: characteristic handle
+ *			[in] offset: the offset from which the attribute value has
  *to be updated
- *			[IN] p_value: pointer to data
- *			[IN] len: data length
+ *			[in] p_value: pointer to data
+ *			[in] len: data length
  * @return  MI_SUCCESS             Successfully retrieved the value of the
  *attribute.
  *          MI_ERR_INVAILD_ADDR    Invalid pointer supplied.
@@ -272,11 +272,10 @@ mible_status_t mible_gatts_value_set(uint16_t srv_handle, uint16_t char_handle,
 
 /*
  * @brief	Get charicteristic value as a GATTS.
- * @param 	[IN] srv_handle: service handle
- * 			[IN] char_handle: characteristic handle
- *			[OUT] p_value: pointer to data which stores characteristic
- *value
- * 			[OUT] len: data length
+ * @param 	[in] srv_handle: service handle
+ * 			[in] char_handle: characteristic handle
+ *			[out] p_value: pointer to data which stores characteristic value
+ * 			[out] p_len: pointer to data length.
  * @return  MI_SUCCESS             Successfully get the value of the attribute.
  *          MI_ERR_INVAILD_ADDR    Invalid pointer supplied.
  *          MI_ERR_INVAILD_PARAM   Invalid parameter (offset) supplied.
@@ -284,7 +283,7 @@ mible_status_t mible_gatts_value_set(uint16_t srv_handle, uint16_t char_handle,
  *          MIBLE_ERR_ATT_INVAILD_HANDLE     Attribute not found.
  **/
 mible_status_t mible_gatts_value_get(uint16_t srv_handle, uint16_t char_handle,
-    uint8_t* p_value, uint8_t len)
+    uint8_t* p_value, uint8_t *p_len)
 {
     return MI_SUCCESS;
 }
@@ -292,12 +291,14 @@ mible_status_t mible_gatts_value_get(uint16_t srv_handle, uint16_t char_handle,
 // this function set char value and notify/indicate it to client
 /*
  * @brief 	Set characteristic value and notify it to client.
- * @param 	[IN] srv_handle: service handle
- * 			[IN] char_handle: characteristic handle
- * 			[IN] offset: the offset from which the attribute value has to
+ * @param 	[in] conn_handle: conn handle
+ *          [in] srv_handle: service handle
+ * 			[in] char_value_handle: characteristic handle
+ * 			[in] offset: the offset from which the attribute value has to
  * be updated
- * 			[IN] p_value: pointer to data
- * 			[IN] len: data length
+ * 			[in] p_value: pointer to data
+ * 			[in] len: data length
+ *          [in] type : notification = 1; indication = 2;
  *
  * @return  MI_SUCCESS             Successfully queued a notification or
  * indication for transmission,
@@ -315,10 +316,9 @@ mible_status_t mible_gatts_value_get(uint16_t srv_handle, uint16_t char_handle,
  *          value to verify that the relevant operation (notification or
  * indication) has been enabled by the client.
  * */
-mible_status_t mible_gatts_notify_or_indicate(uint16_t srv_handle,
-    uint16_t char_handle,
-    uint8_t offset, uint8_t* p_value,
-    uint8_t len)
+mible_status_t mible_gatts_notify_or_indicate(uint16_t conn_handle, uint16_t srv_handle,
+    uint16_t char_value_handle, uint8_t offset, uint8_t* p_value,
+    uint8_t len, uint8_t type)
 {
     return MI_SUCCESS;
 }
@@ -327,11 +327,11 @@ mible_status_t mible_gatts_notify_or_indicate(uint16_t srv_handle,
 
 /*
  * @brief	Discover primary service by service UUID.
- * @param 	[IN] conn_handle: connect handle
- * 			[IN] handle_range: search range for primary sevice
+ * @param 	[in] conn_handle: connect handle
+ * 			[in] handle_range: search range for primary sevice
  *discovery procedure
- * 			[IN] uuid_type: 16-bit or 128-bit
- *			[IN] p_srv_uuid: pointer to service uuid
+ * 			[in] uuid_type: 16-bit or 128-bit
+ *			[in] p_srv_uuid: pointer to service uuid
  * @return  MI_SUCCESS             Successfully started or resumed the Primary
  *Service Discovery procedure.
  *          MI_ERR_INVAILD_ADDR    Invalid pointer supplied.
@@ -341,27 +341,21 @@ mible_status_t mible_gatts_notify_or_indicate(uint16_t srv_handle,
  * @note 	The response is given through
  *MIBLE_GATTC_EVT_PRIMARY_SERVICE_DISCOVER_RESP event
  * */
-mible_status_t
-mible_gattc_primary_service_discover_by_uuid(uint16_t conn_handle,
+mible_status_t mible_gattc_primary_service_discover_by_uuid(uint16_t conn_handle,
     mible_handle_range_t handle_range,
     mible_uuid_t* p_srv_uuid)
 {
-    /*tBleStatus ret;*/
-    /*ret = aci_att_find_by_type_value_req(conn_handle,start_handle,end_handle,*/
-    /*PRIMARY_SERVICE,2,svc_uuid);*/
-    /*if( BLE_STATUS_SUCCESS != ret ){*/
-    /*return MIBLE_ERR_UNKNOWN;*/
-    /*}*/
+
     return MI_SUCCESS;
 }
 
 /*
  * @brief	Discover characteristic by characteristic UUID.
- * @param	[IN] conn_handle: connect handle
- * 			[IN] handle_range: search range for characteristic discovery
+ * @param	[in] conn_handle: connect handle
+ * 			[in] handle_range: search range for characteristic discovery
  * procedure
- * 			[IN] uuid_type: 16-bit or 128-bit
- * 			[IN] p_char_uuid: pointer to characteristic uuid
+ * 			[in] uuid_type: 16-bit or 128-bit
+ * 			[in] p_char_uuid: pointer to characteristic uuid
  * @return  MI_SUCCESS             Successfully started or resumed the
  * Characteristic Discovery procedure.
  *          MI_ERR_INVAILD_ADDR    Invalid pointer supplied.
@@ -381,8 +375,8 @@ mible_gattc_char_discover_by_uuid(uint16_t conn_handle,
 
 /*
  * @brief	Discover characteristic client configuration descriptor
- * @param 	[IN] conn_handle: connection handle
- * 			[IN] handle_range: search range
+ * @param 	[in] conn_handle: connection handle
+ * 			[in] handle_range: search range
  * @return  MI_SUCCESS             Successfully started Clien Config Descriptor
  * Discovery procedure.
  *          MI_ERR_INVAILD_ADDR    Invalid pointer supplied.
@@ -405,10 +399,10 @@ mible_gattc_clt_cfg_descriptor_discover(uint16_t conn_handle,
 
 /*
  * @brief	Read characteristic value by UUID
- * @param 	[IN] conn_handle: connnection handle
- * 			[IN] handle_range: search range
- * 			[IN] uuid_type: 16-bit or 128-bit
- * 			[IN] char_uuid: characteristic uuid
+ * @param 	[in] conn_handle: connnection handle
+ * 			[in] handle_range: search range
+ * 			[in] uuid_type: 16-bit or 128-bit
+ * 			[in] char_uuid: characteristic uuid
  * @return  MI_SUCCESS             Successfully started or resumed the Read
  * using Characteristic UUID procedure.
  *          MI_ERR_INVAILD_STATE   Invalid Connection State.
@@ -427,10 +421,10 @@ mible_gattc_read_char_value_by_uuid(uint16_t conn_handle,
 
 /*
  * @brief	Write characteristic value by handle
- * @param 	[IN] conn_handle: connection handle
- * 			[IN] handle: handle to the attribute to be written.
- * 			[IN] p_value: pointer to data
- * 			[IN] len: data length
+ * @param 	[in] conn_handle: connection handle
+ * 			[in] handle: handle to the attribute to be written.
+ * 			[in] p_value: pointer to data
+ * 			[in] len: data length
  * @return  MI_SUCCESS             Successfully started the Write with response
  * procedure.
  *          MI_ERR_INVAILD_ADDR    Invalid pointer supplied.
@@ -449,10 +443,10 @@ mible_status_t mible_gattc_write_with_rsp(uint16_t conn_handle, uint16_t handle,
 
 /*
  * @brief 	Write characteristic value by handle without response
- * @param   [IN] conn_handle: connection handle
- * 			[IN] handle: handle to the attribute to be written.
- * 			[IN] p_value: pointer to data
- * 			[IN] len: data length
+ * @param   [in] conn_handle: connection handle
+ * 			[in] handle: handle to the attribute to be written.
+ * 			[in] p_value: pointer to data
+ * 			[in] len: data length
  * @return  MI_SUCCESS             Successfully started the Write Cmd procedure.
  *          MI_ERR_INVAILD_ADDR    Invalid pointer supplied.
  *          MI_ERR_INVAILD_STATE   Invalid Connection State.
@@ -471,10 +465,10 @@ mible_status_t mible_gattc_write_cmd(uint16_t conn_handle, uint16_t handle,
 
 /*
  * @brief 	Create a timer.
- * @param 	[OUT] p_timer_id: a pointer to timer id which can uniquely identify the timer.
- * 			[IN] timeout_handler: a pointer to a function which can be
+ * @param 	[out] p_timer_id: a pointer to timer id which can uniquely identify the timer.
+ * 			[in] timeout_handler: a pointer to a function which can be
  * called when the timer expires.
- * 			[IN] mode: repeated or single shot.
+ * 			[in] mode: repeated or single shot.
  * @return  MI_SUCCESS             If the timer was successfully created.
  *          MI_ERR_INVAILD_PARAM   Invalid timer id supplied.
  *          MI_ERR_INVAILD_STATE   timer module has not been initialized or the
@@ -490,7 +484,7 @@ mible_status_t mible_timer_create(void* p_timer_id,
 
 /*
  * @brief 	Delete a timer.
- * @param 	[IN] timer_id: timer id
+ * @param 	[in] timer_id: timer id
  * @return  MI_SUCCESS             If the timer was successfully deleted.
  *          MI_ERR_INVAILD_PARAM   Invalid timer id supplied..
  * */
@@ -498,10 +492,10 @@ mible_status_t mible_timer_delete(void* timer_id) { return MI_SUCCESS; }
 
 /*
  * @brief 	Start a timer.
- * @param 	[IN] timer_id: timer id
- *          [IN] timeout_value: Number of milliseconds to time-out event
+ * @param 	[in] timer_id: timer id
+ *          [in] timeout_value: Number of milliseconds to time-out event
  * (minimum 10 ms).
- * 			[IN] p_context: parameters that can be passed to
+ * 			[in] p_context: parameters that can be passed to
  * timeout_handler
  *
  * @return  MI_SUCCESS             If the timer was successfully started.
@@ -519,7 +513,7 @@ mible_status_t mible_timer_start(void* timer_id, uint32_t timeout_value,
 
 /*
  * @brief 	Stop a timer.
- * @param 	[IN] timer_id: timer id
+ * @param 	[in] timer_id: timer id
  * @return  MI_SUCCESS             If the timer was successfully stopped.
  *          MI_ERR_INVAILD_PARAM   Invalid timer id supplied.
  *
@@ -530,9 +524,9 @@ mible_status_t mible_timer_stop(void* timer_id) { return MI_SUCCESS; }
 
 /*
  * @brief 	Restore data to flash
- * @param 	[IN] record_id: identify an area in flash
- * 			[OUT] p_data: pointer to data
- *			[IN] len: data length
+ * @param 	[in] record_id: identify an area in flash
+ * 			[out] p_data: pointer to data
+ *			[in] len: data length
  * @return  MI_SUCCESS              The command was accepted.
  *          MI_ERR_INVAILD_LENGTH   Size was 0, or higher than the maximum
  *allowed size.
@@ -548,9 +542,9 @@ mible_status_t mible_record_read(uint16_t record_id, uint8_t* p_data,
 
 /*
  * @brief 	Store data to flash
- * @param 	[IN] record_id: identify an area in flash
- * 			[IN] p_data: pointer to data
- * 			[IN] len: data length
+ * @param 	[in] record_id: identify an area in flash
+ * 			[in] p_data: pointer to data
+ * 			[in] len: data length
  * @return  MI_SUCCESS              The command was accepted.
  *          MI_ERR_INVAILD_LENGTH   Size was 0, or higher than the maximum
  * allowed size.
@@ -569,9 +563,9 @@ mible_status_t mible_record_write(uint16_t record_id, uint8_t* p_data,
 
 /*
  * @brief 	Get ture random bytes .
- * @param 	[IN] flash_id: identify an area in flash
- * 			[OUT] p_buf: pointer to data
- * 			[IN] len: Number of bytes to take from pool and place in
+ * @param 	[in] flash_id: identify an area in flash
+ * 			[out] p_buf: pointer to data
+ * 			[in] len: Number of bytes to take from pool and place in
  * p_buff
  * @return  MI_SUCCESS			The requested bytes were written to
  * p_buff
@@ -587,10 +581,10 @@ mible_status_t mible_rand_num_generater(uint8_t* p_buf, uint8_t len)
 /*
  * @brief 	Encrypts a block according to the specified parameters. 128-bit
  * AES encryption.
- * @param 	[IN] key: encryption key
- * 			[IN] plaintext: pointer to plain text
- * 			[IN] plen: plain text length
- *          [OUT] ciphertext: pointer to cipher text
+ * @param 	[in] key: encryption key
+ * 			[in] plaintext: pointer to plain text
+ * 			[in] plen: plain text length
+ *          [out] ciphertext: pointer to cipher text
  * @return  MI_SUCCESS              The encryption operation completed.
  *          MI_ERR_INVAILD_ADDR     Invalid pointer supplied.
  *          MI_ERR_INVAILD_STATE    Encryption module is not initialized.
@@ -608,13 +602,13 @@ mible_status_t mible_ecb128_encrypt(const uint8_t* key,
 
 /*
  * @brief 	Post a task to a task quene, which can be executed in a right place(maybe a task in RTOS or while(1) in the main function).
- * @param 	[IN] handler: a pointer to function 
- * 			[IN] param: function parameters 
+ * @param 	[in] handler: a pointer to function 
+ * 			[in] param: function parameters 
  * @return 	MI_SUCCESS 				Successfully put the handler to quene.		
  * 			MI_ERR_NO_MEM			The task quene is full. 
  * 			MI_ERR_INVAILD_PARAM    Handler is NULL
  * */
-mible_status_t mible_task_post(mible_handler_t handler, void *param)
+mible_status_t mible_task_post(mible_handler_t handler, void *arg)
 {
 	return MI_SUCCESS;	
 } 

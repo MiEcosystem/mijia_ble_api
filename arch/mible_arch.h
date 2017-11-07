@@ -34,7 +34,7 @@ void mible_gatts_event_callback(mible_gatts_evt_t evt,
 void mible_gattc_event_callback(mible_gattc_evt_t evt,
     mible_gattc_param_t* param);
 
-mible_status_t mible_gap_address_get(mible_addr_t* p_mac);
+mible_status_t mible_gap_address_get(mible_addr_t mac);
 
 mible_status_t mible_gap_scan_start(mible_gap_scan_type_t scan_type,
     mible_gap_scan_param_t scan_param);
@@ -59,15 +59,13 @@ mible_status_t mible_gatts_value_set(uint16_t srv_handle, uint16_t char_handle,
     uint8_t offset, uint8_t* buf, uint8_t len);
 
 mible_status_t mible_gatts_value_get(uint16_t srv_handle, uint16_t char_handle,
-    uint8_t* buf, uint8_t len);
+    uint8_t* pdata, uint8_t *plen);
 
-mible_status_t mible_gatts_notify_or_indicate(uint16_t srv_handle,
-    uint16_t char_handle,
-    uint8_t offset, uint8_t* p_value,
-    uint8_t len);
+mible_status_t mible_gatts_notify_or_indicate(uint16_t conn_handle, uint16_t srv_handle,
+    uint16_t char_value_handle, uint8_t offset, uint8_t* p_value,
+    uint8_t len, uint8_t type);
 
-mible_status_t
-mible_gattc_primary_service_discover_by_uuid(uint16_t conn_handle,
+mible_status_t mible_gattc_primary_service_discover_by_uuid(uint16_t conn_handle,
     mible_handle_range_t handle_range,
     mible_uuid_t* p_srv_uuid);
 

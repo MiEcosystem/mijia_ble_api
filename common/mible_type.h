@@ -359,18 +359,18 @@ typedef enum {
     MI_ERR_INTERNAL,
     MI_ERR_NO_EVENT,
     MI_ERR_NO_MEM,
-    MI_ERR_INVAILD_ADDR,     // Invalid pointer supplied
-    MI_ERR_INVAILD_PARAM,    // Invalid parameter(s) supplied.
+    MI_ERR_INVALID_ADDR,     // Invalid pointer supplied
+    MI_ERR_INVALID_PARAM,    // Invalid parameter(s) supplied.
     MI_ERR_INVALID_STATE,    // Invalid state to perform operation.
     MI_ERR_INVALID_LENGTH,
     MI_ERR_DATA_SIZE,
     MI_ERR_TIMEOUT,
     MI_ERR_BUSY,
     MI_ERR_RESOURCES,
-    MIBLE_ERR_INVAILD_CONN_HANDLE,
-    MIBLE_ERR_ATT_INVAILD_ATT_HANDLE,
-    MIBLE_ERR_GAP_INVAILD_BLE_ADDR,
-    MIBLE_ERR_GATT_INVAILD_ATT_TYPE,
+    MIBLE_ERR_INVALID_CONN_HANDLE,
+    MIBLE_ERR_ATT_INVALID_ATT_HANDLE,
+    MIBLE_ERR_GAP_INVALID_BLE_ADDR,
+    MIBLE_ERR_GATT_INVALID_ATT_TYPE,
     MIBLE_ERR_UNKNOWN, // other ble stack errors
 } mible_status_t;
 
