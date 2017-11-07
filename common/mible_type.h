@@ -42,53 +42,42 @@ typedef enum {
 
 /* GAP related */
 typedef enum {
-    MIBLE_SCAN_TYPE_PASSIVE, // passive scanning
-    MIBLE_SCAN_TYPE_ACTIVE, // active scanning
+    MIBLE_SCAN_TYPE_PASSIVE,  // passive scanning
+    MIBLE_SCAN_TYPE_ACTIVE,   // active scanning
 } mible_gap_scan_type_t;
 
 typedef struct {
-    uint16_t scan_interval;
-    // Range: 0x0004 to 0x4000
-    // Time = N * 0.625 msec
-    // Time Range: 2.5 msec to 10.24 sec
-    uint16_t scan_window;
-    // Range: 0x0004 to 0x4000
-    // Time = N * 0.625 msec
-    // Time Range: 2.5 msec to 10.24 seconds
-    uint16_t timeout;
-    // Scan timeout between 0x0001 and 0xFFFF in seconds, 0x0000 disables timeout.
+    uint16_t scan_interval;                   // Range: 0x0004 to 0x4000 Time = N * 0.625 msec Time Range: 2.5 msec to 10.24 sec
+    uint16_t scan_window;                     // Range: 0x0004 to 0x4000 Time = N * 0.625 msec Time Range: 2.5 msec to 10.24 seconds
+    uint16_t timeout;                         // Scan timeout between 0x0001 and 0xFFFF in seconds, 0x0000 disables timeout.
 } mible_gap_scan_param_t;
 
 typedef enum {
-    MIBLE_ADV_TYPE_CONNECTABLE_UNDIRECTED, // ADV_IND
-    MIBLE_ADV_TYPE_SCANNABLE_UNDIRECTED, // ADV_SCAN_IND
-    MIBLE_ADV_TYPE_NON_CONNECTABLE_UNDIRECTED, // ADV_NONCONN_INC
+    MIBLE_ADV_TYPE_CONNECTABLE_UNDIRECTED,      // ADV_IND
+    MIBLE_ADV_TYPE_SCANNABLE_UNDIRECTED,        // ADV_SCAN_IND
+    MIBLE_ADV_TYPE_NON_CONNECTABLE_UNDIRECTED,  // ADV_NONCONN_INC
 } mible_gap_adv_type_t;
 
 typedef struct {
-    uint8_t adv_data[31]; // advertising data
-    uint8_t adv_len; // advertising data length
-    uint8_t scan_rsp_data[31]; // response data in active scanning
-    uint8_t scan_rsp_len; // response data length in active scanning
+    uint8_t adv_data[31];                      // advertising data
+    uint8_t adv_len;                           // advertising data length
+    uint8_t scan_rsp_data[31];                 // response data in active scanning
+    uint8_t scan_rsp_len;                      // response data length in active scanning
 
-    uint16_t adv_interval_min;
-    // Range: 0x0020 to 0x4000
-    // Time = N * 0.625 msec Time
-    // Range: 20 ms to 10.24 sec
-    uint16_t adv_interval_max;
-    // Range: 0x0020 to 0x4000
-    // Time = N * 0.625 msec Time
-    // Range: 20 ms to 10.24 sec
-    mible_gap_adv_type_t adv_type;
-    uint8_t channel;
-    // xxxxxxx1b Enable channel 37 use
-    // xxxxxx1xb Enable channel 38 use
-    // xxxxx1xxb Enable channel 39 use
+	mible_gap_adv_type_t adv_type;
+    uint16_t adv_interval_min;               // Range: 0x0020 to 0x4000  Time = N * 0.625 msec Time Range: 20 ms to 10.24 sec
+    uint16_t adv_interval_max;               // Range: 0x0020 to 0x4000  Time = N * 0.625 msec Time Range: 20 ms to 10.24 sec
+    
+	struct {
+		uint8_t ch_37_off : 1;  /**< Setting this bit to 1 will turn off advertising on channel 37 */
+		uint8_t ch_38_off : 1;  /**< Setting this bit to 1 will turn off advertising on channel 38 */
+		uint8_t ch_39_off : 1;  /**< Setting this bit to 1 will turn off advertising on channel 39 */
+	} ch_mask;
 } mible_gap_adv_param_t;
 
 typedef enum {
-    ADV_DATA, // advertising data
-    SCAN_RSP_DATA, // response data from active scanning
+    ADV_DATA,           // advertising data
+    SCAN_RSP_DATA,      // response data from active scanning
 } mible_gap_adv_data_type_t;
 
 typedef struct {
@@ -107,20 +96,10 @@ typedef enum {
 } mible_gap_disconnect_reason_t;
 
 typedef struct {
-    uint16_t min_conn_interval;
-    // Range: 0x0006 to 0x0C80
-    // Time = N * 1.25 msec
-    // Time Range: 7.5 msec to 4 seconds.
-    uint16_t max_conn_interval;
-    // Range: 0x0006 to 0x0C80
-    // Time = N * 1.25 msec
-    // Time Range: 7.5 msec to 4 seconds.
-    uint16_t slave_latency;
-    // Range: 0x0000 to 0x01F3
-    uint16_t conn_sup_timeout;
-    // Range: 0x000A to 0x0C80
-    // Time = N * 10 msec
-    // Time Range: 100 msec to 32 seconds
+    uint16_t min_conn_interval;    // Range: 0x0006 to 0x0C80, Time = N * 1.25 msec, Time Range: 7.5 msec to 4 seconds.
+    uint16_t max_conn_interval;    // Range: 0x0006 to 0x0C80, Time = N * 1.25 msec, Time Range: 7.5 msec to 4 seconds.
+    uint16_t slave_latency;        // Range: 0x0000 to 0x01F3
+    uint16_t conn_sup_timeout;     // Range: 0x000A to 0x0C80, Time = N * 10 msec, Time Range: 100 msec to 32 seconds
 } mible_gap_conn_param_t;
 
 typedef enum {
@@ -164,7 +143,7 @@ typedef enum {
 
 // GATTS database
 typedef struct {
-    uint32_t type; //	MIBLE_UUID_16 = 0	MIBLE_UUID_128 = 1
+	uint32_t type;                                     // MIBLE_UUID_16 = 0	MIBLE_UUID_128 = 1
     union {
         uint16_t uuid16;
         uint8_t uuid128[16];
@@ -177,77 +156,67 @@ typedef enum {
 } mible_gatts_service_t;
 
 typedef struct{
+	uint16_t reliable_write     :1;
+	uint16_t writeable          :1;
+} mible_gatts_char_desc_ext_prop_t;
 
-}mible_gatts_char_desc_db_t;
+typedef struct{
+	char *string;
+	uint8_t len;
+} mible_gatts_char_desc_user_desc_t;
+
+typedef struct{
+	uint8_t  format;
+	uint8_t  exponent;
+	uint16_t unit;
+	uint8_t  name_space;
+	uint16_t desc;
+} mible_gatts_char_desc_cpf_t;
+
+typedef struct{
+	mible_gatts_char_desc_ext_prop_t  *extend_prop;
+	mible_gatts_char_desc_cpf_t       *char_format;      // See more details at Bluetooth SPEC 4.2 [Vol 3, Part G] Page 539
+	mible_gatts_char_desc_user_desc_t *user_desc;     	// read only
+} mible_gatts_char_desc_db_t;
+
+// gatts characteristic
+// default:  no authentication ; no encrption; configurable authorization
 
 typedef struct{
 	mible_uuid_t char_uuid;
-	uint8_t char_property; // See TYPE mible_gatts_char_property for details 
-	uint8_t *p_value; // initail characteristic value
-	uint8_t char_value_len; 
-	BOOLEAN is_variable;
-	uint16_t char_value_handle; 
-	// [out] a pointer to a 16-bit word where the assigned handle will be stored.
-	BOOLEAN rd_author; 
-	// read authorization. Enabel or Disable MIBLE_GATTS_READ_PERMIT_REQ event
-	BOOLEAN wt_author; 
-	// write authorization. Enabel or Disable MIBLE_GATTS_WRITE_PERMIT_REQ event
+	uint8_t char_property;                             // See TYPE mible_gatts_char_property for details 
+	uint8_t *p_value;                                  // initial characteristic value
+	uint8_t char_value_len;
+	uint16_t char_value_handle;                        // [out] a pointer to a 16-bit word where the assigned handle will be stored.
+	BOOLEAN is_variable_len;
+	BOOLEAN rd_author;                                 // read authorization. Enabel or Disable MIBLE_GATTS_READ_PERMIT_REQ event
+	BOOLEAN wr_author;                                 // write authorization. Enabel or Disable MIBLE_GATTS_WRITE_PERMIT_REQ event
 	mible_gatts_char_desc_db_t char_desc_db;
-}mible_gatts_char_db_t;
+} mible_gatts_char_db_t;
 
 typedef struct{
-	mible_gatts_service_t srv_type; // primary service or secondary service
-	uint16_t srv_handle;  // [out] dynamically allocated
-	mible_uuid_t srv_uuid; // 16-bit or 128-bit uuid	
+	mible_gatts_service_t srv_type;                    // primary service or secondary service
+	uint16_t srv_handle;                               // [out] dynamically allocated
+	mible_uuid_t srv_uuid;                             // 16-bit or 128-bit uuid	
 	uint8_t char_num; 
-	mible_gatts_char_db_t *p_char_db; // p_char_db[charnum]
-}mible_gatts_srv_db_t; // Regardless of service inclusion service
+	mible_gatts_char_db_t *p_char_db;                  // p_char_db[charnum]
+} mible_gatts_srv_db_t;                                // Regardless of service inclusion service
 
 typedef struct{
-	mible_gatts_srv_db_t *p_srv_db;  // p_srv_db[srv_num] 
+	mible_gatts_srv_db_t *p_srv_db;                    // p_srv_db[srv_num] 
 	uint16_t srv_num; 
 } mible_gatts_db_t;
 
 
-
-
-
-
 typedef enum {
-    MIBLE_BROADCAST=0x01,
-    MIBLE_READ=0x02,
-    MIBLE_WRITE_WITHOUT_RESP=0x04,
-    MIBLE_WRITE=0x08,
-    MIBLE_NOTIFY=0x10,
-    MIBLE_INDICATE=0x20,
-    MIBLE_AUTH_SIGNED_WRITE=0x40,
+    MIBLE_BROADCAST           =0x01,
+    MIBLE_READ                =0x02,
+    MIBLE_WRITE_WITHOUT_RESP  =0x04,
+    MIBLE_WRITE               =0x08,
+    MIBLE_NOTIFY              =0x10,
+    MIBLE_INDICATE            =0x20,
+    MIBLE_AUTH_SIGNED_WRITE   =0x40,
 } mible_gatts_char_property;
-
-// gatts characteristic
-// default:  no authentication ; no encrption; configurable authorization
-typedef struct {
-    mible_uuid_t char_uuid;
-    uint8_t char_property; // See TYPE mible_gatts_char_property for details
-    uint8_t* p_value;   // initail characteristic  
-    uint8_t value_len; 
-    BOOLEAN is_variable;  
-  	uint16_t char_value_handle; //  [OUT] *** characteristic value handle 
-    // [out] a pointer to a 16-bit word where the assigned handle will be stored.
-    BOOLEAN rd_author;
-    // read authorization. Enabel or Disable MIBLE_GATTS_READ_PERMIT_REQ event
-    BOOLEAN wt_author;
-    // write authorization. Enabel or Disable MIBLE_GATTS_WRITE_PERMIT_REQ event
-} mible_gatts_char_t;
-
-typedef struct {
-    uint16_t cccd_handle; //  [OUT]
-    // [out] a pointer to a 16-bit word where the assigned handle will be stored.
-} mible_gatts_cccd_t;
-
-// for now, characteristic descriptor only support cccd
-typedef struct {
-    mible_gatts_cccd_t cccd_param;
-} mible_gatts_desc_t;
 
 typedef enum {
     MIBLE_GATTS_EVT_WRITE = MIBLE_GATTS_EVT_BASE,
@@ -387,12 +356,12 @@ typedef enum {
 
 typedef enum {
     MI_SUCCESS      = 0x00,
-    MI_ERR_INTERNAL = 0x01,
-    MI_ERR_NO_EVENT = 0x02,
+    MI_ERR_INTERNAL,
+    MI_ERR_NO_EVENT,
     MI_ERR_NO_MEM,
-    MI_ERR_INVAILD_ADDR, // Invalid pointer supplied
-    MI_ERR_INVAILD_PARAM, // Invalid parameter(s) supplied.
-    MI_ERR_INVALID_STATE, // Invalid state to perform operation.
+    MI_ERR_INVAILD_ADDR,     // Invalid pointer supplied
+    MI_ERR_INVAILD_PARAM,    // Invalid parameter(s) supplied.
+    MI_ERR_INVALID_STATE,    // Invalid state to perform operation.
     MI_ERR_INVALID_LENGTH,
     MI_ERR_DATA_SIZE,
     MI_ERR_TIMEOUT,
