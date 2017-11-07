@@ -264,9 +264,10 @@ typedef enum {
 /*
  * MIBLE_GATTS_EVT_WRITE and MIBLE_GATTS_EVT_WRITE_PERMIT_REQ events callback
  * parameters
+ * NOTE: Stack SHOULD decide whether to response to gatt client. And if need to reply, just reply success or failure according to [permit]
  * */
 typedef struct {
-	uint8_t  rsp_required;
+	BOOLEAN permit; // [OUT] true: permit to change value ; false: reject to change value 
     uint16_t char_handle;
     uint8_t offset;
     uint8_t len;
@@ -275,8 +276,10 @@ typedef struct {
 
 /*
  * MIBLE_GATTS_EVT_READ_PERMIT_REQ event callback parameters
+ * NOTE: Stack SHOULD decide to reply the char value or refuse according to [permit]
  * */
 typedef struct {
+	BOOLEAN permit; // [OUT] true: permit to be read ; false: reject to be read 
     uint16_t conn_handle;
     uint16_t value_handle;  // char value handle 
 } mible_gatts_read_t;

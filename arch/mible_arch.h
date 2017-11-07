@@ -53,14 +53,7 @@ mible_status_t mible_gap_update_conn_params(uint16_t conn_handle,
 
 mible_status_t mible_gap_disconnect(uint16_t conn_handle);
 
-mible_status_t mible_gatts_add_service(mible_gatts_service_t srv_type,
-    mible_uuid_t* p_srv_uuid,
-    uint8_t max_att_records,
-    uint16_t srv_handle);
-
-mible_status_t mible_gatts_add_char_and_desc(uint16_t srv_handle,
-    mible_gatts_char_t *p_char_param,
-    mible_gatts_desc_t *p_desc_param);
+mible_status_t mible_gatts_service_init(mible_gatts_db_t *mible_service_database);
 
 mible_status_t mible_gatts_value_set(uint16_t srv_handle, uint16_t char_handle,
     uint8_t offset, uint8_t* buf, uint8_t len);
