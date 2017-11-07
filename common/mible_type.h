@@ -21,6 +21,11 @@
  *  */
 #include "mible_port.h"
 
+#define MIBLE_GAP_EVT_BASE   0x00
+#define MIBLE_GATTS_EVT_BASE 0x40
+#define MIBLE_GATTC_EVT_BASE 0x80
+
+
 typedef uint8_t mible_addr_t[6];
 
 typedef uint32_t mible_cfm_t;
@@ -124,7 +129,6 @@ typedef enum {
 } mible_gap_role_t;
 
 typedef struct {
-    uint16_t conn_handle;
     mible_addr_t peer_addr;
     mible_addr_type_t type;
     mible_gap_role_t role;
@@ -132,27 +136,28 @@ typedef struct {
 } mible_gap_connect_t;
 
 typedef struct {
-    uint16_t conn_handle;
     mible_gap_disconnect_reason_t reason;
 } mible_gap_disconnect_t;
 
 typedef struct {
-    uint16_t conn_handle;
     mible_gap_conn_param_t conn_param;
 } mible_gap_connect_update_t;
 
-typedef union {
-    mible_gap_connect_t connect;
-    mible_gap_disconnect_t disconnect;
-    mible_gap_adv_report_t report;
-    mible_gap_connect_update_t update_conn;
+typedef struct {
+    uint16_t conn_handle;
+	union {
+		mible_gap_connect_t connect;
+		mible_gap_disconnect_t disconnect;
+		mible_gap_adv_report_t report;
+		mible_gap_connect_update_t update_conn;
+	};
 } mible_gap_evt_param_t;
 
 typedef enum {
-    MIBLE_GAP_EVT_CONNECTED, /**< Generated when a connection is established.*/
+    MIBLE_GAP_EVT_CONNECTED = MIBLE_GAP_EVT_BASE, /**< Generated when a connection is established.*/
     MIBLE_GAP_EVT_DISCONNET, /**< Generated when a connection is terminated.*/
-    MIBLE_GAP_EVT_CONN_PARAM_UPDATED, /**< */
-    MIBLE_GAP_EVT_ADV_REPORT  
+	MIBLE_GAP_EVT_CONN_PARAM_UPDATED,
+	MIBLE_GAP_EVT_ADV_REPORT,
 } mible_gap_evt_t;
 
 /*GATTS related*/
@@ -245,14 +250,15 @@ typedef struct {
 } mible_gatts_desc_t;
 
 typedef enum {
-    MIBLE_GATTS_EVT_WRITE,
+    MIBLE_GATTS_EVT_WRITE = MIBLE_GATTS_EVT_BASE,
     // When this event is called, the characteristic has been modified.
     MIBLE_GATTS_EVT_READ_PERMIT_REQ,
     // If charicteristic's rd_auth = TRUE, the event will be called.
     // When this event is called, the characteristic hasn't been read.
     MIBLE_GATTS_EVT_WRITE_PERMIT_REQ,
-    // If charicteristic's wt_auth = TRUE, the event will be called
+    // If charicteristic's wr_auth = TRUE, the event will be called
     // When this event is called, the characteristic hasn't been modified.
+	// Application may use mible_gatts_value_set to finalise the writing operation.
 } mible_gatts_evt_t;
 
 /*
@@ -260,11 +266,11 @@ typedef enum {
  * parameters
  * */
 typedef struct {
-    uint16_t conn_handle;
-    uint16_t value_handle;
-    uint8_t* buf;
-    uint8_t len;
+	uint8_t  rsp_required;
+    uint16_t char_handle;
     uint8_t offset;
+    uint8_t len;
+    uint8_t* data;
 } mible_gatts_write_t;
 
 /*
@@ -278,9 +284,12 @@ typedef struct {
 /*
  * GATTS event callback parameters union
  * */
-typedef union {
-    mible_gatts_write_t write;
-    mible_gatts_read_t read;
+typedef struct {
+	uint16_t conn_handle;
+	union {
+		mible_gatts_write_t write;
+		mible_gatts_read_t read;
+	};
 } mible_gatts_param_t;
 
 /*GATTC related*/
@@ -290,7 +299,7 @@ typedef union {
  * */
 typedef enum {
     // this event generated in responses to a discover_primary_service procedure.
-    MIBLE_GATTC_EVT_PRIMARY_SERVICE_DISCOVER_RESP,
+    MIBLE_GATTC_EVT_PRIMARY_SERVICE_DISCOVER_RESP = MIBLE_GATTC_EVT_BASE,
     // this event generated in responses to a discover_charicteristic_by_uuid
     // procedure.
     MIBLE_GATTC_EVT_CHR_DISCOVER_BY_UUID_RESP,
@@ -309,7 +318,6 @@ typedef enum {
  * MIBLE_GATTC_EVT_PRIMARY_SERVICE_DISCOVER_RESP event callback parameters
  * */
 typedef struct {
-    uint16_t conn_handle;
     mible_handle_range_t primary_srv_range;
     mible_uuid_t uuid_type;
     mible_uuid_t* srv_uuid;
@@ -321,7 +329,6 @@ typedef struct {
  * MIBLE_GATTC_EVT_CHR_DISCOVER_BY_UUID_RESP event callback parameters
  * */
 typedef struct {
-    uint16_t conn_handle;
     mible_handle_range_t char_range;
     mible_uuid_t uuid_type;
     mible_uuid_t* char_uuid;
@@ -332,7 +339,6 @@ typedef struct {
  * MIBLE_GATTC_EVT_CCCD_DISCOVER_RESP event callback parameters
  * */
 typedef struct {
-    uint16_t conn_handle;
     uint16_t desc_handle;
     BOOLEAN succ; // true: exit cccd and return correctly
 } mible_gattc_clt_cfg_desc_disc_rsp;
@@ -341,7 +347,6 @@ typedef struct {
  * MIBLE_GATTC_EVT_READ_CHAR_VALUE_BY_UUID_RESP event callback paramters
  * */
 typedef struct {
-    uint16_t conn_handle;
     uint16_t char_value_handle;
     uint8_t len;
     uint8_t* data;
@@ -352,20 +357,21 @@ typedef struct {
  * MIBLE_GATTC_EVT_WRITE_RESP event callback parameters
  *  */
 typedef struct {
-    uint16_t conn_handle;
     BOOLEAN succ;
 } mible_gattc_write_rsp;
 
 /*
  * GATTC callback parameters union
  * */
-typedef union {
-    mible_gattc_prim_srv_disc_rsp_t srv_disc_rsp;
-    mible_gattc_char_disc_rsp_t char_disc_rsp;
-    mible_gattc_read_char_value_by_uuid_rsp read_char_value_by_uuid_rsp;
-    mible_gattc_clt_cfg_desc_disc_rsp clt_cfg_desc_disc_rsp;
-    mible_gattc_write_rsp write_rsp;
-
+typedef struct {
+	uint16_t conn_handle;
+	union {
+		mible_gattc_prim_srv_disc_rsp_t srv_disc_rsp;
+		mible_gattc_char_disc_rsp_t char_disc_rsp;
+		mible_gattc_read_char_value_by_uuid_rsp read_char_value_by_uuid_rsp;
+		mible_gattc_clt_cfg_desc_disc_rsp clt_cfg_desc_disc_rsp;
+		mible_gattc_write_rsp write_rsp;
+	};
 } mible_gattc_param_t;
 
 /* TIMER related */
@@ -377,9 +383,9 @@ typedef enum {
 } mible_timer_mode;
 
 typedef enum {
-    MI_SUCCESS=0x00,
-    MI_ERR_INTERNAL=0x01,
-    MI_ERR_NO_EVENT=0x02,
+    MI_SUCCESS      = 0x00,
+    MI_ERR_INTERNAL = 0x01,
+    MI_ERR_NO_EVENT = 0x02,
     MI_ERR_NO_MEM,
     MI_ERR_INVAILD_ADDR, // Invalid pointer supplied
     MI_ERR_INVAILD_PARAM, // Invalid parameter(s) supplied.
