@@ -160,7 +160,7 @@ mible_status_t mible_gap_scan_stop(void) { return MI_SUCCESS; }
  * @note	Other default advertising parameters: local public address , no
  * filter policy
  * */
-mible_status_t mible_gap_adv_start(mible_gap_adv_param_t adv_param)
+mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_adv_param)
 {
     return MI_SUCCESS;
 }
@@ -234,43 +234,14 @@ mible_status_t mible_gap_update_conn_params(uint16_t conn_handle,
 
 /*
  * @brief	Add a Service to a GATT server
- * @param 	[IN] srv_type: primary or secondary service
- * 			[IN] uuid_type: 16-bit or 128-bit
- * 			[IN] p_srv_uuid: a pointer to service uuid
- * 			[IN] max_att_records: max attribute records,the service handle
- * range must bigger than this value.
- * 			[OUT] srv_handle: where the assigned handle will be stored.
+ * @param 	[IN|OUT] pointer to mible service data type of mible_gatts_db_t, see TYPE mible_gatts_db_t for details. 
  * @return  MI_SUCCESS             Successfully added a service declaration.
  *          MI_ERR_INVAILD_ADDR    Invalid pointer supplied.
  *          MI_ERR_INVAILD_PARAM   Invalid parameter(s) supplied.
  *          MI_ERR_NO_MEM	       Not enough memory to complete operation.
  * @note
  * */
-mible_status_t mible_gatts_add_service(mible_gatts_service_t srv_type,
-    mible_uuid_t* p_srv_uuid,
-    uint8_t max_att_records,
-    uint16_t srv_handle)
-{
-    return MI_SUCCESS;
-}
-
-/*
- * @brief	Add a characteristic and descriptor to a service
- * @param   [IN] srv_handle: handle of service to which the characteristic
- *belongs
- *			[IN/OUT] p_char_param: pointer to characteristic parameters, see TYPE
- *mible_char_t for details
- * 			[IN/OUT] p_desc_param: pointer to descriptor parameters, see TYPE
- *mible_desc_t for details
- * @return  MI_SUCCESS             Successfully added a characteristic.
- *          MI_ERR_INVAILD_ADDR    Invalid pointer supplied.
- *          MI_ERR_INVAILD_PARAM   Invalid parameter(s) supplied.
- *          MI_ERR_NO_MEM	       Not enough memory to complete operation.
- * @note    if there is no descriptor , set desc_param to NULL 
- * */
-mible_status_t mible_gatts_add_char_and_desc(uint16_t srv_handle,
-    mible_gatts_char_t *p_char_param,
-    mible_gatts_desc_t *p_desc_param)
+mible_status_t mible_gatts_service_init(mible_gatts_db_t *mible_service_database)
 {
     return MI_SUCCESS;
 }

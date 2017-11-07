@@ -157,11 +157,7 @@ typedef enum {
 
 /*GATTS related*/
 
-typedef enum {
-    MIBLE_PRIMARY_SERVICE,
-    MIBLE_SECONDARY_SERVICE,
-} mible_gatts_service_t;
-
+// GATTS database
 typedef struct {
     uint32_t type; //	MIBLE_UUID_16 = 0	MIBLE_UUID_128 = 1
     union {
@@ -169,6 +165,48 @@ typedef struct {
         uint8_t uuid128[16];
     };
 } mible_uuid_t;
+
+typedef enum {
+    MIBLE_PRIMARY_SERVICE,
+    MIBLE_SECONDARY_SERVICE,
+} mible_gatts_service_t;
+
+typedef struct{
+
+}mible_gatts_char_desc_db_t;
+
+typedef struct{
+	mible_uuid_t char_uuid;
+	uint8_t char_property; // See TYPE mible_gatts_char_property for details 
+	uint8_t *p_value; // initail characteristic value
+	uint8_t char_value_len; 
+	BOOLEAN is_variable;
+	uint16_t char_value_handle; 
+	// [out] a pointer to a 16-bit word where the assigned handle will be stored.
+	BOOLEAN rd_author; 
+	// read authorization. Enabel or Disable MIBLE_GATTS_READ_PERMIT_REQ event
+	BOOLEAN wt_author; 
+	// write authorization. Enabel or Disable MIBLE_GATTS_WRITE_PERMIT_REQ event
+	mible_gatts_char_desc_db_t char_desc_db;
+}mible_gatts_char_db_t;
+
+typedef struct{
+	mible_gatts_service_t srv_type; // primary service or secondary service
+	uint16_t srv_handle;  // [out] dynamically allocated
+	mible_uuid_t srv_uuid; // 16-bit or 128-bit uuid	
+	uint8_t char_num; 
+	mible_gatts_char_db_t *p_char_db; // p_char_db[charnum]
+}mible_gatts_srv_db_t; // Regardless of service inclusion service
+
+typedef struct{
+	mible_gatts_srv_db_t *p_srv_db;  // p_srv_db[srv_num] 
+	uint16_t srv_num; 
+} mible_gatts_db_t;
+
+
+
+
+
 
 typedef enum {
     MIBLE_BROADCAST=0x01,
