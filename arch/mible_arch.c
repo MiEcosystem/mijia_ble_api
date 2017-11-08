@@ -36,16 +36,16 @@ void mible_gap_event_callback(mible_gap_evt_t evt,
 {
     switch (evt) {
     case MIBLE_GAP_EVT_CONNECTED:
-		// mible_std_server_gap_evt_connected(param->connect); 
+		// mible_std_server_gap_evt_connected(param); 
         break;
     case MIBLE_GAP_EVT_DISCONNET:
-		// mible_std_server_gap_evt_disconnected(param->disconnect);
+		// mible_std_server_gap_evt_disconnected(param);
         break;
     case MIBLE_GAP_EVT_ADV_REPORT:
-        // mible_std_server_gap_evt_scan_report(param->report); 
+        // mible_std_server_gap_evt_scan_report(param); 
 		break;
     case MIBLE_GAP_EVT_CONN_PARAM_UPDATED:
-		// mible_std_server_gap_evt_conn_params_updated(param->update_conn);
+		// mible_std_server_gap_evt_conn_params_updated(param);
         break;
     }
 }
@@ -56,23 +56,22 @@ void mible_gap_event_callback(mible_gap_evt_t evt,
  *@return   Void
  *@note     You should support this function in your own ble stack .
             Make sure when the corresponding event occurs, be able to call this
- function
-                        and pass in the corresponding parameters.
+ function and pass in the corresponding parameters.
 */
 void mible_gatts_event_callback(mible_gatts_evt_t evt,
-    mible_gatts_param_t* param)
+    mible_gatts_evt_param_t* param)
 {
     switch (evt) {
     case MIBLE_GATTS_EVT_WRITE:
-		// mible_std_server_gatts_evt_write(param->write);
+		// mible_std_server_gatts_evt_write(param);
         break;
 
     case MIBLE_GATTS_EVT_READ_PERMIT_REQ:
-		// mible_std_server_gatts_evt_read_permit_req(param->read);
+		// mible_std_server_gatts_evt_read_permit_req(param);
         break;
 
     case MIBLE_GATTS_EVT_WRITE_PERMIT_REQ:
-		// mible_std_server_gatts_evt_write_permit_req(param->write);
+		// mible_std_server_gatts_evt_write_permit_req(param);
         break;
     }
 }
@@ -83,11 +82,10 @@ void mible_gatts_event_callback(mible_gatts_evt_t evt,
  *@return   Void
  *@note     You should support this function in your own ble stack .
             Make sure when the corresponding event occurs, be able to call this
- function
-                        and pass in the corresponding parameters.
+ function and pass in the corresponding parameters.
 */
 void mible_gattc_event_callback(mible_gattc_evt_t evt,
-    mible_gattc_param_t* param)
+    mible_gattc_evt_param_t* param)
 {
     switch (evt) {
     case MIBLE_GATTC_EVT_PRIMARY_SERVICE_DISCOVER_RESP:
@@ -107,12 +105,15 @@ void mible_gattc_event_callback(mible_gattc_evt_t evt,
 
 /*
  * @brief 	Get BLE mac address.
- * @param 	[out] p_mac: pointer to data
- * @return  MI_SUCCESS			The requested mac address were written to
- * p_mac
+ * @param 	[out] mac: pointer to data
+ * @return  MI_SUCCESS			The requested mac address were written to mac
  *          MI_ERR_INTERNAL     No mac address found.
+ * @note: 	You should copy gap mac to mac[6]  
  * */
-mible_status_t mible_gap_address_get(mible_addr_t mac) { return MI_SUCCESS; }
+mible_status_t mible_gap_address_get(mible_addr_t mac) 
+{ 
+	return MI_SUCCESS; 
+}
 
 /* GAP related function.  You should complement these functions. */
 
@@ -143,7 +144,10 @@ mible_status_t mible_gap_scan_start(mible_gap_scan_type_t scan_type,
  * @return  MI_SUCCESS             Successfully stopped scanning procedure.
  *          MI_ERR_INVAILD_STATE   Not in scanning state.
  * */
-mible_status_t mible_gap_scan_stop(void) { return MI_SUCCESS; }
+mible_status_t mible_gap_scan_stop(void) 
+{ 
+	return MI_SUCCESS; 
+}
 
 /*
  * @brief	Start advertising
@@ -170,7 +174,10 @@ mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_adv_param)
  * @return  MI_SUCCESS             Successfully stopped advertising procedure.
  *          MI_ERR_INVAILD_STATE   Not in advertising state.
  * */
-mible_status_t mible_gap_adv_stop(void) { return MI_SUCCESS; }
+mible_status_t mible_gap_adv_stop(void) 
+{ 
+	return MI_SUCCESS; 
+}
 
 /*
  * @brief  	Create a Direct connection
@@ -179,11 +186,9 @@ mible_status_t mible_gap_adv_stop(void) { return MI_SUCCESS; }
  * 			[in] conn_param : connection parameters, see TYPE
  * mible_gap_connect_t for details.
  * @return  MI_SUCCESS             Successfully initiated connection procedure.
- *          MI_ERR_INVAILD_STATE   Initiated connection procedure in connected
- * state.
+ *          MI_ERR_INVAILD_STATE   Initiated connection procedure in connected state.
  *          MI_ERR_INVAILD_PARAM   Invalid parameter(s) supplied.
- *          MI_ERR_BUSY            The stack is busy, process pending events and
- * retry.
+ *          MI_ERR_BUSY            The stack is busy, process pending events and retry.
  *          MI_ERR_RESOURCES       Stop one or more currently active roles
  * (Central, Peripheral or Observer) and try again
  *          MIBLE_ERR_GAP_INVAILD_BLE_ADDR    Invalid Bluetooth address
@@ -207,7 +212,10 @@ mible_status_t mible_gap_connect(mible_gap_scan_param_t scan_param,
  * @note 	This function can be used by both central role and periphral
  * role.
  * */
-mible_status_t mible_gap_disconnect(uint16_t conn_handle) { return MI_SUCCESS; }
+mible_status_t mible_gap_disconnect(uint16_t conn_handle) 
+{ 
+	return MI_SUCCESS; 
+}
 
 /*
  * @brief	Update the connection parameters.
@@ -234,14 +242,14 @@ mible_status_t mible_gap_update_conn_params(uint16_t conn_handle,
 
 /*
  * @brief	Add a Service to a GATT server
- * @param 	[IN|OUT] pointer to mible service data type of mible_gatts_db_t, see TYPE mible_gatts_db_t for details. 
+ * @param 	[in|out] p_mible_service_database: pointer to mible service data type 
+ * of mible_gatts_db_t, see TYPE mible_gatts_db_t for details. 
  * @return  MI_SUCCESS             Successfully added a service declaration.
  *          MI_ERR_INVAILD_ADDR    Invalid pointer supplied.
  *          MI_ERR_INVAILD_PARAM   Invalid parameter(s) supplied.
  *          MI_ERR_NO_MEM	       Not enough memory to complete operation.
- * @note
  * */
-mible_status_t mible_gatts_service_init(mible_gatts_db_t *mible_service_database)
+mible_status_t mible_gatts_service_init(mible_gatts_db_t *p_mible_service_database)
 {
     return MI_SUCCESS;
 }
@@ -249,7 +257,7 @@ mible_status_t mible_gatts_service_init(mible_gatts_db_t *mible_service_database
 /*
  * @brief	Set characteristic value
  * @param	[in] srv_handle: service handle
- *			[in] char_handle: characteristic handle
+ *			[in] value_handle: characteristic value handle
  *			[in] offset: the offset from which the attribute value has
  *to be updated
  *			[in] p_value: pointer to data
@@ -263,7 +271,7 @@ mible_status_t mible_gatts_service_init(mible_gatts_db_t *mible_service_database
  *          MIBLE_ERR_GATT_INVAILD_ATT_TYPE  Attributes are not modifiable by
  *the application.
  * */
-mible_status_t mible_gatts_value_set(uint16_t srv_handle, uint16_t char_handle,
+mible_status_t mible_gatts_value_set(uint16_t srv_handle, uint16_t value_handle,
     uint8_t offset, uint8_t* p_value,
     uint8_t len)
 {
@@ -273,7 +281,7 @@ mible_status_t mible_gatts_value_set(uint16_t srv_handle, uint16_t char_handle,
 /*
  * @brief	Get charicteristic value as a GATTS.
  * @param 	[in] srv_handle: service handle
- * 			[in] char_handle: characteristic handle
+ * 			[in] value_handle: characteristic value handle
  *			[out] p_value: pointer to data which stores characteristic value
  * 			[out] p_len: pointer to data length.
  * @return  MI_SUCCESS             Successfully get the value of the attribute.
@@ -282,7 +290,7 @@ mible_status_t mible_gatts_value_set(uint16_t srv_handle, uint16_t char_handle,
  *          MI_ERR_INVAILD_LENTH   Invalid length supplied.
  *          MIBLE_ERR_ATT_INVAILD_HANDLE     Attribute not found.
  **/
-mible_status_t mible_gatts_value_get(uint16_t srv_handle, uint16_t char_handle,
+mible_status_t mible_gatts_value_get(uint16_t srv_handle, uint16_t value_handle,
     uint8_t* p_value, uint8_t *p_len)
 {
     return MI_SUCCESS;
@@ -411,18 +419,17 @@ mible_gattc_clt_cfg_descriptor_discover(uint16_t conn_handle,
  * @note    The response is given through
  * MIBLE_GATTC_EVT_READ_CHR_VALUE_BY_UUID_RESP event
  * */
-mible_status_t
-mible_gattc_read_char_value_by_uuid(uint16_t conn_handle,
+mible_status_t mible_gattc_read_char_value_by_uuid(uint16_t conn_handle,
     mible_handle_range_t handle_range,
-    mible_uuid_t char_uuid)
+    mible_uuid_t *char_uuid)
 {
     return MI_SUCCESS;
 }
 
 /*
- * @brief	Write characteristic value by handle
+ * @brief	Write value by handle with response
  * @param 	[in] conn_handle: connection handle
- * 			[in] handle: handle to the attribute to be written.
+ * 			[in] att_handle: handle to the attribute to be written.
  * 			[in] p_value: pointer to data
  * 			[in] len: data length
  * @return  MI_SUCCESS             Successfully started the Write with response
@@ -435,16 +442,16 @@ mible_gattc_read_char_value_by_uuid(uint16_t conn_handle,
  * @note  	The response is given through MIBLE_GATTC_EVT_WRITE_RESP event
  *
  * */
-mible_status_t mible_gattc_write_with_rsp(uint16_t conn_handle, uint16_t handle,
+mible_status_t mible_gattc_write_with_rsp(uint16_t conn_handle, uint16_t att_handle,
     uint8_t* p_value, uint8_t len)
 {
     return MI_SUCCESS;
 }
 
 /*
- * @brief 	Write characteristic value by handle without response
+ * @brief 	Write value by handle without response
  * @param   [in] conn_handle: connection handle
- * 			[in] handle: handle to the attribute to be written.
+ * 			[in] att_handle: handle to the attribute to be written.
  * 			[in] p_value: pointer to data
  * 			[in] len: data length
  * @return  MI_SUCCESS             Successfully started the Write Cmd procedure.
@@ -455,7 +462,7 @@ mible_status_t mible_gattc_write_with_rsp(uint16_t conn_handle, uint16_t handle,
  *          MIBLE_ERR_INVAILD_CONN_HANDLE  Invaild connection handle.
  * @note 	no response
  * */
-mible_status_t mible_gattc_write_cmd(uint16_t conn_handle, uint16_t handle,
+mible_status_t mible_gattc_write_cmd(uint16_t conn_handle, uint16_t att_handle,
     uint8_t* p_value, uint8_t len)
 {
     return MI_SUCCESS;
@@ -488,7 +495,10 @@ mible_status_t mible_timer_create(void* p_timer_id,
  * @return  MI_SUCCESS             If the timer was successfully deleted.
  *          MI_ERR_INVAILD_PARAM   Invalid timer id supplied..
  * */
-mible_status_t mible_timer_delete(void* timer_id) { return MI_SUCCESS; }
+mible_status_t mible_timer_delete(void* timer_id) 
+{ 
+	return MI_SUCCESS; 
+}
 
 /*
  * @brief 	Start a timer.
@@ -518,7 +528,10 @@ mible_status_t mible_timer_start(void* timer_id, uint32_t timeout_value,
  *          MI_ERR_INVAILD_PARAM   Invalid timer id supplied.
  *
  * */
-mible_status_t mible_timer_stop(void* timer_id) { return MI_SUCCESS; }
+mible_status_t mible_timer_stop(void* timer_id) 
+{ 
+	return MI_SUCCESS; 
+}
 
 /* FLASH related function*/
 
@@ -526,7 +539,7 @@ mible_status_t mible_timer_stop(void* timer_id) { return MI_SUCCESS; }
  * @brief 	Restore data to flash
  * @param 	[in] record_id: identify an area in flash
  * 			[out] p_data: pointer to data
- *			[in] len: data length
+ *			[out] len: data length
  * @return  MI_SUCCESS              The command was accepted.
  *          MI_ERR_INVAILD_LENGTH   Size was 0, or higher than the maximum
  *allowed size.
@@ -534,9 +547,8 @@ mible_status_t mible_timer_stop(void* timer_id) { return MI_SUCCESS; }
  *          MI_ERR_INVAILD_ADDR     Invalid pointer supplied.
  * */
 mible_status_t mible_record_read(uint16_t record_id, uint8_t* p_data,
-    uint8_t len)
+    uint8_t *p_len)
 {
-
     return MI_SUCCESS;
 }
 
@@ -557,7 +569,6 @@ mible_status_t mible_record_read(uint16_t record_id, uint8_t* p_data,
 mible_status_t mible_record_write(uint16_t record_id, uint8_t* p_data,
     uint8_t len)
 {
-
     return MI_SUCCESS;
 }
 
