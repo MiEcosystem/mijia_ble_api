@@ -151,7 +151,7 @@ typedef struct {
 } mible_uuid_t;
 
 typedef enum {
-    MIBLE_PRIMARY_SERVICE,
+    MIBLE_PRIMARY_SERVICE = 1,
     MIBLE_SECONDARY_SERVICE,
 } mible_gatts_service_t;
 
@@ -206,19 +206,19 @@ typedef struct{
 } mible_gatts_srv_db_t;                                // Regardless of service inclusion service
 
 typedef struct{
-	mible_gatts_srv_db_t *p_srv_db;                    // p_srv_db[srv_num-1] 
-	uint16_t srv_num; 
+	mible_gatts_srv_db_t *p_srv_db;                    // p_srv_db[srv_num] 
+	uint8_t srv_num; 
 } mible_gatts_db_t;
 
 
 typedef enum {
-    MIBLE_BROADCAST           =0x01,
-    MIBLE_READ                =0x02,
-    MIBLE_WRITE_WITHOUT_RESP  =0x04,
-    MIBLE_WRITE               =0x08,
-    MIBLE_NOTIFY              =0x10,
-    MIBLE_INDICATE            =0x20,
-    MIBLE_AUTH_SIGNED_WRITE   =0x40,
+    MIBLE_BROADCAST           = 0x01,
+    MIBLE_READ                = 0x02,
+    MIBLE_WRITE_WITHOUT_RESP  = 0x04,
+    MIBLE_WRITE               = 0x08,
+    MIBLE_NOTIFY              = 0x10,
+    MIBLE_INDICATE            = 0x20,
+    MIBLE_AUTH_SIGNED_WRITE   = 0x40,
 } mible_gatts_char_property;
 
 typedef enum {
@@ -231,6 +231,7 @@ typedef enum {
     // If charicteristic's wr_auth = TRUE, the event will be called
     // When this event is called, the characteristic hasn't been modified.
 	// Application may use mible_gatts_value_set to finalise the writing operation.
+	MIBLE_GATTS_EVT_IND_CONFIRM
 } mible_gatts_evt_t;
 
 /*
@@ -239,7 +240,7 @@ typedef enum {
  * NOTE: Stack SHOULD decide whether to response to gatt client. And if need to reply, just reply success or failure according to [permit]
  * */
 typedef struct {
-	BOOLEAN permit; // [OUT] true: permit to change value ; false: reject to change value 
+	uint8_t permit; // [OUT] true: permit to change value ; false: reject to change value 
     uint16_t value_handle; // char value_handle
     uint8_t offset;
     uint8_t len;
@@ -251,7 +252,7 @@ typedef struct {
  * NOTE: Stack SHOULD decide to reply the char value or refuse according to [permit]
  * */
 typedef struct {
-	BOOLEAN permit; // [OUT] true: permit to be read ; false: reject to be read 
+	uint8_t permit;
     uint16_t conn_handle;
     uint16_t value_handle;  // char value handle 
 } mible_gatts_read_t;
@@ -385,12 +386,12 @@ typedef enum{
 } mible_arch_event_t;
 
 typedef struct{
-	mible_status_t state_return;
+	mible_status_t status;
 }mible_arch_gatts_srv_init_cmp_t;
 
 typedef struct{
 	uint16_t record_id;
-	mible_status_t state_return;	
+	mible_status_t status;	
 }mible_arch_record_write_cmp_t; 
 
 typedef struct{

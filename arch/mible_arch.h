@@ -84,7 +84,7 @@ mible_gattc_clt_cfg_descriptor_discover(uint16_t conn_handle,
 mible_status_t
 mible_gattc_read_char_value_by_uuid(uint16_t conn_handle,
     mible_handle_range_t handle_range,
-    mible_uuid_t *char_uuid);
+    mible_uuid_t *p_char_uuid);
 
 mible_status_t mible_gattc_write_with_rsp(uint16_t conn_handle, uint16_t handle,
     uint8_t* p_value, uint8_t len);
