@@ -379,4 +379,25 @@ typedef enum {
 
 typedef void (*mible_handler_t) (void* arg);
 
+typedef enum{
+	MIBLE_ARCH_EVT_GATTS_SRV_INIT_CMP,
+	MIBLE_ARCH_EVT_RECORD_WRITE_CMP,
+} mible_arch_event_t;
+
+typedef struct{
+	mible_status_t state_return;
+}mible_arch_gatts_srv_init_cmp_t;
+
+typedef struct{
+	uint16_t record_id;
+	mible_status_t state_return;	
+}mible_arch_record_write_cmp_t; 
+
+typedef struct{
+	union {
+		mible_arch_gatts_srv_init_cmp_t srv_init_cmp;
+		mible_arch_record_write_cmp_t record_write_cmp;
+	};
+}mible_arch_evt_param_t;
+
 #endif

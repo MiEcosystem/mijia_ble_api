@@ -102,6 +102,20 @@ void mible_gattc_event_callback(mible_gattc_evt_t evt,
 		;
     }
 }
+/*
+ *@brief 	This function is mible_arch api related event callback function.
+ *@param 	[in] evt: asynchronous function complete event 
+ *			[in] param: the return of asynchronous function 
+ *@note  	You should support this function in corresponding asynchronous function. 
+ *          For now, mible_gatts_service_int and mible_record_write is asynchronous. 
+ * */
+void mible_arch_event_callback(mible_arch_event_t evt, 
+		mible_arch_evt_param_t* param)
+{
+
+}
+
+
 
 /*
  * @brief 	Get BLE mac address.
@@ -248,6 +262,7 @@ mible_status_t mible_gap_update_conn_params(uint16_t conn_handle,
  *          MI_ERR_INVAILD_ADDR    Invalid pointer supplied.
  *          MI_ERR_INVAILD_PARAM   Invalid parameter(s) supplied.
  *          MI_ERR_NO_MEM	       Not enough memory to complete operation.
+ * @note    This function can be implemented asynchronous. When service inition complete, call mible_arch_event_callback function and pass in MIBLE_ARCH_EVT_GATTS_SRV_INIT_CMP event and result.
  * */
 mible_status_t mible_gatts_service_init(mible_gatts_db_t *p_mible_service_database)
 {
@@ -536,6 +551,33 @@ mible_status_t mible_timer_stop(void* timer_id)
 /* FLASH related function*/
 
 /*
+ * @brief 	Create a record in flash 
+ * @param 	[in] record_id: identify a record in flash 
+ * 			[in] len: record length
+ * @return 	MI_SUCCESS 				Create successfully.
+ * 			MI_ERR_INVAILD_LENGTH   Size was 0, or higher than the maximum
+ *allowed size.
+ *   		MI_ERR_NO_MEM,			Not enough flash memory to be assigned 
+ * 				
+ * */
+mible_status_t mible_record_create(uint16_t record_id, uint8_t len)
+{
+	return MI_SUCCESS;	
+}
+
+
+/*
+ * @brief  	Delete a record in flash
+ * @param 	[in] record_id: identify a record in flash  
+ * @return 	MI_SUCCESS 				Delete successfully. 
+ * 			MI_ERR_INVAILD_PARAMS   Invalid record id supplied.
+ * */
+mible_status_t mible_record_delete(uint16_t record_id)
+{
+	return MI_SUCCESS;
+}
+
+/*
  * @brief 	Restore data to flash
  * @param 	[in] record_id: identify an area in flash
  * 			[out] p_data: pointer to data
@@ -564,7 +606,7 @@ mible_status_t mible_record_read(uint16_t record_id, uint8_t* p_data,
  * @note  	Should use asynchronous mode to implement this function.
  *          The data to be written to flash has to be kept in memory until the
  * operation has terminated, i.e., an event is received.
- *
+ * 			When record writing complete , call mible_arch_event_callback function and pass MIBLE_ARCH_EVT_RECORD_WRITE_CMP event and result. 
  * */
 mible_status_t mible_record_write(uint16_t record_id, uint8_t* p_data,
     uint8_t len)
@@ -574,8 +616,7 @@ mible_status_t mible_record_write(uint16_t record_id, uint8_t* p_data,
 
 /*
  * @brief 	Get ture random bytes .
- * @param 	[in] flash_id: identify an area in flash
- * 			[out] p_buf: pointer to data
+ * @param 	[out] p_buf: pointer to data
  * 			[in] len: Number of bytes to take from pool and place in
  * p_buff
  * @return  MI_SUCCESS			The requested bytes were written to

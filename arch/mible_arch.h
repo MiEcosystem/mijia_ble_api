@@ -34,6 +34,9 @@ void mible_gatts_event_callback(mible_gatts_evt_t evt,
 void mible_gattc_event_callback(mible_gattc_evt_t evt,
     mible_gattc_evt_param_t* param);
 
+void mible_arch_event_callback(mible_arch_event_t evt, 
+		mible_arch_evt_param_t* param);
+
 mible_status_t mible_gap_address_get(mible_addr_t mac);
 
 mible_status_t mible_gap_scan_start(mible_gap_scan_type_t scan_type,
@@ -99,6 +102,10 @@ mible_status_t mible_timer_start(void* timer_id, uint32_t timeout_value,
     void* p_context);
 
 mible_status_t mible_timer_stop(void* timer_id);
+
+mible_status_t mible_record_create(uint16_t record_id, uint8_t len);
+
+mible_status_t mible_record_delete(uint16_t record_id);
 
 mible_status_t mible_record_read(uint16_t record_id, uint8_t* p_data,
     uint8_t *p_len);
