@@ -993,7 +993,7 @@ mible_status_t mible_rand_num_generater(uint8_t* p_buf, uint8_t len)
  * @return  MI_SUCCESS              The encryption operation completed.
  *          MI_ERR_INVALID_ADDR     Invalid pointer supplied.
  *          MI_ERR_INVALID_STATE    Encryption module is not initialized.
- *          MI_ERR_INVALID_LENGTH   Invalid length supplied.
+ *          MI_ERR_INVALID_LENGTH   Length bigger than 16.
  *          MI_ERR_BUSY             Encryption module already in progress.
  * @note  	SHOULD use synchronous mode to implement this function
  * */
