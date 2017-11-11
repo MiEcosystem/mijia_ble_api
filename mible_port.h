@@ -26,69 +26,87 @@
 /* anonymous unions are enabled by default */
 #endif
 
-typedef bool BOOLEAN;
+#if defined ( __CC_ARM )
 
-#ifdef MI_LOG_ENABLED
+    #ifndef __ASM
+        #define __ASM               __asm
+    #endif
 
-/**
- * Log error   level    :1
- * Log warning level    :2
- * Log info    level    :3
- * Log debug   level    :4
- */
+    #ifndef __INLINE
+        #define __INLINE            __inline
+    #endif
 
-#define MI_LOG_LEVEL              4
-#define MI_LOG_COLORS_ENABLE      1
+    #ifndef __WEAK
+        #define __WEAK              __weak
+    #endif
+
+    #ifndef __ALIGN
+        #define __ALIGN(n)          __align(n)
+    #endif
+
+    #ifndef __PACKED
+        #define __PACKED            __packed
+    #endif
+
+    #define GET_SP()                __current_sp()
+
+#elif defined ( __ICCARM__ )
+
+    #ifndef __ASM
+        #define __ASM               __asm
+    #endif
+
+    #ifndef __INLINE
+        #define __INLINE            inline
+    #endif
+
+    #ifndef __WEAK
+        #define __WEAK              __weak
+    #endif
+
+    #ifndef __ALIGN
+        #define STRING_PRAGMA(x) _Pragma(#x)
+        #define __ALIGN(n) STRING_PRAGMA(data_alignment = n)
+    #endif
+
+    #ifndef __PACKED
+        #define __PACKED            __packed
+    #endif
+    
+    #define GET_SP()                __get_SP()
+
+#elif defined   ( __GNUC__ )
+
+    #ifndef __ASM
+        #define __ASM               __asm
+    #endif
+
+    #ifndef __INLINE
+        #define __INLINE            inline
+    #endif
+
+    #ifndef __WEAK
+        #define __WEAK              __attribute__((weak))
+    #endif
+
+    #ifndef __ALIGN
+        #define __ALIGN(n)          __attribute__((aligned(n)))
+    #endif
+
+    #ifndef __PACKED
+        #define __PACKED           __attribute__((packed)) 
+    #endif
+
+    #define GET_SP()                gcc_current_sp()
+
+    static inline unsigned int gcc_current_sp(void)
+    {
+        register unsigned sp __ASM("sp");
+        return sp;
+    }
+#endif
+
 #define MI_LOG_PRINTF             printf
-
-#include "mible_log_internal.h"
-
-#define MI_LOG_ERROR(...)                     MI_LOG_INTERNAL_ERROR(__VA_ARGS__)
-#define MI_LOG_WARNING(...)                   MI_LOG_INTERNAL_WARNING( __VA_ARGS__)
-#define MI_LOG_INFO(...)                      MI_LOG_INTERNAL_INFO( __VA_ARGS__)
-#define MI_LOG_DEBUG(...)                     MI_LOG_INTERNAL_DEBUG( __VA_ARGS__)
-#else // MI_LOG_ENABLED
-#define MI_LOG_ERROR(...)
-#define MI_LOG_WARNING(...)
-#define MI_LOG_INFO(...)
-#define MI_LOG_DEBUG(...)
-#endif // MI_LOG_ENABLED
-
-
-#ifdef MI_ASSERT
-
-#define MI_ERR_HANDLER(ERR_CODE)                                     \
-    do                                                                 \
-    {                                                                  \
-        MI_LOG_ERROR((ERR_CODE), __LINE__, (uint8_t*) __FILE__);       \
-    } while (0)
-
-#define MI_ERR_CHECK(ERR_CODE)                            \
-    do                                                      \
-    {                                                       \
-        const uint32_t LOCAL_ERR_CODE = (ERR_CODE);         \
-        if (LOCAL_ERR_CODE != 0)                            \
-        {                                                   \
-            MI_ERR_HANDLER(LOCAL_ERR_CODE);               \
-        }                                                   \
-    } while (0)
-
-#define MI_ERR_TEST(ERR_CODE, EXPECT)
-    do                                                      \
-    {                                                       \
-        const uint32_t LOCAL_ERR_CODE = (ERR_CODE);         \
-        if (LOCAL_ERR_CODE != (EXPECT))                     \
-        {                                                   \
-            MI_ERR_HANDLER(LOCAL_ERR_CODE);               \
-        }                                                   \
-    } while (0)
-#else // MI_ASSERT
-
-#define MI_ERR_CHECK(ERR_CODE)
-#define MI_ERR_TEST(ERR_CODE)
-
-#endif // MI_ASSERT
-
 
 
 #endif // MIBLE_PORT_H__

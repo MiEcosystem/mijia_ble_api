@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "mible_arch.h"
-
+#include "mible_port.h"
 /*
  * Add your own include file
  *
@@ -31,7 +31,7 @@
  *function
  *          and pass in the corresponding parameters.
 */
-void mible_gap_event_callback(mible_gap_evt_t evt,
+__WEAK void mible_gap_event_callback(mible_gap_evt_t evt,
     mible_gap_evt_param_t* param)
 {
     switch (evt) {
@@ -58,7 +58,7 @@ void mible_gap_event_callback(mible_gap_evt_t evt,
             Make sure when the corresponding event occurs, be able to call this
  function and pass in the corresponding parameters.
 */
-void mible_gatts_event_callback(mible_gatts_evt_t evt,
+__WEAK void mible_gatts_event_callback(mible_gatts_evt_t evt,
     mible_gatts_evt_param_t* param)
 {
     switch (evt) {
@@ -84,7 +84,7 @@ void mible_gatts_event_callback(mible_gatts_evt_t evt,
             Make sure when the corresponding event occurs, be able to call this
  function and pass in the corresponding parameters.
 */
-void mible_gattc_event_callback(mible_gattc_evt_t evt,
+__WEAK void mible_gattc_event_callback(mible_gattc_evt_t evt,
     mible_gattc_evt_param_t* param)
 {
     switch (evt) {
@@ -109,7 +109,7 @@ void mible_gattc_event_callback(mible_gattc_evt_t evt,
  *@note  	You should support this function in corresponding asynchronous function. 
  *          For now, mible_gatts_service_int and mible_record_write is asynchronous. 
  * */
-void mible_arch_event_callback(mible_arch_event_t evt, 
+__WEAK void mible_arch_event_callback(mible_arch_event_t evt, 
 		mible_arch_evt_param_t* param)
 {
 
@@ -124,7 +124,7 @@ void mible_arch_event_callback(mible_arch_event_t evt,
  *          MI_ERR_INTERNAL     No mac address found.
  * @note: 	You should copy gap mac to mac[6]  
  * */
-mible_status_t mible_gap_address_get(mible_addr_t mac) 
+__WEAK mible_status_t mible_gap_address_get(mible_addr_t mac) 
 { 
 	return MI_SUCCESS; 
 }
@@ -146,7 +146,7 @@ mible_status_t mible_gap_address_get(mible_addr_t mac)
  * 	        The scan response is given through
  * MIBLE_GAP_EVT_ADV_REPORT event
  */
-mible_status_t mible_gap_scan_start(mible_gap_scan_type_t scan_type,
+__WEAK mible_status_t mible_gap_scan_start(mible_gap_scan_type_t scan_type,
     mible_gap_scan_param_t scan_param)
 {
     return MI_SUCCESS;
@@ -158,7 +158,7 @@ mible_status_t mible_gap_scan_start(mible_gap_scan_type_t scan_type,
  * @return  MI_SUCCESS             Successfully stopped scanning procedure.
  *          MI_ERR_INVALID_STATE   Not in scanning state.
  * */
-mible_status_t mible_gap_scan_stop(void) 
+__WEAK mible_status_t mible_gap_scan_stop(void) 
 { 
 	return MI_SUCCESS; 
 }
@@ -178,7 +178,7 @@ mible_status_t mible_gap_scan_stop(void)
  * @note	Other default advertising parameters: local public address , no
  * filter policy
  * */
-mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_adv_param)
+__WEAK mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_adv_param)
 {
     return MI_SUCCESS;
 }
@@ -188,7 +188,7 @@ mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_adv_param)
  * @return  MI_SUCCESS             Successfully stopped advertising procedure.
  *          MI_ERR_INVALID_STATE   Not in advertising state.
  * */
-mible_status_t mible_gap_adv_stop(void) 
+__WEAK mible_status_t mible_gap_adv_stop(void) 
 { 
 	return MI_SUCCESS; 
 }
@@ -211,7 +211,7 @@ mible_status_t mible_gap_adv_stop(void)
  * 			The connection result is given by MIBLE_GAP_EVT_CONNECTED
  * event
  * */
-mible_status_t mible_gap_connect(mible_gap_scan_param_t scan_param,
+__WEAK mible_status_t mible_gap_connect(mible_gap_scan_param_t scan_param,
     mible_gap_connect_t conn_param)
 {
     return MI_SUCCESS;
@@ -226,7 +226,7 @@ mible_status_t mible_gap_connect(mible_gap_scan_param_t scan_param,
  * @note 	This function can be used by both central role and periphral
  * role.
  * */
-mible_status_t mible_gap_disconnect(uint16_t conn_handle) 
+__WEAK mible_status_t mible_gap_disconnect(uint16_t conn_handle) 
 { 
 	return MI_SUCCESS; 
 }
@@ -246,7 +246,7 @@ mible_status_t mible_gap_disconnect(uint16_t conn_handle)
  * @note  	This function can be used by both central role and peripheral
  *role.
  * */
-mible_status_t mible_gap_update_conn_params(uint16_t conn_handle,
+__WEAK mible_status_t mible_gap_update_conn_params(uint16_t conn_handle,
     mible_gap_conn_param_t conn_params)
 {
     return MI_SUCCESS;
@@ -264,7 +264,7 @@ mible_status_t mible_gap_update_conn_params(uint16_t conn_handle,
  *          MI_ERR_NO_MEM	       Not enough memory to complete operation.
  * @note    This function can be implemented asynchronous. When service inition complete, call mible_arch_event_callback function and pass in MIBLE_ARCH_EVT_GATTS_SRV_INIT_CMP event and result.
  * */
-mible_status_t mible_gatts_service_init(mible_gatts_db_t *p_server_db)
+__WEAK mible_status_t mible_gatts_service_init(mible_gatts_db_t *p_server_db)
 {
     return MI_SUCCESS;
 }
@@ -286,7 +286,7 @@ mible_status_t mible_gatts_service_init(mible_gatts_db_t *p_server_db)
  *          MIBLE_ERR_GATT_INVALID_ATT_TYPE  Attributes are not modifiable by
  *the application.
  * */
-mible_status_t mible_gatts_value_set(uint16_t srv_handle, uint16_t value_handle,
+__WEAK mible_status_t mible_gatts_value_set(uint16_t srv_handle, uint16_t value_handle,
     uint8_t offset, uint8_t* p_value,
     uint8_t len)
 {
@@ -305,7 +305,7 @@ mible_status_t mible_gatts_value_set(uint16_t srv_handle, uint16_t value_handle,
  *          MI_ERR_INVALID_LENGTH   Invalid length supplied.
  *          MIBLE_ERR_ATT_INVALID_HANDLE     Attribute not found.
  **/
-mible_status_t mible_gatts_value_get(uint16_t srv_handle, uint16_t value_handle,
+__WEAK mible_status_t mible_gatts_value_get(uint16_t srv_handle, uint16_t value_handle,
     uint8_t* p_value, uint8_t *p_len)
 {
     return MI_SUCCESS;
@@ -339,7 +339,7 @@ mible_status_t mible_gatts_value_get(uint16_t srv_handle, uint16_t value_handle,
  *          value to verify that the relevant operation (notification or
  * indication) has been enabled by the client.
  * */
-mible_status_t mible_gatts_notify_or_indicate(uint16_t conn_handle, uint16_t srv_handle,
+__WEAK mible_status_t mible_gatts_notify_or_indicate(uint16_t conn_handle, uint16_t srv_handle,
     uint16_t char_value_handle, uint8_t offset, uint8_t* p_value,
     uint8_t len, uint8_t type)
 {
@@ -364,7 +364,7 @@ mible_status_t mible_gatts_notify_or_indicate(uint16_t conn_handle, uint16_t srv
  * @note 	The response is given through
  *MIBLE_GATTC_EVT_PRIMARY_SERVICE_DISCOVER_RESP event
  * */
-mible_status_t mible_gattc_primary_service_discover_by_uuid(uint16_t conn_handle,
+__WEAK mible_status_t mible_gattc_primary_service_discover_by_uuid(uint16_t conn_handle,
     mible_handle_range_t handle_range,
     mible_uuid_t* p_srv_uuid)
 {
@@ -388,7 +388,7 @@ mible_status_t mible_gattc_primary_service_discover_by_uuid(uint16_t conn_handle
  * @note 	The response is given through
  * MIBLE_GATTC_CHR_DISCOVER_BY_UUID_RESP event
  * */
-mible_status_t
+__WEAK mible_status_t
 mible_gattc_char_discover_by_uuid(uint16_t conn_handle,
     mible_handle_range_t handle_range,
     mible_uuid_t* p_char_uuid)
@@ -413,7 +413,7 @@ mible_gattc_char_discover_by_uuid(uint16_t conn_handle,
  * 			Only return the first cccd handle within the specified
  * range.
  * */
-mible_status_t
+__WEAK mible_status_t
 mible_gattc_clt_cfg_descriptor_discover(uint16_t conn_handle,
     mible_handle_range_t handle_range)
 {
@@ -434,7 +434,7 @@ mible_gattc_clt_cfg_descriptor_discover(uint16_t conn_handle,
  * @note    The response is given through
  * MIBLE_GATTC_EVT_READ_CHR_VALUE_BY_UUID_RESP event
  * */
-mible_status_t mible_gattc_read_char_value_by_uuid(uint16_t conn_handle,
+__WEAK mible_status_t mible_gattc_read_char_value_by_uuid(uint16_t conn_handle,
     mible_handle_range_t handle_range,
     mible_uuid_t *char_uuid)
 {
@@ -457,7 +457,7 @@ mible_status_t mible_gattc_read_char_value_by_uuid(uint16_t conn_handle,
  * @note  	The response is given through MIBLE_GATTC_EVT_WRITE_RESP event
  *
  * */
-mible_status_t mible_gattc_write_with_rsp(uint16_t conn_handle, uint16_t att_handle,
+__WEAK mible_status_t mible_gattc_write_with_rsp(uint16_t conn_handle, uint16_t att_handle,
     uint8_t* p_value, uint8_t len)
 {
     return MI_SUCCESS;
@@ -477,7 +477,7 @@ mible_status_t mible_gattc_write_with_rsp(uint16_t conn_handle, uint16_t att_han
  *          MIBLE_ERR_INVALID_CONN_HANDLE  Invaild connection handle.
  * @note 	no response
  * */
-mible_status_t mible_gattc_write_cmd(uint16_t conn_handle, uint16_t att_handle,
+__WEAK mible_status_t mible_gattc_write_cmd(uint16_t conn_handle, uint16_t att_handle,
     uint8_t* p_value, uint8_t len)
 {
     return MI_SUCCESS;
@@ -497,7 +497,7 @@ mible_status_t mible_gattc_write_cmd(uint16_t conn_handle, uint16_t att_handle,
  * timer is running.
  *
  * */
-mible_status_t mible_timer_create(void* p_timer_id,
+__WEAK mible_status_t mible_timer_create(void* p_timer_id,
     mible_timer_handler timeout_handler,
     mible_timer_mode mode)
 {
@@ -510,7 +510,7 @@ mible_status_t mible_timer_create(void* p_timer_id,
  * @return  MI_SUCCESS             If the timer was successfully deleted.
  *          MI_ERR_INVALID_PARAM   Invalid timer id supplied..
  * */
-mible_status_t mible_timer_delete(void* timer_id) 
+__WEAK mible_status_t mible_timer_delete(void* timer_id) 
 { 
 	return MI_SUCCESS; 
 }
@@ -530,7 +530,7 @@ mible_status_t mible_timer_delete(void* timer_id)
  *         	MI_ERR_NO_MEM          If the timer operations queue was full.
  * @note 	If the timer has already started, it will start counting again.
  * */
-mible_status_t mible_timer_start(void* timer_id, uint32_t timeout_value,
+__WEAK mible_status_t mible_timer_start(void* timer_id, uint32_t timeout_value,
     void* p_context)
 {
     return MI_SUCCESS;
@@ -543,7 +543,7 @@ mible_status_t mible_timer_start(void* timer_id, uint32_t timeout_value,
  *          MI_ERR_INVALID_PARAM   Invalid timer id supplied.
  *
  * */
-mible_status_t mible_timer_stop(void* timer_id) 
+__WEAK mible_status_t mible_timer_stop(void* timer_id) 
 { 
 	return MI_SUCCESS; 
 }
@@ -560,7 +560,7 @@ mible_status_t mible_timer_stop(void* timer_id)
  *   		MI_ERR_NO_MEM,			Not enough flash memory to be assigned 
  * 				
  * */
-mible_status_t mible_record_create(uint16_t record_id, uint8_t len)
+__WEAK mible_status_t mible_record_create(uint16_t record_id, uint8_t len)
 {
 	return MI_SUCCESS;	
 }
@@ -572,7 +572,7 @@ mible_status_t mible_record_create(uint16_t record_id, uint8_t len)
  * @return 	MI_SUCCESS 				Delete successfully. 
  * 			MI_ERR_INVALID_PARAMS   Invalid record id supplied.
  * */
-mible_status_t mible_record_delete(uint16_t record_id)
+__WEAK mible_status_t mible_record_delete(uint16_t record_id)
 {
 	return MI_SUCCESS;
 }
@@ -588,7 +588,7 @@ mible_status_t mible_record_delete(uint16_t record_id)
  *          MI_ERR_INVALID_PARAMS   Invalid record id supplied.
  *          MI_ERR_INVALID_ADDR     Invalid pointer supplied.
  * */
-mible_status_t mible_record_read(uint16_t record_id, uint8_t* p_data,
+__WEAK mible_status_t mible_record_read(uint16_t record_id, uint8_t* p_data,
     uint8_t *p_len)
 {
     return MI_SUCCESS;
@@ -608,7 +608,7 @@ mible_status_t mible_record_read(uint16_t record_id, uint8_t* p_data,
  * operation has terminated, i.e., an event is received.
  * 			When record writing complete , call mible_arch_event_callback function and pass MIBLE_ARCH_EVT_RECORD_WRITE_CMP event and result. 
  * */
-mible_status_t mible_record_write(uint16_t record_id, uint8_t* p_data,
+__WEAK mible_status_t mible_record_write(uint16_t record_id, uint8_t* p_data,
     uint8_t len)
 {
     return MI_SUCCESS;
@@ -625,7 +625,7 @@ mible_status_t mible_record_write(uint16_t record_id, uint8_t* p_data,
  * there were not enough random bytes available.
  * @note  	SHOULD use TRUE random num generator
  * */
-mible_status_t mible_rand_num_generater(uint8_t* p_buf, uint8_t len)
+__WEAK mible_status_t mible_rand_num_generater(uint8_t* p_buf, uint8_t len)
 {
     return MI_SUCCESS;
 }
@@ -644,7 +644,7 @@ mible_status_t mible_rand_num_generater(uint8_t* p_buf, uint8_t len)
  *          MI_ERR_BUSY             Encryption module already in progress.
  * @note  	SHOULD use synchronous mode to implement this function
  * */
-mible_status_t mible_ecb128_encrypt(const uint8_t* key,
+__WEAK mible_status_t mible_ecb128_encrypt(const uint8_t* key,
     const uint8_t* plaintext, uint8_t plen,
     uint8_t* ciphertext)
 {
@@ -660,7 +660,7 @@ mible_status_t mible_ecb128_encrypt(const uint8_t* key,
  * 			MI_ERR_NO_MEM			The task quene is full. 
  * 			MI_ERR_INVALID_PARAM    Handler is NULL
  * */
-mible_status_t mible_task_post(mible_handler_t handler, void *arg)
+__WEAK mible_status_t mible_task_post(mible_handler_t handler, void *arg)
 {
 	return MI_SUCCESS;	
 } 
