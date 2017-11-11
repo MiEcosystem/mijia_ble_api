@@ -106,7 +106,7 @@
     }
 #endif
 
-#define MI_LOG_PRINTF             printf
-
+#define MI_LOG_PRINTF(...)
+#define MI_LOG_HEXDUMP(...)
 
 #endif // MIBLE_PORT_H__

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "mible_arch.h"
+#include "mible_api.h"
 #include "mible_port.h"
 /*
  * Add your own include file
