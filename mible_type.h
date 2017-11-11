@@ -191,9 +191,9 @@ typedef struct{
 	uint8_t *p_value;                                  // initial characteristic value
 	uint8_t char_value_len;
 	uint16_t char_value_handle;                        // [out] where the assigned handle will be stored.
-	BOOLEAN is_variable_len;
-	BOOLEAN rd_author;                                 // read authorization. Enabel or Disable MIBLE_GATTS_READ_PERMIT_REQ event
-	BOOLEAN wr_author;                                 // write authorization. Enabel or Disable MIBLE_GATTS_WRITE_PERMIT_REQ event
+	bool is_variable_len;
+	bool rd_author;                                 // read authorization. Enabel or Disable MIBLE_GATTS_READ_PERMIT_REQ event
+	bool wr_author;                                 // write authorization. Enabel or Disable MIBLE_GATTS_WRITE_PERMIT_REQ event
 	mible_gatts_char_desc_db_t char_desc_db;
 } mible_gatts_char_db_t;
 
@@ -297,7 +297,7 @@ typedef struct {
     mible_handle_range_t primary_srv_range;
     mible_uuid_t uuid_type;
     mible_uuid_t* srv_uuid;
-    BOOLEAN
+    bool
     succ; // true : exist the specified primary service and return correctly
 } mible_gattc_prim_srv_disc_rsp_t;
 
@@ -308,7 +308,7 @@ typedef struct {
     mible_handle_range_t char_range;
     mible_uuid_t uuid_type;
     mible_uuid_t* char_uuid;
-    BOOLEAN succ; // true: exist the specified characteristic and return correctly
+    bool succ; // true: exist the specified characteristic and return correctly
 } mible_gattc_char_disc_rsp_t;
 
 /*
@@ -316,7 +316,7 @@ typedef struct {
  * */
 typedef struct {
     uint16_t desc_handle;
-    BOOLEAN succ; // true: exit cccd and return correctly
+    bool succ; // true: exit cccd and return correctly
 } mible_gattc_clt_cfg_desc_disc_rsp;
 
 /*
@@ -326,14 +326,14 @@ typedef struct {
     uint16_t char_value_handle;
     uint8_t len;
     uint8_t* data;
-    BOOLEAN succ; // true: exist the specified characteristic and return correctly
+    bool succ; // true: exist the specified characteristic and return correctly
 } mible_gattc_read_char_value_by_uuid_rsp;
 
 /*
  * MIBLE_GATTC_EVT_WRITE_RESP event callback parameters
  *  */
 typedef struct {
-    BOOLEAN succ;
+    bool succ;
 } mible_gattc_write_rsp;
 
 /*
