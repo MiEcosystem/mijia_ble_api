@@ -387,7 +387,7 @@ typedef enum{
 
 typedef struct{
 	mible_status_t status;
-	mible_gatts_db_t gatts_db;
+	mible_gatts_db_t *p_gatts_db;
 }mible_arch_gatts_srv_init_cmp_t;
 
 typedef struct{

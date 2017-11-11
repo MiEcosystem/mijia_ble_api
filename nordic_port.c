@@ -7,6 +7,7 @@
 #include "ble_gatts.h"
 
 #include "mible_api.h"
+#include "mible_log.h"
 
 static void gap_evt_dispatch(ble_evt_t *p_ble_evt)
 {

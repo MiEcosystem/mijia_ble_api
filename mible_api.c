@@ -13,6 +13,7 @@
 // limitations under the License.
 #include "mible_api.h"
 #include "mible_type.h"
+#include "mible_log.h"
 
 #include "nrf_soc.h"
 #include "nrf_queue.h"
