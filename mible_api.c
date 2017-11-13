@@ -286,7 +286,8 @@ mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_adv_param)
  * @return  MI_SUCCESS             Successfully stopped advertising procedure.
  *          MI_ERR_INVALID_STATE   Not in advertising state.
  * */
-mible_status_t mible_gap_adv_stop(void) {
+mible_status_t mible_gap_adv_stop(void)
+{
 	uint32_t errno;
 	errno = sd_ble_gap_adv_stop();
 	errno = errno == NRF_SUCCESS ? MI_SUCCESS : MI_ERR_INVALID_STATE;
@@ -326,7 +327,8 @@ mible_status_t mible_gap_connect(mible_gap_scan_param_t scan_param,
  * @note 	This function can be used by both central role and periphral
  * role.
  * */
-mible_status_t mible_gap_disconnect(uint16_t conn_handle) {
+mible_status_t mible_gap_disconnect(uint16_t conn_handle)
+{
 	uint32_t errno;
 	errno = sd_ble_gap_disconnect(conn_handle, BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
 	errno = errno == NRF_SUCCESS ? MI_SUCCESS : MI_ERR_INVALID_STATE;
@@ -1043,11 +1045,11 @@ mible_status_t mible_task_post(mible_handler_t handler, void *arg)
 
 void mible_tasks_exec(void)
 {
-	uint32_t errno;
+	uint32_t errno = 0;
 	mible_task_t task;
-	errno = nrf_queue_pop(&task_queue, &task);
-	MI_ERR_CHECK(errno);
-
-	if (errno == NRF_SUCCESS)
-		task.handler(task.arg);
+	while(!errno) {
+		errno = nrf_queue_pop(&task_queue, &task);
+		if (errno == NRF_SUCCESS)
+			task.handler(task.arg);
+	}
 }
