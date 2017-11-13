@@ -14,6 +14,7 @@
 
 #include "mible_api.h"
 #include "mible_port.h"
+#include "mible_type.h"
 /*
  * Add your own include file
  *
@@ -73,6 +74,9 @@ __WEAK void mible_gatts_event_callback(mible_gatts_evt_t evt,
     case MIBLE_GATTS_EVT_WRITE_PERMIT_REQ:
 		// mible_std_server_gatts_evt_write_permit_req(param);
         break;
+
+	case MIBLE_GATTS_EVT_IND_CONFIRM:
+		break;
     }
 }
 /**
@@ -436,7 +440,7 @@ mible_gattc_clt_cfg_descriptor_discover(uint16_t conn_handle,
  * */
 __WEAK mible_status_t mible_gattc_read_char_value_by_uuid(uint16_t conn_handle,
     mible_handle_range_t handle_range,
-    mible_uuid_t *char_uuid)
+    mible_uuid_t *p_char_uuid)
 {
     return MI_SUCCESS;
 }
@@ -444,7 +448,7 @@ __WEAK mible_status_t mible_gattc_read_char_value_by_uuid(uint16_t conn_handle,
 /*
  * @brief	Write value by handle with response
  * @param 	[in] conn_handle: connection handle
- * 			[in] att_handle: handle to the attribute to be written.
+ * 			[in] handle: handle to the attribute to be written.
  * 			[in] p_value: pointer to data
  * 			[in] len: data length
  * @return  MI_SUCCESS             Successfully started the Write with response
@@ -457,7 +461,7 @@ __WEAK mible_status_t mible_gattc_read_char_value_by_uuid(uint16_t conn_handle,
  * @note  	The response is given through MIBLE_GATTC_EVT_WRITE_RESP event
  *
  * */
-__WEAK mible_status_t mible_gattc_write_with_rsp(uint16_t conn_handle, uint16_t att_handle,
+__WEAK mible_status_t mible_gattc_write_with_rsp(uint16_t conn_handle, uint16_t handle,
     uint8_t* p_value, uint8_t len)
 {
     return MI_SUCCESS;
@@ -487,7 +491,7 @@ __WEAK mible_status_t mible_gattc_write_cmd(uint16_t conn_handle, uint16_t att_h
 
 /*
  * @brief 	Create a timer.
- * @param 	[out] p_timer_id: a pointer to timer id which can uniquely identify the timer.
+ * @param 	[out] p_timer_id: a pointer to timer id address which can uniquely identify the timer.
  * 			[in] timeout_handler: a pointer to a function which can be
  * called when the timer expires.
  * 			[in] mode: repeated or single shot.
@@ -495,9 +499,10 @@ __WEAK mible_status_t mible_gattc_write_cmd(uint16_t conn_handle, uint16_t att_h
  *          MI_ERR_INVALID_PARAM   Invalid timer id supplied.
  *          MI_ERR_INVALID_STATE   timer module has not been initialized or the
  * timer is running.
+ *          MI_ERR_NO_MEM          timer pool is full.
  *
  * */
-__WEAK mible_status_t mible_timer_create(void* p_timer_id,
+__WEAK mible_status_t mible_timer_create(void** p_timer_id,
     mible_timer_handler timeout_handler,
     mible_timer_mode mode)
 {
@@ -581,7 +586,7 @@ __WEAK mible_status_t mible_record_delete(uint16_t record_id)
  * @brief 	Restore data to flash
  * @param 	[in] record_id: identify an area in flash
  * 			[out] p_data: pointer to data
- *			[out] p_len: data length
+ *			[in] len: data length
  * @return  MI_SUCCESS              The command was accepted.
  *          MI_ERR_INVALID_LENGTH   Size was 0, or higher than the maximum
  *allowed size.
@@ -589,7 +594,7 @@ __WEAK mible_status_t mible_record_delete(uint16_t record_id)
  *          MI_ERR_INVALID_ADDR     Invalid pointer supplied.
  * */
 __WEAK mible_status_t mible_record_read(uint16_t record_id, uint8_t* p_data,
-    uint8_t *p_len)
+    uint8_t len)
 {
     return MI_SUCCESS;
 }
@@ -640,7 +645,7 @@ __WEAK mible_status_t mible_rand_num_generater(uint8_t* p_buf, uint8_t len)
  * @return  MI_SUCCESS              The encryption operation completed.
  *          MI_ERR_INVALID_ADDR     Invalid pointer supplied.
  *          MI_ERR_INVALID_STATE    Encryption module is not initialized.
- *          MI_ERR_INVALID_LENGTH    Invalid length supplied.
+ *          MI_ERR_INVALID_LENGTH   Length bigger than 16.
  *          MI_ERR_BUSY             Encryption module already in progress.
  * @note  	SHOULD use synchronous mode to implement this function
  * */
@@ -664,3 +669,7 @@ __WEAK mible_status_t mible_task_post(mible_handler_t handler, void *arg)
 {
 	return MI_SUCCESS;	
 } 
+
+
+__WEAK void mible_tasks_exec(void)
+{}
