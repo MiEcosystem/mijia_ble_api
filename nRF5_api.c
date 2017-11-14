@@ -462,7 +462,7 @@ mible_status_t mible_gatts_service_init(mible_gatts_db_t *p_server_db)
 		return MI_ERR_INVALID_ADDR;
 
 	for (uint8_t idx = 0, max = p_server_db->srv_num; idx < max; idx++) {
-		mible_gatts_srv_db_t *p_service = p_server_db->p_srv_db++;
+		mible_gatts_srv_db_t *p_service = p_server_db->p_srv_db + idx;
 
 		// add vendor specific uuid
 		uuid16 = convert_uuid(&p_service->srv_uuid);
@@ -475,7 +475,7 @@ mible_status_t mible_gatts_service_init(mible_gatts_db_t *p_server_db)
 
 		// add charateristic
 		for (uint8_t idx = 0, max = p_service->char_num; idx < max; idx++) {
-			mible_gatts_char_db_t *p_char = p_service->p_char_db++;
+			mible_gatts_char_db_t *p_char = p_service->p_char_db + idx;
 			ble_gatt_char_props_t props = {0};
 			memcpy((uint8_t*)&props, &p_char->char_property, 1);
 			uuid16 = convert_uuid(&p_char->char_uuid);
