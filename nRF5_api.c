@@ -27,7 +27,9 @@
 
 #include "app_timer.h"
 
+
 #include "mi_psm.h"
+#include "mible_server.h"
 
 #define TIMER_MAX_NUM             4
 
@@ -122,15 +124,15 @@ void mible_gatts_event_callback(mible_gatts_evt_t evt,
 {
     switch (evt) {
     case MIBLE_GATTS_EVT_WRITE:
-		// mible_std_server_gatts_evt_write(param->write);
+		mible_std_server_gatts_evt_write(param);
         break;
 
     case MIBLE_GATTS_EVT_READ_PERMIT_REQ:
-		// mible_std_server_gatts_evt_read_permit_req(param->read);
+		mible_std_server_gatts_evt_read_permit_req(param);
         break;
 
     case MIBLE_GATTS_EVT_WRITE_PERMIT_REQ:
-		// mible_std_server_gatts_evt_write_permit_req(param->write);
+		mible_std_server_gatts_evt_write_permit_req(param);
         break;
 
 	case MIBLE_GATTS_EVT_IND_CONFIRM:
@@ -177,8 +179,10 @@ void mible_arch_event_callback(mible_arch_event_t evt,
 {
 	switch(evt) {
 		case MIBLE_ARCH_EVT_GATTS_SRV_INIT_CMP:
+			mible_std_server_arch_service_init_complete(param->srv_init_cmp);
 		break;
 		case MIBLE_ARCH_EVT_RECORD_WRITE_CMP:
+			
 		break;
 	}
 }
@@ -481,7 +485,11 @@ mible_status_t mible_gatts_service_init(mible_gatts_db_t *p_server_db)
 			MI_ERR_CHECK(errno);
 		}
 	}
-
+	mible_arch_evt_param_t param;
+	memset(&param, 0, sizeof(param));
+	param.srv_init_cmp.status = MI_SUCCESS;
+	param.srv_init_cmp.p_gatts_db = p_server_db;
+	mible_arch_event_callback(MIBLE_ARCH_EVT_GATTS_SRV_INIT_CMP, &param);
 	return MI_SUCCESS;
 }
 
