@@ -462,26 +462,26 @@ mible_status_t mible_gatts_service_init(mible_gatts_db_t *p_server_db)
 		return MI_ERR_INVALID_ADDR;
 
 	for (uint8_t idx = 0, max = p_server_db->srv_num; idx < max; idx++) {
-		mible_gatts_srv_db_t service = p_server_db->p_srv_db[idx];
+		mible_gatts_srv_db_t *p_service = p_server_db->p_srv_db++;
 
 		// add vendor specific uuid
-		uuid16 = convert_uuid(&service.srv_uuid);
+		uuid16 = convert_uuid(&p_service->srv_uuid);
 		
 		// add service
 		errno = sd_ble_gatts_service_add(
-			service.srv_type == MIBLE_PRIMARY_SERVICE ? BLE_GATTS_SRVC_TYPE_PRIMARY : BLE_GATTS_SRVC_TYPE_SECONDARY,
-			&uuid16, &service.srv_handle);
+			p_service->srv_type == MIBLE_PRIMARY_SERVICE ? BLE_GATTS_SRVC_TYPE_PRIMARY : BLE_GATTS_SRVC_TYPE_SECONDARY,
+			&uuid16, &p_service->srv_handle);
 		MI_ERR_CHECK(errno);
 
 		// add charateristic
-		for (uint8_t idx = 0, max = service.char_num; idx < max; idx++) {
-			mible_gatts_char_db_t char_item = service.p_char_db[idx];
+		for (uint8_t idx = 0, max = p_service->char_num; idx < max; idx++) {
+			mible_gatts_char_db_t *p_char = p_service->p_char_db++;
 			ble_gatt_char_props_t props = {0};
-			memcpy((uint8_t*)&props, &char_item.char_property, 1);
-			uuid16 = convert_uuid(&char_item.char_uuid);
-			errno = char_add(service.srv_handle, &uuid16, NULL, char_item.char_value_len,
-					    props, &char_item.char_value_handle,
-						char_item.is_variable_len, char_item.rd_author, char_item.wr_author);
+			memcpy((uint8_t*)&props, &p_char->char_property, 1);
+			uuid16 = convert_uuid(&p_char->char_uuid);
+			errno = char_add(p_service->srv_handle, &uuid16, NULL, p_char->char_value_len,
+					    props, &p_char->char_value_handle,
+						p_char->is_variable_len, p_char->rd_author, p_char->wr_author);
 			MI_ERR_CHECK(errno);
 		}
 	}
@@ -836,8 +836,7 @@ mible_status_t mible_timer_create(void** p_timer_id,
 	app_timer_mode_t m = mode == MIBLE_TIMER_SINGLE_SHOT ? APP_TIMER_MODE_SINGLE_SHOT : APP_TIMER_MODE_REPEATED;
 	app_timer_timeout_handler_t handler = (void*)timeout_handler;
 	errno = app_timer_create(&id, m, handler);
-	MI_ERR_CHECK(errno);
-
+	*p_timer_id = id;
 	return (mible_status_t)errno;
 }
 
