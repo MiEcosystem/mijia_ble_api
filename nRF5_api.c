@@ -27,7 +27,6 @@
 
 #include "app_timer.h"
 
-
 #include "mi_psm.h"
 #include "mible_server.h"
 
@@ -74,119 +73,6 @@ static int free_timer(void* timer_id)
 }
 
 NRF_QUEUE_DEF(mible_task_t, task_queue, 4, NRF_QUEUE_MODE_OVERFLOW);
-
-/*
- * Add your own include file
- *
- * */
-
-/* GAP, GATTS, GATTC event callback function */
-
-/**
- *@brief    This function is MIBLE GAP related event callback function.
- *@param    [in] evt : GAP EVENT
- *			[in] param : callback parameters corresponding to evt
- *@return   Void
- *@note     You should support this function in your own ble stack .
- *          Make sure when the corresponding event occurs, be able to call this
- *function
- *          and pass in the corresponding parameters.
-*/
-void mible_gap_event_callback(mible_gap_evt_t evt,
-    mible_gap_evt_param_t* param)
-{
-    switch (evt) {
-    case MIBLE_GAP_EVT_CONNECTED:
-		mible_std_server_gap_evt_connected(param); 
-        break;
-    case MIBLE_GAP_EVT_DISCONNET:
-		mible_std_server_gap_evt_disconnected(param);
-        break;
-    case MIBLE_GAP_EVT_ADV_REPORT:
-        mible_std_server_gap_evt_scan_report(param); 
-		break;
-    case MIBLE_GAP_EVT_CONN_PARAM_UPDATED:
-//		mible_std_server_gap_evt_conn_params_updated(param);
-        break;
-    }
-}
-/**
- *@brief    This function is MIBLE GATTS related event callback function.
- *@param    [in] evt : GATTS EVENT
- *			[in] param : callback parameters corresponding to evt
- *@return   Void
- *@note     You should support this function in your own ble stack .
-            Make sure when the corresponding event occurs, be able to call this
- function and pass in the corresponding parameters.
-*/
-void mible_gatts_event_callback(mible_gatts_evt_t evt,
-    mible_gatts_evt_param_t* param)
-{
-    switch (evt) {
-    case MIBLE_GATTS_EVT_WRITE:
-		mible_std_server_gatts_evt_write(param);
-        break;
-
-    case MIBLE_GATTS_EVT_READ_PERMIT_REQ:
-		mible_std_server_gatts_evt_read_permit_req(param);
-        break;
-
-    case MIBLE_GATTS_EVT_WRITE_PERMIT_REQ:
-		mible_std_server_gatts_evt_write_permit_req(param);
-        break;
-
-	case MIBLE_GATTS_EVT_IND_CONFIRM:
-		break;
-    }
-}
-
-/**
- *@brief    This function is MIBLE GATTC related event callback function.
- *@param    [in] evt : GATTC EVENT
- *			[in] param : callback parameters corresponding to evt
- *@return   Void
- *@note     You should support this function in your own ble stack .
-            Make sure when the corresponding event occurs, be able to call this
- function and pass in the corresponding parameters.
-*/
-void mible_gattc_event_callback(mible_gattc_evt_t evt,
-    mible_gattc_evt_param_t* param)
-{
-    switch (evt) {
-    case MIBLE_GATTC_EVT_PRIMARY_SERVICE_DISCOVER_RESP:
-        break;
-    case MIBLE_GATTC_EVT_CHR_DISCOVER_BY_UUID_RESP:
-        break;
-    case MIBLE_GATTC_EVT_CCCD_DISCOVER_RESP:
-        break;
-    case MIBLE_GATTC_EVT_READ_CHAR_VALUE_BY_UUID_RESP:
-        break;
-    case MIBLE_GATTC_EVT_WRITE_RESP:
-        break;
-    default:
-		;
-    }
-}
-/*
- *@brief 	This function is mible_arch api related event callback function.
- *@param 	[in] evt: asynchronous function complete event 
- *			[in] param: the return of asynchronous function 
- *@note  	You should support this function in corresponding asynchronous function. 
- *          For now, mible_gatts_service_int and mible_record_write is asynchronous. 
- * */
-void mible_arch_event_callback(mible_arch_event_t evt, 
-		mible_arch_evt_param_t* param)
-{
-	switch(evt) {
-		case MIBLE_ARCH_EVT_GATTS_SRV_INIT_CMP:
-			mible_std_server_arch_service_init_complete(param->srv_init_cmp);
-		break;
-		case MIBLE_ARCH_EVT_RECORD_WRITE_CMP:
-			
-		break;
-	}
-}
-
 
 /*
  * @brief 	Get BLE mac address.
@@ -986,7 +872,7 @@ mible_status_t mible_record_write(uint16_t record_id, uint8_t* p_data,
  * there were not enough random bytes available.
  * @note  	SHOULD use TRUE random num generator
  * */
-mible_status_t mible_rand_num_generater(uint8_t* p_buf, uint8_t len)
+mible_status_t mible_rand_num_generator(uint8_t* p_buf, uint8_t len)
 {
 	uint32_t errno;
 	errno = sd_rand_application_vector_get(p_buf, len);

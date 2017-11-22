@@ -23,18 +23,6 @@
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #endif
 
-void mible_gap_event_callback(mible_gap_evt_t evt,
-    mible_gap_evt_param_t* param);
-
-void mible_gatts_event_callback(mible_gatts_evt_t evt,
-    mible_gatts_evt_param_t* param);
-
-void mible_gattc_event_callback(mible_gattc_evt_t evt,
-    mible_gattc_evt_param_t* param);
-
-void mible_arch_event_callback(mible_arch_event_t evt, 
-		mible_arch_evt_param_t* param);
-
 mible_status_t mible_gap_address_get(mible_addr_t mac);
 
 mible_status_t mible_gap_scan_start(mible_gap_scan_type_t scan_type,
@@ -111,7 +99,7 @@ mible_status_t mible_record_read(uint16_t record_id, uint8_t* p_data,
 mible_status_t mible_record_write(uint16_t record_id, uint8_t* p_data,
     uint8_t len);
 
-mible_status_t mible_rand_num_generater(uint8_t* p_buf, uint8_t len);
+mible_status_t mible_rand_num_generator(uint8_t* p_buf, uint8_t len);
 
 mible_status_t mible_ecb128_encrypt(const uint8_t* key,
     const uint8_t* plaintext, uint8_t plen,
