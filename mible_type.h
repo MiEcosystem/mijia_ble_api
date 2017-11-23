@@ -252,7 +252,7 @@ typedef struct {
  * NOTE: Stack SHOULD decide to reply the char value or refuse according to [permit]
  * */
 typedef struct {
-	uint8_t permit;
+	uint8_t permit; // [OUT] true: permit to be read; false: reject read request 
     uint16_t conn_handle;
     uint16_t value_handle;  // char value handle 
 } mible_gatts_read_t;
