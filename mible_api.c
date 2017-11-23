@@ -630,7 +630,7 @@ __WEAK mible_status_t mible_record_write(uint16_t record_id, uint8_t* p_data,
  * there were not enough random bytes available.
  * @note  	SHOULD use TRUE random num generator
  * */
-__WEAK mible_status_t mible_rand_num_generater(uint8_t* p_buf, uint8_t len)
+__WEAK mible_status_t mible_rand_num_generator(uint8_t* p_buf, uint8_t len)
 {
     return MI_SUCCESS;
 }
