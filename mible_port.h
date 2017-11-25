@@ -106,7 +106,7 @@
     }
 #endif
 
-#define MI_LOG_PRINTF(...)             SDK_PRINTF( __VA_ARGS__)
-#define MI_LOG_HEXDUMP(...)            SDK_HEXDUMP( __VA_ARGS__)
-
+#include "arch_console.h"
+#define MI_LOG_PRINTF(...)           COMPrintf( __VA_ARGS__)  //SDK_PRINTF( __VA_ARGS__)
+#define MI_LOG_HEXDUMP(...)          COMPrintf_hexdump( __VA_ARGS__)// SDK_HEXDUMP( __VA_ARGS__)
 #endif // MIBLE_PORT_H__
