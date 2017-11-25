@@ -41,7 +41,7 @@ static uint16_t att_decl_secondry_svc   = ATT_DECL_SECONDARY_SERVICE;
 static uint16_t att_decl_char      			= ATT_DECL_CHARACTERISTIC;
 static uint16_t att_decl_cfg       			= ATT_DESC_CLIENT_CHAR_CFG;
 
-#include "mible_gatttdb_cfg.h"
+//#include "mible_gatttdb_cfg.h"
 
 static uint16_t s_max_mijia_idx_nb = 0;
 
