@@ -41,9 +41,11 @@ static uint16_t att_decl_secondry_svc   = ATT_DECL_SECONDARY_SERVICE;
 static uint16_t att_decl_char      			= ATT_DECL_CHARACTERISTIC;
 static uint16_t att_decl_cfg       			= ATT_DESC_CLIENT_CHAR_CFG;
 
-//#include "mible_gatttdb_cfg.h"
-
 static uint16_t s_max_mijia_idx_nb = 0;
+
+
+//按照给应用层的句柄对应
+static bool s_wr_author[MIJIA_IDX_ATT_DB_MAX] = {0};
 
 /**
  ****************************************************************************************
@@ -292,13 +294,17 @@ static mible_status_t add_char_value(mible_gatts_char_db_t *inchar,struct attm_d
 
 		if((inchar->char_property & MIBLE_INDICATE)  > 0)
 			outatt->perm |= PERM(IND, ENABLE);
-		
+
 		outatt->max_length = inchar->char_value_len;
 		if(inchar->rd_author)
 			outatt->max_length |= PERM(RI, ENABLE);
 		
-		outatt->length	= 0;//inchar->char_value_len;
-		memcpy(outatt->value,inchar->p_value,inchar->char_value_len);
+		outatt->length	= inchar->char_value_len;//
+		uint8_t* pval = (uint8_t*)ke_malloc(outatt->length, KE_MEM_ATT_DB);
+		memcpy(pval,inchar->p_value,inchar->char_value_len);
+		outatt->value = pval;
+
+		
 		
 		return MI_SUCCESS;
 }
@@ -311,7 +317,6 @@ static mible_status_t  translate_char_db(mible_gatts_char_db_t *inchar,struct at
 
 		//增加特征值声明
 		mible_status_t sta = add_char_declaration(inchar,&outatt[(*out_att_pos)]);
-		inchar->char_value_handle = *out_att_pos;
 		(*out_att_pos)++;
 		if(sta != MI_SUCCESS)
 				return sta;
@@ -319,6 +324,7 @@ static mible_status_t  translate_char_db(mible_gatts_char_db_t *inchar,struct at
 
 		//增加特征值的值
 		sta = add_char_value(inchar,&outatt[(*out_att_pos)]);
+		s_wr_author[(*out_att_pos)] = inchar->wr_author;
 		inchar->char_value_handle = *out_att_pos;
 		(*out_att_pos)++;
 		if(sta != MI_SUCCESS)
@@ -330,7 +336,6 @@ static mible_status_t  translate_char_db(mible_gatts_char_db_t *inchar,struct at
 			  ((inchar->char_property & MIBLE_INDICATE) > 0))
 		{
 				sta = add_char_cfg(inchar,&outatt[(*out_att_pos)]);
-//				inchar->char_value_handle = *out_att_pos;
 				(*out_att_pos)++;
 				if(sta != MI_SUCCESS)
 					return sta;
@@ -386,6 +391,15 @@ mible_gatts_db_t *get_server_db(void)
 		return s_server_db;
 }
 
+
+bool get_wr_author(uint16_t value_handle)
+{
+		if(value_handle < MIJIA_IDX_ATT_DB_MAX)
+				return s_wr_author[value_handle];
+		else
+				return false;
+}
+
 //将米家平台配置的GATT属性表转换 dialog 平台的
 mible_status_t translate_miarch_attdb(mible_gatts_db_t * p_server_db)
 {
@@ -434,7 +448,7 @@ const struct prf_task_cbs* mijia_prf_itf_get(void)
 
 
 
-void mijia_send_write_val(mible_gatts_evt_t evt,uint16_t handle,uint8_t* val, uint32_t length)
+void mijia_send_write_val(mible_gatts_evt_t evt,uint16_t value_handle,uint8_t* val, uint32_t length)
 {
 
 		
@@ -449,28 +463,11 @@ void mijia_send_write_val(mible_gatts_evt_t evt,uint16_t handle,uint8_t* val, ui
    memcpy(ind->value, val, length);
 	 ind->evt = evt;
    ind->length = length;
-   ind->handle = handle;
+   ind->value_handle = value_handle;
    // Send the message
    ke_msg_send(ind);
 }
 
-void mijia_send_read_val(mible_gatts_evt_t evt,uint16_t handle)
-{
-
-		
-	struct mijia_env_tag *mijia_env = PRF_ENV_GET(MIJIA, mijia);
-    // Allocate the write value indication message
-   struct mijia_val_read_ind *ind = KE_MSG_ALLOC(MIJIA_VAL_READ_IND,
-                                              prf_dst_task_get(&(mijia_env->prf_env), mijia_env->cursor), 
-                                              prf_src_task_get(&(mijia_env->prf_env), mijia_env->cursor),
-                                              mijia_val_read_ind);
-   // Fill in the parameter structure
-   ind->conhdl = gapc_get_conhdl(mijia_env->cursor);
-	 ind->evt = evt;
-   ind->handle = handle;
-   // Send the message
-   ke_msg_send(ind);
-}
 
 
 void mijia_enable_indication_notification(uint16_t isEnable,uint16_t handle)
@@ -485,12 +482,12 @@ void mijia_enable_indication_notification(uint16_t isEnable,uint16_t handle)
    // Fill in the parameter structure
    ind->conhdl = gapc_get_conhdl(mijia_env->cursor);
    ind->isEnable = isEnable;
-   ind->handle = handle - mijia_env->shdl;
+   ind->value_handle = handle-mijia_env->shdl;
    // Send the message
    ke_msg_send(ind);
 }
 
-void mijia_indication_cfm_send(uint8_t status)
+void mijia_ind_ntf_cfm_send(uint8_t status)
 {
 		struct mijia_env_tag *mijia_env = PRF_ENV_GET(MIJIA, mijia);
 	// allocate indication confirmation message to tell application layer the host has received the indication sent from device
@@ -499,7 +496,6 @@ void mijia_indication_cfm_send(uint8_t status)
 																								 prf_src_task_get(&(mijia_env->prf_env), mijia_env->cursor),
                                                  mijia_indication_cfm);
     cfm->status = status;
-    
     // Send the message
     ke_msg_send(cfm);
 }

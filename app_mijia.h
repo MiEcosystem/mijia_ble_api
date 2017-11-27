@@ -76,7 +76,7 @@ void app_mijia_enable(uint16_t conhdl);
 uint8_t app_mijia_val_wr_validate(uint16_t att_idx, uint16_t offset, uint16_t len, uint8_t *value);
 
 
-void ble_mijia_send_data(uint16_t handle,uint8_t* pData, uint32_t length);
+void ble_mijia_send_data(uint16_t srv_handle,uint16_t value_handle,uint8_t* pData, uint32_t length);
 
 /*
  * Other Mijia app functions

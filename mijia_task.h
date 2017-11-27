@@ -128,7 +128,7 @@ struct mijia_val_write_ind
     uint16_t conhdl;
     /// data length
     uint16_t length;
-		uint16_t handle;
+		uint16_t value_handle;
     /// Value
     uint8_t value[BLE_MIJIA_MAX_DATA_LEN];
 };
@@ -152,7 +152,7 @@ struct mijia_enable_indication_req
 {
     /// Connection handle
     uint16_t conhdl;
-	uint16_t handle;
+		uint16_t value_handle;
     /// 0  FALSE   1  NTF  2 IND
     uint16_t isEnable;
     
@@ -163,7 +163,7 @@ struct mijia_indication_req
 {
     /// Connection handle
     uint16_t conhdl;
-		uint16_t handle_pos;
+		uint16_t value_handle;
     /// Indicated data length
     uint16_t length;
     /// Characteristic Value
@@ -175,7 +175,7 @@ struct mijia_indication_req
 
 struct mijia_notifcation_req
 {
-		uint8_t handle_pos;
+		uint8_t value_handle;
 		/// Connection handle
     uint16_t conhdl;
     /// Indicated data length
@@ -220,7 +220,7 @@ void mijia_init_ccc_values(const struct attm_desc_128 *att_db, int max_nb_att);
 void mijia_set_ccc_value(uint8_t conidx, uint8_t att_idx, uint16_t ccc);
 
 
-void ble_mijia_gatts_value_get(uint16_t srv_handle, uint16_t value_handle,
+bool ble_mijia_gatts_value_get(uint16_t srv_handle, uint16_t value_handle,
     uint8_t* p_value, uint8_t *p_len);
 
 void ble_mijia_gatts_notify_or_indicate(uint16_t conn_handle, uint16_t srv_handle,

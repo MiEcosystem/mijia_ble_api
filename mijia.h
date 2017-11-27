@@ -117,17 +117,18 @@ void mijia_disable(uint16_t conhdl);
 
 const struct prf_task_cbs *mijia_prf_itf_get(void);
 
-void mijia_send_write_val(mible_gatts_evt_t evt,uint16_t handle,uint8_t* val, uint32_t length);
-void mijia_send_read_val(mible_gatts_evt_t evt,uint16_t handle);
+void mijia_send_write_val(mible_gatts_evt_t evt,uint16_t value_handle,uint8_t* val, uint32_t length);
 
 void mijia_enable_indication_notification(uint16_t isEnable,uint16_t handle);
 
-void mijia_indication_cfm_send(uint8_t status);
+void mijia_ind_ntf_cfm_send(uint8_t status);
 
 
 mible_status_t translate_miarch_attdb(mible_gatts_db_t * p_server_db);
 
 mible_gatts_db_t *get_server_db(void);
+
+bool get_wr_author(uint16_t value_handle);
 
 
 #endif // (BLE_MIJIA_SERVER)

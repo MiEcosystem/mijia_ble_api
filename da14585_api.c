@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "da14585_api.h"
 #include "arch.h"
 #include "mible_port.h"
 #include "mible_type.h"
@@ -210,7 +211,7 @@ mible_status_t mible_gatts_value_set(uint16_t srv_handle, uint16_t value_handle,
     uint8_t len)
 {
 		//不支持  offset 写  只能从 offset=0  处开始写
-		ble_mijia_send_data(value_handle,p_value,len);
+		ble_mijia_send_data(srv_handle,value_handle,p_value,len);
     return MI_SUCCESS;
 }
 
@@ -230,8 +231,11 @@ mible_status_t mible_gatts_value_get(uint16_t srv_handle, uint16_t value_handle,
     uint8_t* p_value, uint8_t *p_len)
 {
 
-		ble_mijia_gatts_value_get(srv_handle,value_handle,p_value,p_len);
-    return MI_SUCCESS;
+		if(!ble_mijia_gatts_value_get(srv_handle,value_handle,p_value,p_len))
+    	return MI_SUCCESS;
+		else
+			return MI_ERR_INVALID_PARAM;
+			
 }
 
 // this function set char value and notify/indicate it to client
@@ -585,7 +589,7 @@ mible_status_t mible_rand_num_generater(uint8_t* p_buf, uint8_t len)
  *          MI_ERR_BUSY             Encryption module already in progress.
  * @note  	SHOULD use synchronous mode to implement this function
  * */
-mible_status_t mible_aes128_encrypt(const uint8_t* key,
+mible_status_t mible_ecb128_encrypt(const uint8_t* key,
     const uint8_t* plaintext, uint8_t plen,
     uint8_t* ciphertext)
 {

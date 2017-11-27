@@ -52,6 +52,7 @@
 void app_mijia_init(void)
 {
     
+
 }
 
 /**
@@ -88,22 +89,22 @@ void app_mijia_create_db(void)
     ke_msg_send(req);
 }
 
-void ble_mijia_send_data(uint16_t handle,uint8_t* pData, uint32_t length)
+void ble_mijia_send_data(uint16_t srv_handle,uint16_t value_handle,uint8_t* pData, uint32_t length)
 {
 
-		struct mijia_env_tag *wechat_env = PRF_ENV_GET(MIJIA, mijia);
+		struct mijia_env_tag *mijia_env = PRF_ENV_GET(MIJIA, mijia);
 		
-		ke_task_id_t temp_dst = prf_dst_task_get(&(wechat_env->prf_env), wechat_env->cursor);
-		ke_task_id_t temp_src = prf_src_task_get(&(wechat_env->prf_env), wechat_env->cursor);
+		ke_task_id_t temp_dst = prf_dst_task_get(&(mijia_env->prf_env), mijia_env->cursor);
+		ke_task_id_t temp_src = prf_src_task_get(&(mijia_env->prf_env), mijia_env->cursor);
 		
 		struct mijia_notifcation_req *req = KE_MSG_ALLOC(MIJIA_SEND_NOTIFCATION_REQ,
 																									temp_src, 
 																									temp_dst,
 																									mijia_notifcation_req);
-		req->handle_pos = handle;
+		
+		req->value_handle = value_handle;
 		memcpy(req->value, pData, length);
 		req->length = length;
-
 		ke_msg_send(req);
 }
 

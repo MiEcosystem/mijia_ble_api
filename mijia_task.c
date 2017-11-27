@@ -30,7 +30,7 @@
 #include "prf_utils.h"
 #include "app_prf_types.h"
 #include "arch_console.h"
-#include "mible_api.h"
+#include "da14585_api.h"
 
 #if (BLE_CUSTOM_SERVER)
 #include "user_custs_config.h"
@@ -193,21 +193,23 @@ void ble_mijia_gatts_notify_or_indicate(uint16_t conn_handle, uint16_t srv_handl
 }
 
 
-void ble_mijia_gatts_value_get(uint16_t srv_handle, uint16_t value_handle,
+bool ble_mijia_gatts_value_get(uint16_t srv_handle, uint16_t value_handle,
     uint8_t* p_value, uint8_t *p_len)
 {
 	  uint16_t length;
-    const uint8_t *value;
-		uint8_t att_idx = 0;
+    uint8_t *value;
 
 		struct mijia_env_tag *mijia_env = PRF_ENV_GET(MIJIA, mijia);
-		
-		uint8_t status = mijia_get_att_idx(mijia_env->shdl+value_handle, &att_idx);
-		if(0 == mijia_att_get_value(att_idx, &length, &value))
+
+		uint8_t state = attmdb_get_value(mijia_env->shdl+value_handle,&length,&value);
+		if(state == ATT_ERR_NO_ERROR)
 		{
-				memcpy(p_value, value, length);
 				*p_len = length;
+				memcpy(p_value,value,length);
+				return false;
 		}
+		else
+				return true;
 }
 
 /**
@@ -262,7 +264,7 @@ static int gattc_cmp_evt_handler(ke_msg_id_t const msgid,
 
     if (param->operation == GATTC_INDICATE || param->operation == GATTC_NOTIFY)
     {
-        mijia_indication_cfm_send(param->status);
+        mijia_ind_ntf_cfm_send(param->status);
     }
 
     return (KE_MSG_CONSUMED);
@@ -441,38 +443,47 @@ static int gattc_write_req_ind_handler(ke_msg_id_t const msgid, const struct gat
 
             if (status == ATT_ERR_NO_ERROR)
             {
-				struct attm_elmt elem = {0};
-				// Find the handle of the Characteristic Value
-				uint16_t value_hdl = get_value_handle(param->handle);
-				//ASSERT_ERR(value_hdl);
-							//arch_printf("param->handle:%d\n",param->handle);
-				attmdb_att_get_permission(value_hdl, &perm, 0, &elem);
-				//arch_printf("perm:%x\n",perm);
-				att_perm_type cmp_perm = PERM(WR, ENABLE);
-				//
-				mible_gatts_evt_t evt;
-				if(perm & cmp_perm > 0)
-				{
-					evt = MIBLE_GATTS_EVT_WRITE;
-					// Set value in the database
-					status = attmdb_att_set_value(param->handle, param->length, param->offset, (uint8_t *)&param->value[0]);
-				}
-				else
-					evt = MIBLE_GATTS_EVT_WRITE_PERMIT_REQ;
-				mible_gatts_evt_param_t mi_param;
-				mi_param.conn_handle = 0;
-				mi_param.write.len = param->length;
-				mi_param.write.data = (uint8_t*)param->value;
-				mi_param.write.value_handle = param->handle - mijia_env->shdl;
+            		struct attm_elmt elem = {0};
+            		// Find the handle of the Characteristic Value
+		            uint16_t value_hdl = get_value_handle(param->handle);
+		            //ASSERT_ERR(value_hdl);
+		            attmdb_att_get_permission(value_hdl, &perm, 0, &elem);
+								att_perm_type cmp_perm = PERM(WRITE_REQ, ENABLE);
+								//
+								mible_gatts_evt_t evt;
+								if((perm & cmp_perm) == cmp_perm)
+										evt = MIBLE_GATTS_EVT_WRITE;
+								else
+										evt = MIBLE_GATTS_EVT_WRITE_PERMIT_REQ;
 
-				mible_gatts_event_callback(evt,&mi_param);
-				if((mi_param.write.permit != 0) && ((perm & cmp_perm)==0))
-				{
-					status = attmdb_att_set_value(param->handle, param->length, param->offset, (uint8_t *)&param->value[0]);
-				}
-				else
-					status = PRF_APP_ERROR;
-				}
+								bool has_write = false;
+								if((evt == MIBLE_GATTS_EVT_WRITE) || (!get_wr_author(param->handle-mijia_env->shdl)))
+								{
+										has_write = true;
+                		// Set value in the database
+                		status = attmdb_att_set_value(param->handle, param->length, param->offset, (uint8_t *)&param->value[0]);
+								}
+										
+								mible_gatts_evt_param_t mi_param;
+								memset(&mi_param,0,sizeof(mi_param));
+								mi_param.conn_handle = 0;
+								mi_param.write.len = param->length;
+								mi_param.write.data = (uint8_t*)param->value;
+								mi_param.write.value_handle = param->handle - mijia_env->shdl;
+
+								mible_gatts_event_callback(evt,&mi_param);
+								
+								if((mi_param.write.permit != 0) && ((!has_write)))
+								{
+										has_write = true;
+										status = attmdb_att_set_value(param->handle, param->length, param->offset, (uint8_t *)&param->value[0]);
+								}
+								else
+								{
+										if(!has_write)
+											status = PRF_APP_ERROR;
+								}
+						}
         }
 
     }
@@ -508,17 +519,16 @@ static int mijia_send_notifcation_req_handler(ke_msg_id_t const msgid,
 		{
 				//if((mijia_env->feature & PRF_CLI_START_IND))
 				{
-						attmdb_att_set_value(mijia_env->shdl + param->handle_pos, 
+						attmdb_att_set_value(param->value_handle+mijia_env->shdl, 
 																				param->length,0,
 																				(uint8_t *)(param->value));
 						uint16_t cfg_hdl;
 						// Find the handle of the Characteristic Client Configuration
-		    		cfg_hdl = get_cfg_handle(param->handle_pos);
+		    		cfg_hdl = get_cfg_handle(param->value_handle+mijia_env->shdl);
 
 						// Send indication through GATT
 						uint16_t ccc_val = 0;
 						ccc_val = mijia_get_ccc_value(0, cfg_hdl-mijia_env->shdl);
-						arch_printf("ccc_val:%d\n",ccc_val);
 						if(ccc_val == PRF_CLI_START_NTF || ccc_val == PRF_CLI_START_IND)
 						{
 							 // Allocate the GATT notification message
@@ -527,8 +537,11 @@ static int mijia_send_notifcation_req_handler(ke_msg_id_t const msgid,
 										gattc_send_evt_cmd,param->length);
 
 								// Fill in the parameter structure
-								req->operation = GATTC_NOTIFY;
-								req->handle = mijia_env->shdl + param->handle_pos;
+								if(ccc_val == PRF_CLI_START_NTF)
+										req->operation = GATTC_NOTIFY;
+								else
+										req->operation = PRF_CLI_START_IND;
+								req->handle = param->value_handle+mijia_env->shdl;
 								req->length = param->length;
 								memcpy(req->value,param->value,param->length);
 								// Send the event
@@ -543,7 +556,7 @@ static int mijia_send_notifcation_req_handler(ke_msg_id_t const msgid,
 
 		if (status != ATT_ERR_NO_ERROR)
 		{
-				mijia_indication_cfm_send(status);
+				mijia_ind_ntf_cfm_send(status);
 		}
 
 		return (KE_MSG_CONSUMED);
@@ -572,7 +585,7 @@ static int mijia_send_indication_req_handler(ke_msg_id_t const msgid,
     {
         if((mijia_env->feature & PRF_CLI_START_IND))
         {
-            attmdb_att_set_value(mijia_env->shdl + param->handle_pos, 
+            attmdb_att_set_value(mijia_env->shdl + param->value_handle, 
                                         param->length,0,
                                         (uint8_t *)(param->value));
                     
@@ -583,7 +596,7 @@ static int mijia_send_indication_req_handler(ke_msg_id_t const msgid,
 
     		// Fill in the parameter structure
     		req->operation = GATTC_INDICATE;
-    		req->handle = mijia_env->shdl + param->handle_pos;
+    		req->handle = mijia_env->shdl + param->value_handle;
 			  req->length = param->length;
 			  memcpy(req->value,param->value,param->length);
     		// Send the event
@@ -597,7 +610,7 @@ static int mijia_send_indication_req_handler(ke_msg_id_t const msgid,
 
     if (status != ATT_ERR_NO_ERROR)
     {
-        mijia_indication_cfm_send(status);
+        mijia_ind_ntf_cfm_send(status);
     }
 
     return (KE_MSG_CONSUMED);

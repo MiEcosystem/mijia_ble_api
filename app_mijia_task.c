@@ -39,7 +39,7 @@
 #include "app.h"
 #include "arch_console.h"
 #if (BLE_MIJIA_SERVER)
-#include "mible_api.h"
+#include "da14585_api.h"
 
 /*
  * FUNCTION DEFINITIONS
@@ -64,6 +64,11 @@ int app_mijia_send_indication_cfm_handler(ke_msg_id_t const msgid,
                                   ke_task_id_t const src_id)
 {
 		arch_printf("state:%d\n",param->status);
+		if(param->status == 0)
+		{
+				mible_gatts_evt_t evt = MIBLE_GATTS_EVT_IND_CONFIRM;
+				mible_gatts_event_callback(evt,NULL);
+		}
     return (KE_MSG_CONSUMED);
 }
 
@@ -84,7 +89,7 @@ static int app_mijia_write_val_ind_handler(ke_msg_id_t const msgid,
 		mi_param.conn_handle = param->conhdl;
 		mi_param.write.len = param->length;
 		mi_param.write.data = (uint8_t*)param->value;
-		mi_param.write.value_handle = param->handle;
+		mi_param.write.value_handle = param->value_handle;
 
 		mible_gatts_event_callback(evt,&mi_param);
 
@@ -140,11 +145,11 @@ int app_mijia_enable_ind_handler(ke_msg_id_t const msgid,
                                   ke_task_id_t const src_id)
 {
 		mible_gatts_evt_t evt = MIBLE_GATTS_EVT_WRITE;
-		mible_gatts_evt_param_t mi_param = {0};
+		mible_gatts_evt_param_t mi_param;
 		mi_param.conn_handle = param->conhdl;
 		mi_param.write.len = sizeof(param->isEnable);
 		mi_param.write.data = (uint8_t*)&(param->isEnable);
-		mi_param.write.value_handle = param->handle;
+		mi_param.write.value_handle = param->value_handle;
 		mible_gatts_event_callback(evt,&mi_param);
     return (KE_MSG_CONSUMED);
 }
@@ -160,7 +165,7 @@ static const struct ke_msg_handler app_mijia_process_handlers[] =
 {
     {MIJIA_SEND_INDICATION_CFM,         (ke_msg_func_t)app_mijia_send_indication_cfm_handler},
     {MIJIA_VAL_WRITE_IND,               (ke_msg_func_t)app_mijia_write_val_ind_handler},
-	{MIJIA_ENABLE_IND_NTF_REQ,          (ke_msg_func_t)app_mijia_enable_ind_handler},
+		{MIJIA_ENABLE_IND_NTF_REQ,          (ke_msg_func_t)app_mijia_enable_ind_handler},
     {MIJIA_SEND_DATA_TO_MASTER,         (ke_msg_func_t)app_mijia_send_data_handler},
 };
 
