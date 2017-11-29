@@ -893,7 +893,7 @@ mible_status_t mible_rand_num_generator(uint8_t* p_buf, uint8_t len)
  *          MI_ERR_BUSY             Encryption module already in progress.
  * @note  	SHOULD use synchronous mode to implement this function
  * */
-mible_status_t mible_ecb128_encrypt(const uint8_t* key,
+mible_status_t mible_aes128_encrypt(const uint8_t* key,
     const uint8_t* plaintext, uint8_t plen,
     uint8_t* ciphertext)
 {
