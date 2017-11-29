@@ -39,7 +39,7 @@
 #include "app.h"
 #include "arch_console.h"
 #if (BLE_MIJIA_SERVER)
-#include "da14585_api.h"
+#include "mible_api.h"
 
 /*
  * FUNCTION DEFINITIONS

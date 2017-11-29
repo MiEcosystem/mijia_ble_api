@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "da14585_api.h"
+#include "mible_api.h"
 #include "arch.h"
 #include "mible_port.h"
 #include "mible_type.h"
@@ -26,6 +26,7 @@
 #include "wechat_aes.h"
 #include "arch_console.h"
 #include "mijia_task.h"
+#include "mible_log.h"
 
 
 /*

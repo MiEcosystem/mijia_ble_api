@@ -15,6 +15,7 @@
 #include "mible_api.h"
 #include "mible_port.h"
 #include "mible_type.h"
+#include "mible_log.h"
 /*
  * Add your own include file
  *
@@ -32,6 +33,8 @@
  *function
  *          and pass in the corresponding parameters.
 */
+
+
 __WEAK void mible_gap_event_callback(mible_gap_evt_t evt,
     mible_gap_evt_param_t* param)
 {
@@ -270,6 +273,7 @@ __WEAK mible_status_t mible_gap_update_conn_params(uint16_t conn_handle,
  * */
 __WEAK mible_status_t mible_gatts_service_init(mible_gatts_db_t *p_server_db)
 {
+	MI_LOG_INFO("WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWEAK\r\n");
     return MI_SUCCESS;
 }
 

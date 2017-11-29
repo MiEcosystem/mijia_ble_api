@@ -30,7 +30,7 @@
 #include "prf_utils.h"
 #include "app_prf_types.h"
 #include "arch_console.h"
-#include "da14585_api.h"
+#include "mible_api.h"
 #include "mible_port.h"
 #include "mible_log.h"
 

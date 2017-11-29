@@ -23,7 +23,6 @@
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #endif
 
-
 void mible_gap_event_callback(mible_gap_evt_t evt,
     mible_gap_evt_param_t* param);
 
