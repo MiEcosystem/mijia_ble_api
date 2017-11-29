@@ -23,6 +23,18 @@
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #endif
 
+void mible_gap_event_callback(mible_gap_evt_t evt,
+    mible_gap_evt_param_t* param);
+
+void mible_gatts_event_callback(mible_gatts_evt_t evt,
+    mible_gatts_evt_param_t* param);
+
+void mible_gattc_event_callback(mible_gattc_evt_t evt,
+    mible_gattc_evt_param_t* param);
+
+void mible_arch_event_callback(mible_arch_event_t evt, 
+		mible_arch_evt_param_t* param);
+
 mible_status_t mible_gap_address_get(mible_addr_t mac);
 
 mible_status_t mible_gap_scan_start(mible_gap_scan_type_t scan_type,
