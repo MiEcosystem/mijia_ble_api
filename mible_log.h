@@ -38,7 +38,7 @@
 #ifdef MI_RELEASE 
 	#define MI_LOG_DEBUG(...)                 
 #else
-	#define MI_LOG_DEBUG(...) 					MI_LOG_INTERNAL_DEBUG( __VA_ARGS__)
+	#define MI_LOG_DEBUG(...) 		MI_LOG_INTERNAL_DEBUG( __VA_ARGS__)
 #endif
 #else // MI_LOG_ENABLED
 #define MI_LOG_ERROR(...)
