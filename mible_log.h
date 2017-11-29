@@ -32,10 +32,14 @@
 
 #include "mible_log_internal.h"
 
-#define MI_LOG_ERROR(...)                     MI_LOG_INTERNAL_ERROR(__VA_ARGS__)
-#define MI_LOG_WARNING(...)                   MI_LOG_INTERNAL_WARNING( __VA_ARGS__)
-#define MI_LOG_INFO(...)                      MI_LOG_INTERNAL_INFO( __VA_ARGS__)
-#define MI_LOG_DEBUG(...)                     MI_LOG_INTERNAL_DEBUG( __VA_ARGS__)
+#define MI_LOG_ERROR(...)                     	MI_LOG_INTERNAL_ERROR(__VA_ARGS__)
+#define MI_LOG_WARNING(...)                   	MI_LOG_INTERNAL_WARNING( __VA_ARGS__)
+#define MI_LOG_INFO(...)                      	MI_LOG_INTERNAL_INFO( __VA_ARGS__)
+#ifdef MI_RELEASE 
+	#define MI_LOG_DEBUG(...)                 
+#else
+	#define MI_LOG_DEBUG(...) 					MI_LOG_INTERNAL_DEBUG( __VA_ARGS__)
+#endif
 #else // MI_LOG_ENABLED
 #define MI_LOG_ERROR(...)
 #define MI_LOG_WARNING(...)

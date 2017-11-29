@@ -270,8 +270,8 @@ mible_status_t mible_gatts_notify_or_indicate(uint16_t conn_handle, uint16_t srv
     uint16_t char_value_handle, uint8_t offset, uint8_t* p_value,
     uint8_t len, uint8_t type)
 {
-   //不支持offset 
-		ble_mijia_gatts_notify_or_indicate(conn_handle,srv_handle,char_value_handle,offset,p_value,len,type);		
+   //不支持offset 		
+	ble_mijia_send_data(srv_handle,char_value_handle,p_value,len);
     return MI_SUCCESS;
 }
 

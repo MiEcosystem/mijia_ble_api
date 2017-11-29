@@ -31,6 +31,8 @@
 #include "app_prf_types.h"
 #include "arch_console.h"
 #include "da14585_api.h"
+#include "mible_port.h"
+#include "mible_log.h"
 
 #if (BLE_CUSTOM_SERVER)
 #include "user_custs_config.h"
