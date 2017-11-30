@@ -874,9 +874,8 @@ mible_status_t mible_record_write(uint16_t record_id, uint8_t* p_data,
  * */
 mible_status_t mible_rand_num_generator(uint8_t* p_buf, uint8_t len)
 {
-	uint32_t errno;
-	errno = sd_rand_application_vector_get(p_buf, len);
-	return (mible_status_t)errno == MI_SUCCESS ? MI_SUCCESS : MI_ERR_NO_MEM;
+	while(NRF_SUCCESS != sd_rand_application_vector_get(p_buf, len));
+	return MI_SUCCESS;
 }
 
 /*
