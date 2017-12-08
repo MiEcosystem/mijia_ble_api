@@ -64,9 +64,9 @@ typedef struct {
     uint8_t scan_rsp_data[31];                 // response data in active scanning
     uint8_t scan_rsp_len;                      // response data length in active scanning
 
-	mible_gap_adv_type_t adv_type;
     uint16_t adv_interval_min;               // Range: 0x0020 to 0x4000  Time = N * 0.625 msec Time Range: 20 ms to 10.24 sec
     uint16_t adv_interval_max;               // Range: 0x0020 to 0x4000  Time = N * 0.625 msec Time Range: 20 ms to 10.24 sec
+	mible_gap_adv_type_t adv_type;
     
 	struct {
 		uint8_t ch_37_off : 1;  /**< Setting this bit to 1 will turn off advertising on channel 37 */
@@ -252,7 +252,7 @@ typedef struct {
  * NOTE: Stack SHOULD decide to reply the char value or refuse according to [permit]
  * */
 typedef struct {
-	uint8_t permit;
+	uint8_t permit; // [OUT] true: permit to be read; false: reject read request 
     uint16_t conn_handle;
     uint16_t value_handle;  // char value handle 
 } mible_gatts_read_t;
@@ -297,8 +297,7 @@ typedef struct {
     mible_handle_range_t primary_srv_range;
     mible_uuid_t uuid_type;
     mible_uuid_t* srv_uuid;
-    bool
-    succ; // true : exist the specified primary service and return correctly
+    bool succ; // true : exist the specified primary service and return correctly
 } mible_gattc_prim_srv_disc_rsp_t;
 
 /*
