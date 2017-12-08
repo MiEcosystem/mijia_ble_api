@@ -357,7 +357,6 @@ __WEAK mible_status_t mible_gatts_notify_or_indicate(uint16_t conn_handle, uint1
  * @param 	[in] conn_handle: connect handle
  * 			[in] handle_range: search range for primary sevice
  *discovery procedure
- * 			[in] uuid_type: 16-bit or 128-bit
  *			[in] p_srv_uuid: pointer to service uuid
  * @return  MI_SUCCESS             Successfully started or resumed the Primary
  *Service Discovery procedure.
@@ -369,8 +368,7 @@ __WEAK mible_status_t mible_gatts_notify_or_indicate(uint16_t conn_handle, uint1
  *MIBLE_GATTC_EVT_PRIMARY_SERVICE_DISCOVER_RESP event
  * */
 __WEAK mible_status_t mible_gattc_primary_service_discover_by_uuid(uint16_t conn_handle,
-    mible_handle_range_t handle_range,
-    mible_uuid_t* p_srv_uuid)
+    mible_handle_range_t handle_range, mible_uuid_t* p_srv_uuid)
 {
 
     return MI_SUCCESS;
@@ -381,7 +379,6 @@ __WEAK mible_status_t mible_gattc_primary_service_discover_by_uuid(uint16_t conn
  * @param	[in] conn_handle: connect handle
  * 			[in] handle_range: search range for characteristic discovery
  * procedure
- * 			[in] uuid_type: 16-bit or 128-bit
  * 			[in] p_char_uuid: pointer to characteristic uuid
  * @return  MI_SUCCESS             Successfully started or resumed the
  * Characteristic Discovery procedure.
@@ -394,8 +391,7 @@ __WEAK mible_status_t mible_gattc_primary_service_discover_by_uuid(uint16_t conn
  * */
 __WEAK mible_status_t
 mible_gattc_char_discover_by_uuid(uint16_t conn_handle,
-    mible_handle_range_t handle_range,
-    mible_uuid_t* p_char_uuid)
+    mible_handle_range_t handle_range, mible_uuid_t* p_char_uuid)
 {
     return MI_SUCCESS;
 }
@@ -428,8 +424,7 @@ mible_gattc_clt_cfg_descriptor_discover(uint16_t conn_handle,
  * @brief	Read characteristic value by UUID
  * @param 	[in] conn_handle: connnection handle
  * 			[in] handle_range: search range
- * 			[in] uuid_type: 16-bit or 128-bit
- * 			[in] char_uuid: characteristic uuid
+ * 			[in] p_char_uuid: pointer to characteristic uuid
  * @return  MI_SUCCESS             Successfully started or resumed the Read
  * using Characteristic UUID procedure.
  *          MI_ERR_INVALID_STATE   Invalid Connection State.
@@ -439,8 +434,7 @@ mible_gattc_clt_cfg_descriptor_discover(uint16_t conn_handle,
  * MIBLE_GATTC_EVT_READ_CHR_VALUE_BY_UUID_RESP event
  * */
 __WEAK mible_status_t mible_gattc_read_char_value_by_uuid(uint16_t conn_handle,
-    mible_handle_range_t handle_range,
-    mible_uuid_t *p_char_uuid)
+    mible_handle_range_t handle_range, mible_uuid_t *p_char_uuid)
 {
     return MI_SUCCESS;
 }
@@ -461,7 +455,7 @@ __WEAK mible_status_t mible_gattc_read_char_value_by_uuid(uint16_t conn_handle,
  * @note  	The response is given through MIBLE_GATTC_EVT_WRITE_RESP event
  *
  * */
-__WEAK mible_status_t mible_gattc_write_with_rsp(uint16_t conn_handle, uint16_t handle,
+__WEAK mible_status_t mible_gattc_write_with_rsp(uint16_t conn_handle, uint16_t att_handle,
     uint8_t* p_value, uint8_t len)
 {
     return MI_SUCCESS;
