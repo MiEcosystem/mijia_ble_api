@@ -288,6 +288,8 @@ typedef enum {
     // this event generated in responses to a
     // write_charicteristic_value_with_response procedure.
     MIBLE_GATTC_EVT_WRITE_RESP,
+	MIBLE_GATTC_EVT_NOTIFICATION,
+	MIBLE_GATTC_EVT_INDICATION,
 } mible_gattc_evt_t;
 
 /*
@@ -336,6 +338,24 @@ typedef struct {
 } mible_gattc_write_rsp;
 
 /*
+ * MIBLE_GATTC_EVT_WRITE_RESP event callback parameters
+ *  */
+typedef struct {
+    uint16_t handle;
+	uint8_t  len;
+	uint8_t  *pdata;
+} mible_gattc_write_rsp;
+
+/*
+ * MIBLE_GATTC_EVT_NOTIFICATION event callback parameters
+ *  */
+typedef struct {
+    uint16_t handle;
+	uint8_t  len;
+	uint8_t  *pdata;
+} mible_gattc_notification_t;
+
+/*
  * GATTC callback parameters union
  * */
 typedef struct {
@@ -346,6 +366,7 @@ typedef struct {
 		mible_gattc_read_char_value_by_uuid_rsp read_char_value_by_uuid_rsp;
 		mible_gattc_clt_cfg_desc_disc_rsp clt_cfg_desc_disc_rsp;
 		mible_gattc_write_rsp write_rsp;
+		mible_gattc_notification_t notification;
 	};
 } mible_gattc_evt_param_t;
 
