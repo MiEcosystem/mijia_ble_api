@@ -161,6 +161,29 @@ static void gattc_evt_dispatch(ble_evt_t *p_ble_evt)
 	gattc_params.conn_handle = p_ble_evt->evt.gattc_evt.conn_handle;
 
 	switch(p_ble_evt->header.evt_id) {
+	case BLE_GATTC_EVT_PRIM_SRVC_DISC_RSP:
+		evt = MIBLE_GATTC_EVT_PRIMARY_SERVICE_DISCOVER_RESP;
+		ble_gattc_evt_prim_srvc_disc_rsp_t prim_srv =
+			p_ble_evt->evt.gattc_evt.params.prim_srvc_disc_rsp;
+		gattc_params.srv_disc_rsp.primary_srv_range.begin_handle = prim_srv.services[0].handle_range.start_handle;
+		gattc_params.srv_disc_rsp.primary_srv_range.end_handle = prim_srv.services[0].handle_range.end_handle;
+		gattc_params.srv_disc_rsp.srv_uuid.uuid16 = prim_srv.services[0].uuid.uuid;
+		gattc_evt_availble = 1;
+		break;
+
+	case BLE_GATTC_EVT_HVX:
+		evt = 0;
+		ble_gattc_evt_hvx_t hvx = p_ble_evt->evt.gattc_evt.params.hvx;
+		if (hvx.type == BLE_GATT_HVX_INDICATION)
+			evt = MIBLE_GATTC_EVT_INDICATION;
+		else if (hvx.type == BLE_GATT_HVX_NOTIFICATION)
+			evt = MIBLE_GATTC_EVT_NOTIFICATION;
+		gattc_params.notification.handle = hvx.handle;
+		gattc_params.notification.pdata  = hvx.data;
+		gattc_params.notification.len    = hvx.len;
+		gattc_evt_availble = 1;
+		break;
+
 	default:
 		break;
 	}

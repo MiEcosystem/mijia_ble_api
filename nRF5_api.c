@@ -85,7 +85,11 @@ mible_status_t mible_gap_address_get(mible_addr_t mac)
 {
 	uint32_t errno;
 	ble_gap_addr_t gap_addr;
-	errno = sd_ble_gap_address_get(&gap_addr);
+	#if (NRF_SD_BLE_API_VERSION == 3)
+        errno = sd_ble_gap_addr_get(&gap_addr);
+    #else
+        errno = sd_ble_gap_address_get(&gap_addr);
+    #endif
 	memcpy(mac, gap_addr.addr, 6);
 	return (mible_status_t)errno;
 }
@@ -205,7 +209,31 @@ mible_status_t mible_gap_adv_stop(void)
 mible_status_t mible_gap_connect(mible_gap_scan_param_t scan_param,
     mible_gap_connect_t conn_param)
 {
-    return MI_SUCCESS;
+	uint32_t errno;
+	ble_gap_addr_t mac;
+	ble_gap_scan_params_t sdk_scan_param = {0};
+	ble_gap_conn_params_t sdk_conn_param = {0};
+	switch (conn_param.type) {
+		case MIBLE_ADDRESS_TYPE_PUBLIC:
+			mac.addr_type = BLE_GAP_ADDR_TYPE_PUBLIC;
+			break;
+		case MIBLE_ADDRESS_TYPE_RANDOM:
+			mac.addr_type = BLE_GAP_ADDR_TYPE_RANDOM_STATIC;
+			break;
+	}
+	memcpy(mac.addr, conn_param.peer_addr, 6);
+	
+	sdk_scan_param.active   = 1;
+	sdk_scan_param.interval = scan_param.scan_interval;
+	sdk_scan_param.window   = scan_param.scan_window;
+	sdk_scan_param.timeout  = scan_param.timeout;
+
+	sdk_conn_param.min_conn_interval = conn_param.conn_param.min_conn_interval;
+	sdk_conn_param.max_conn_interval = conn_param.conn_param.max_conn_interval;
+	sdk_conn_param.slave_latency     = conn_param.conn_param.slave_latency;
+	sdk_conn_param.conn_sup_timeout  = conn_param.conn_param.conn_sup_timeout;
+	errno = sd_ble_gap_connect(&mac, &sdk_scan_param, &sdk_conn_param);
+    return errno;
 }
 
 /*
@@ -256,7 +284,7 @@ static ble_uuid_t convert_uuid(mible_uuid_t *p_uuid)
 	uint32_t errno;
 	ble_uuid_t uuid16 = {0};
 	if (p_uuid->type == 0) {
-		uuid16.type = 1;
+		uuid16.type = BLE_UUID_TYPE_BLE;
 		uuid16.uuid = p_uuid->uuid16;
 	} else {
 		ble_uuid128_t vs_uuid = {0};
@@ -567,16 +595,13 @@ mible_status_t mible_gatts_notify_or_indicate(uint16_t conn_handle, uint16_t srv
  *MIBLE_GATTC_EVT_PRIMARY_SERVICE_DISCOVER_RESP event
  * */
 mible_status_t mible_gattc_primary_service_discover_by_uuid(uint16_t conn_handle,
-    mible_handle_range_t handle_range,
-    mible_uuid_t* p_srv_uuid)
+    mible_handle_range_t handle_range, mible_uuid_t* p_srv_uuid)
 {
-    /*tBleStatus errno;*/
-    /*errno = aci_att_find_by_type_value_req(conn_handle,start_handle,end_handle,*/
-    /*PRIMARY_SERVICE,2,svc_uuid);*/
-    /*if( BLE_STATUS_SUCCESS != errno ){*/
-    /*return MIBLE_ERR_UNKNOWN;*/
-    /*}*/
-    return MI_SUCCESS;
+	uint32_t errno;
+	ble_uuid_t srv_uuid;
+	srv_uuid = convert_uuid(p_srv_uuid);
+	errno = sd_ble_gattc_primary_services_discover(conn_handle, handle_range.begin_handle, &srv_uuid);
+    return errno;
 }
 
 /*
@@ -595,11 +620,11 @@ mible_status_t mible_gattc_primary_service_discover_by_uuid(uint16_t conn_handle
  * @note 	The response is given through
  * MIBLE_GATTC_CHR_DISCOVER_BY_UUID_RESP event
  * */
-mible_status_t
-mible_gattc_char_discover_by_uuid(uint16_t conn_handle,
+mible_status_t mible_gattc_char_discover_by_uuid(uint16_t conn_handle,
     mible_handle_range_t handle_range,
     mible_uuid_t* p_char_uuid)
 {
+	
     return MI_SUCCESS;
 }
 
@@ -620,8 +645,7 @@ mible_gattc_char_discover_by_uuid(uint16_t conn_handle,
  * 			Only return the first cccd handle within the specified
  * range.
  * */
-mible_status_t
-mible_gattc_clt_cfg_descriptor_discover(uint16_t conn_handle,
+mible_status_t mible_gattc_clt_cfg_descriptor_discover(uint16_t conn_handle,
     mible_handle_range_t handle_range)
 {
     return MI_SUCCESS;
@@ -641,8 +665,7 @@ mible_gattc_clt_cfg_descriptor_discover(uint16_t conn_handle,
  * @note    The response is given through
  * MIBLE_GATTC_EVT_READ_CHR_VALUE_BY_UUID_RESP event
  * */
-mible_status_t
-mible_gattc_read_char_value_by_uuid(uint16_t conn_handle,
+mible_status_t mible_gattc_read_char_value_by_uuid(uint16_t conn_handle,
     mible_handle_range_t handle_range,
     mible_uuid_t *p_char_uuid)
 {
@@ -668,13 +691,21 @@ mible_gattc_read_char_value_by_uuid(uint16_t conn_handle,
 mible_status_t mible_gattc_write_with_rsp(uint16_t conn_handle, uint16_t handle,
     uint8_t* p_value, uint8_t len)
 {
-    return MI_SUCCESS;
+	uint32_t errno;
+	ble_gattc_write_params_t params = {0};
+	params.write_op = BLE_GATT_OP_WRITE_REQ;
+	params.handle   = handle;
+	params.p_value  = p_value;
+	params.len      = len;
+	
+	errno = sd_ble_gattc_write(conn_handle, &params);
+    return errno;
 }
 
 /*
  * @brief 	Write value by handle without response
  * @param   [in] conn_handle: connection handle
- * 			[in] att_handle: handle to the attribute to be written.
+ * 			[in] handle: handle to the attribute to be written.
  * 			[in] p_value: pointer to data
  * 			[in] len: data length
  * @return  MI_SUCCESS             Successfully started the Write Cmd procedure.
@@ -685,10 +716,18 @@ mible_status_t mible_gattc_write_with_rsp(uint16_t conn_handle, uint16_t handle,
  *          MIBLE_ERR_INVALID_CONN_HANDLE  Invaild connection handle.
  * @note 	no response
  * */
-mible_status_t mible_gattc_write_cmd(uint16_t conn_handle, uint16_t att_handle,
+mible_status_t mible_gattc_write_cmd(uint16_t conn_handle, uint16_t handle,
     uint8_t* p_value, uint8_t len)
 {
-    return MI_SUCCESS;
+	uint32_t errno;
+	ble_gattc_write_params_t params = {0};
+	params.write_op = BLE_GATT_OP_WRITE_CMD;
+	params.handle   = handle;
+	params.p_value  = p_value;
+	params.len      = len;
+	
+	errno = sd_ble_gattc_write(conn_handle, &params);
+    return errno;
 }
 
 /*TIMER related function*/

@@ -288,7 +288,9 @@ typedef enum {
     // this event generated in responses to a
     // write_charicteristic_value_with_response procedure.
     MIBLE_GATTC_EVT_WRITE_RESP,
+	// this event is generated when peer gatts device send a notification. 
 	MIBLE_GATTC_EVT_NOTIFICATION,
+	// this event is generated when peer gatts device send a indication. 
 	MIBLE_GATTC_EVT_INDICATION,
 } mible_gattc_evt_t;
 
@@ -297,8 +299,7 @@ typedef enum {
  * */
 typedef struct {
     mible_handle_range_t primary_srv_range;
-    mible_uuid_t uuid_type;
-    mible_uuid_t* srv_uuid;
+    mible_uuid_t srv_uuid;
     bool succ; // true : exist the specified primary service and return correctly
 } mible_gattc_prim_srv_disc_rsp_t;
 
@@ -338,22 +339,13 @@ typedef struct {
 } mible_gattc_write_rsp;
 
 /*
- * MIBLE_GATTC_EVT_WRITE_RESP event callback parameters
+ * MIBLE_GATTC_EVT_NOTIFICATION or MIBLE_GATTC_EVT_INDICATION event callback parameters
  *  */
 typedef struct {
     uint16_t handle;
 	uint8_t  len;
 	uint8_t  *pdata;
-} mible_gattc_write_rsp;
-
-/*
- * MIBLE_GATTC_EVT_NOTIFICATION event callback parameters
- *  */
-typedef struct {
-    uint16_t handle;
-	uint8_t  len;
-	uint8_t  *pdata;
-} mible_gattc_notification_t;
+} mible_gattc_notification_or_indication_t;
 
 /*
  * GATTC callback parameters union
@@ -366,7 +358,7 @@ typedef struct {
 		mible_gattc_read_char_value_by_uuid_rsp read_char_value_by_uuid_rsp;
 		mible_gattc_clt_cfg_desc_disc_rsp clt_cfg_desc_disc_rsp;
 		mible_gattc_write_rsp write_rsp;
-		mible_gattc_notification_t notification;
+		mible_gattc_notification_or_indication_t notification;
 	};
 } mible_gattc_evt_param_t;
 
