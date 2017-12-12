@@ -53,6 +53,19 @@ static void gap_evt_dispatch(ble_evt_t *p_ble_evt)
 
 		gap_evt_availble = 1;
 		break;
+
+	case BLE_GAP_EVT_ADV_REPORT:
+		evt = MIBLE_GAP_EVT_ADV_REPORT;
+		ble_gap_evt_adv_report_t adv = p_ble_evt->evt.gap_evt.params.adv_report;
+		gap_params.conn_handle = conn_handle;
+		gap_params.report.addr_type = adv.peer_addr.addr_type == BLE_GAP_ADDR_TYPE_PUBLIC ? MIBLE_ADDRESS_TYPE_PUBLIC : MIBLE_ADDRESS_TYPE_RANDOM;
+		memcpy(gap_params.report.peer_addr, adv.peer_addr.addr, 6);
+		gap_params.report.adv_type = adv.scan_rsp ? SCAN_RSP_DATA : ADV_DATA;
+		gap_params.report.rssi = adv.rssi;
+		memcpy(gap_params.report.data, adv.data, adv.dlen);;
+		gap_params.report.data_len = adv.dlen;
+		gap_evt_availble = 1;
+		break;
 	}
 	
 	if (gap_evt_availble)
@@ -167,7 +180,10 @@ static void gattc_evt_dispatch(ble_evt_t *p_ble_evt)
 			p_ble_evt->evt.gattc_evt.params.prim_srvc_disc_rsp;
 		gattc_params.srv_disc_rsp.primary_srv_range.begin_handle = prim_srv.services[0].handle_range.start_handle;
 		gattc_params.srv_disc_rsp.primary_srv_range.end_handle = prim_srv.services[0].handle_range.end_handle;
-		gattc_params.srv_disc_rsp.srv_uuid.uuid16 = prim_srv.services[0].uuid.uuid;
+		uint8_t uuid_len, uuid128[16];
+		sd_ble_uuid_encode(&prim_srv.services[0].uuid, &uuid_len, uuid128);
+		gattc_params.srv_disc_rsp.srv_uuid.type = uuid_len == 16 ? 1 : 0;
+		memcpy(gattc_params.srv_disc_rsp.srv_uuid.uuid128, uuid128, uuid_len);
 		gattc_evt_availble = 1;
 		break;
 

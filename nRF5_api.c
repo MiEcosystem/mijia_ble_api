@@ -114,7 +114,14 @@ mible_status_t mible_gap_address_get(mible_addr_t mac)
 mible_status_t mible_gap_scan_start(mible_gap_scan_type_t scan_type,
     mible_gap_scan_param_t scan_param)
 {
-    return MI_SUCCESS;
+	uint32_t errno;
+	ble_gap_scan_params_t  sdk_param = {0};
+	sdk_param.active = scan_type == MIBLE_SCAN_TYPE_ACTIVE ? 1 : 0;
+	sdk_param.interval = scan_param.scan_interval;
+	sdk_param.window   = scan_param.scan_window;
+	sdk_param.timeout  = scan_param.timeout;
+	errno = sd_ble_gap_scan_start(&sdk_param);
+    return errno;
 }
 
 /*
@@ -123,7 +130,12 @@ mible_status_t mible_gap_scan_start(mible_gap_scan_type_t scan_type,
  * @return  MI_SUCCESS             Successfully stopped scanning procedure.
  *          MI_ERR_INVALID_STATE   Not in scanning state.
  * */
-mible_status_t mible_gap_scan_stop(void) { return MI_SUCCESS; }
+mible_status_t mible_gap_scan_stop(void)
+{
+	uint32_t errno;
+	errno = sd_ble_gap_scan_stop() == MI_SUCCESS ?  MI_SUCCESS : MI_ERR_INVALID_STATE;
+	return errno; 
+}
 
 /*
  * @brief	Start advertising
