@@ -158,8 +158,6 @@ mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_adv_param)
 	if (p_adv_param == NULL )
 		return MI_ERR_INVALID_PARAM;
 
-	errno = sd_ble_gap_adv_data_set(p_adv_param->adv_data, p_adv_param->adv_len, p_adv_param->scan_rsp_data, p_adv_param->scan_rsp_len);
-    MI_ERR_CHECK(errno);
 
 	ble_gap_adv_params_t adv_params = {0};
 	adv_params.channel_mask.ch_37_off = p_adv_param->ch_mask.ch_37_off;
@@ -186,6 +184,24 @@ mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_adv_param)
 	
     return MI_SUCCESS;
 }
+
+/*
+ * @brief	Config advertising data
+ * @param 	[in] p_adv_data : pointer to advertising data, see
+ * mible_gap_adv_data_t for details
+ * @return  MI_SUCCESS             Successfully set advertising data.
+ *          MI_ERR_INVALID_ADDR    Invalid pointer supplied.
+ *          MI_ERR_INVALID_PARAM   Invalid parameter(s) supplied.
+ * */
+mible_status_t mible_gap_adv_data_set(mible_gap_adv_data_t *p_data)
+{
+	uint32_t errno;
+	errno = sd_ble_gap_adv_data_set(p_data->adv_data, p_data->adv_len, p_data->scan_rsp_data, p_data->scan_rsp_len);
+    MI_ERR_CHECK(errno);
+	return errno;
+}
+
+
 /*
  * @brief	Stop advertising
  * @param	void
