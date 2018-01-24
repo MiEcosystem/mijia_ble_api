@@ -59,11 +59,6 @@ typedef enum {
 } mible_gap_adv_type_t;
 
 typedef struct {
-    uint8_t adv_data[31];                      // advertising data
-    uint8_t adv_len;                           // advertising data length
-    uint8_t scan_rsp_data[31];                 // response data in active scanning
-    uint8_t scan_rsp_len;                      // response data length in active scanning
-
     uint16_t adv_interval_min;               // Range: 0x0020 to 0x4000  Time = N * 0.625 msec Time Range: 20 ms to 10.24 sec
     uint16_t adv_interval_max;               // Range: 0x0020 to 0x4000  Time = N * 0.625 msec Time Range: 20 ms to 10.24 sec
 	mible_gap_adv_type_t adv_type;
@@ -74,6 +69,13 @@ typedef struct {
 		uint8_t ch_39_off : 1;  /**< Setting this bit to 1 will turn off advertising on channel 39 */
 	} ch_mask;
 } mible_gap_adv_param_t;
+
+typedef struct {
+    uint8_t adv_data[31];                      // advertising data
+    uint8_t adv_len;                           // advertising data length
+    uint8_t scan_rsp_data[31];                 // response data in active scanning
+    uint8_t scan_rsp_len;                      // response data length in active scanning
+} mible_gap_adv_data_t;
 
 typedef enum {
     ADV_DATA,           // advertising data

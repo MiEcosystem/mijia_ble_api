@@ -182,10 +182,24 @@ __WEAK mible_status_t mible_gap_scan_stop(void)
  * @note	Other default advertising parameters: local public address , no
  * filter policy
  * */
-__WEAK mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_adv_param)
+__WEAK mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_param)
 {
     return MI_SUCCESS;
 }
+
+/*
+ * @brief	Config advertising
+ * @param 	[in] p_adv_data : pointer to advertising data, see
+ * mible_gap_adv_data_t for details
+ * @return  MI_SUCCESS             Successfully set advertising data.
+ *          MI_ERR_INVALID_ADDR    Invalid pointer supplied.
+ *          MI_ERR_INVALID_PARAM   Invalid parameter(s) supplied.
+ * */
+__WEAK mible_status_t mible_gap_adv_data_set(mible_gap_adv_data_t *p_data)
+{
+    return MI_SUCCESS;
+}
+
 /*
  * @brief	Stop advertising
  * @param	void
@@ -614,15 +628,15 @@ __WEAK mible_status_t mible_record_write(uint16_t record_id, uint8_t* p_data,
 }
 
 /*
- * @brief 	Get ture random bytes .
- * @param 	[out] p_buf: pointer to data
- * 			[in] len: Number of bytes to take from pool and place in
+ * @brief   Get ture random bytes .
+ * @param   [out] p_buf: pointer to data
+ *          [in] len: Number of bytes to take from pool and place in
  * p_buff
- * @return  MI_SUCCESS			The requested bytes were written to
+ * @return  MI_SUCCESS          The requested bytes were written to
  * p_buff
  *          MI_ERR_NO_MEM       No bytes were written to the buffer, because
  * there were not enough random bytes available.
- * @note  	SHOULD use TRUE random num generator
+ * @note    SHOULD use TRUE random num generator
  * */
 __WEAK mible_status_t mible_rand_num_generator(uint8_t* p_buf, uint8_t len)
 {
@@ -630,18 +644,18 @@ __WEAK mible_status_t mible_rand_num_generator(uint8_t* p_buf, uint8_t len)
 }
 
 /*
- * @brief 	Encrypts a block according to the specified parameters. 128-bit
+ * @brief   Encrypts a block according to the specified parameters. 128-bit
  * AES encryption.
- * @param 	[in] key: encryption key
- * 			[in] plaintext: pointer to plain text
- * 			[in] plen: plain text length
+ * @param   [in] key: encryption key
+ *          [in] plaintext: pointer to plain text
+ *          [in] plen: plain text length
  *          [out] ciphertext: pointer to cipher text
  * @return  MI_SUCCESS              The encryption operation completed.
  *          MI_ERR_INVALID_ADDR     Invalid pointer supplied.
  *          MI_ERR_INVALID_STATE    Encryption module is not initialized.
  *          MI_ERR_INVALID_LENGTH   Length bigger than 16.
  *          MI_ERR_BUSY             Encryption module already in progress.
- * @note  	SHOULD use synchronous mode to implement this function
+ * @note    SHOULD use synchronous mode to implement this function
  * */
 __WEAK mible_status_t mible_aes128_encrypt(const uint8_t* key,
     const uint8_t* plaintext, uint8_t plen,
@@ -652,16 +666,16 @@ __WEAK mible_status_t mible_aes128_encrypt(const uint8_t* key,
 
 
 /*
- * @brief 	Post a task to a task quene, which can be executed in a right place(maybe a task in RTOS or while(1) in the main function).
- * @param 	[in] handler: a pointer to function 
- * 			[in] param: function parameters 
- * @return 	MI_SUCCESS 				Successfully put the handler to quene.		
- * 			MI_ERR_NO_MEM			The task quene is full. 
- * 			MI_ERR_INVALID_PARAM    Handler is NULL
+ * @brief   Post a task to a task quene, which can be executed in a right place(maybe a task in RTOS or while(1) in the main function).
+ * @param   [in] handler: a pointer to function 
+ *          [in] param: function parameters 
+ * @return  MI_SUCCESS              Successfully put the handler to quene.
+ *          MI_ERR_NO_MEM           The task quene is full. 
+ *          MI_ERR_INVALID_PARAM    Handler is NULL
  * */
 __WEAK mible_status_t mible_task_post(mible_handler_t handler, void *arg)
 {
-	return MI_SUCCESS;	
+	return MI_SUCCESS;
 } 
 
 
