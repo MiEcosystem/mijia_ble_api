@@ -81,7 +81,7 @@ static void gatts_evt_dispatch(ble_evt_t *p_ble_evt)
 	mible_gatts_evt_param_t gatts_params = {0};
 	gatts_params.conn_handle = p_ble_evt->evt.gatts_evt.conn_handle;
 	ble_gatts_evt_rw_authorize_request_t rw_req = {0};
-	MI_LOG_INFO("[gatts_evt_dispatch]\r\n");
+
 	switch(p_ble_evt->header.evt_id) {
 	case BLE_GATTS_EVT_WRITE:
 		gatts_params.write.value_handle = p_ble_evt->evt.gatts_evt.params.write.handle;
