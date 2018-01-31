@@ -158,7 +158,8 @@ mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_adv_param)
 	if (p_adv_param == NULL )
 		return MI_ERR_INVALID_PARAM;
 
-
+    sd_ble_gap_adv_stop();
+    
 	ble_gap_adv_params_t adv_params = {0};
 	adv_params.channel_mask.ch_37_off = p_adv_param->ch_mask.ch_37_off;
 	adv_params.channel_mask.ch_38_off = p_adv_param->ch_mask.ch_38_off;
@@ -364,7 +365,7 @@ static uint32_t char_add(uint16_t                       service_handle,
 		BLE_GAP_CONN_SEC_MODE_SET_OPEN(&attr_md.write_perm);
 	}
 
-    attr_md.vloc       = p_char_value == NULL ? BLE_GATTS_VLOC_STACK : BLE_GATTS_VLOC_USER;
+    attr_md.vloc       = BLE_GATTS_VLOC_STACK;
     attr_md.rd_auth    = rd_auth;
     attr_md.wr_auth    = wr_auth;
     attr_md.vlen       = is_vlen;
@@ -421,7 +422,7 @@ mible_status_t mible_gatts_service_init(mible_gatts_db_t *p_server_db)
 			ble_gatt_char_props_t props = {0};
 			memcpy((uint8_t*)&props, &p_char->char_property, 1);
 			uuid16 = convert_uuid(&p_char->char_uuid);
-			errno = char_add(p_service->srv_handle, &uuid16, NULL, p_char->char_value_len,
+			errno = char_add(p_service->srv_handle, &uuid16, p_char->p_value, p_char->char_value_len,
 					    props, &p_char->char_value_handle,
 						p_char->is_variable_len, p_char->rd_author, p_char->wr_author);
 			MI_ERR_CHECK(errno);
@@ -1011,4 +1012,31 @@ void mible_tasks_exec(void)
 		if (errno == NRF_SUCCESS)
 			task.handler(task.arg);
 	}
+}
+
+typedef void (*irq_handler_t)(void * p_context, ...);
+
+typedef struct {
+    uint8_t scl;
+    uint8_t sda;
+    uint8_t speed;
+} iic_config_t;
+
+mible_status_t mible_iic_init(iic_config_t config, irq_handler_t handler)
+{
+    
+    
+    return MI_SUCCESS;
+}
+
+mible_status_t mible_iic_write(uint16_t addr, uint8_t * p_out, uint16_t len)
+{
+    
+    return MI_SUCCESS;
+}
+
+mible_status_t mible_iic_read(uint16_t addr, uint8_t * p_in, uint16_t len)
+{
+    
+    return MI_SUCCESS;
 }

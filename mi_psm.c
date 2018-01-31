@@ -2,6 +2,7 @@
 #include "mible_type.h"
 
 #include "fds.h"
+#include "fstorage.h"
 
 #define NRF_LOG_MODULE_NAME "PSM"
 #include "nrf_log.h"
@@ -73,6 +74,20 @@ static void mi_psm_fds_evt_handler(fds_evt_t const * const p_fds_evt)
 		}
 		break;
     }
+}
+
+
+/** @brief Function to determine if a flash write operation in in progress.
+ *
+ * @return true if a flash operation is in progress, false if not.
+ */
+bool flash_access_in_progress()
+{
+    uint32_t count;
+
+    (void)fs_queued_op_count_get(&count);
+
+    return (count != 0);
 }
 
 void mi_psm_init(void)

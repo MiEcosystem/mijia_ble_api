@@ -8,6 +8,7 @@
 
 #include "mible_api.h"
 #include "mible_log.h"
+#define MI_LOG_MODULE_NAME "nRF"
 
 static void gap_evt_dispatch(ble_evt_t *p_ble_evt)
 {
@@ -110,9 +111,6 @@ static void gatts_evt_dispatch(ble_evt_t *p_ble_evt)
 		}
 
 		mible_gatts_event_callback(evt, &gatts_params);
-
-		if (gatts_params.write.permit == 0) 
-			break;
 		
 		ble_gatts_value_t gatts_value = {0};
 		errno = sd_ble_gatts_value_get(gatts_params.conn_handle, gatts_params.read.value_handle, &gatts_value);
@@ -211,6 +209,7 @@ static void gattc_evt_dispatch(ble_evt_t *p_ble_evt)
 
 void mible_on_ble_evt(ble_evt_t *p_ble_evt)
 {
+    MI_LOG_DEBUG("BLE EVT %X\n", p_ble_evt->header.evt_id);
 	gap_evt_dispatch(p_ble_evt);
 	gatts_evt_dispatch(p_ble_evt);
 	gattc_evt_dispatch(p_ble_evt);
