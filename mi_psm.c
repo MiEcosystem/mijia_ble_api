@@ -23,6 +23,7 @@ static void mi_psm_fds_evt_handler(fds_evt_t const * const p_fds_evt)
 		break;
 		
 	case FDS_EVT_WRITE:
+        NRF_LOG_INFO("KEY %X \n", p_fds_evt->write.record_key);
 		if (p_fds_evt->result == FDS_SUCCESS) {
 			NRF_LOG_INFO("FDS_EVT_WR SUCCESS\n");
 			if ((uint32_t)p_fds_evt->write.file_id == MI_RECORD_FILE_ID) {
@@ -34,6 +35,8 @@ static void mi_psm_fds_evt_handler(fds_evt_t const * const p_fds_evt)
 		break;
 		
 	case FDS_EVT_UPDATE:
+        NRF_LOG_INFO("KEY %X \n", p_fds_evt->write.record_key);
+
 		if (p_fds_evt->result == FDS_SUCCESS) {
 			NRF_LOG_INFO("FDS_EVT_UPDATE SUCCESS\n");
 			if ((uint32_t)p_fds_evt->write.file_id == MI_RECORD_FILE_ID) {
@@ -45,6 +48,7 @@ static void mi_psm_fds_evt_handler(fds_evt_t const * const p_fds_evt)
 		break;
 			
 	case FDS_EVT_DEL_RECORD:
+        NRF_LOG_INFO("KEY %X \n", p_fds_evt->del.record_key);
 		if (p_fds_evt->result == FDS_SUCCESS) {
 			NRF_LOG_INFO("FDS_EVT_DEL_RECORD SUCCESS\n");
 			if ((uint32_t)p_fds_evt->del.file_id == MI_RECORD_FILE_ID) {
@@ -130,12 +134,12 @@ int mi_psm_record_write(uint16_t rec_key, uint8_t *in, uint16_t in_len)
 
 	if (ret == FDS_ERR_NO_SPACE_IN_QUEUES)
 	{
-		NRF_LOG_INFO("mi psm write KEY %X failed :%d \n", rec_key, ret);
+		NRF_LOG_ERROR("mi psm write KEY %X failed :%d \n", rec_key, ret);
 		ret = MI_ERR_RESOURCES;
 	}
 	else if (ret == FDS_ERR_NO_SPACE_IN_FLASH)
 	{
-		NRF_LOG_INFO("mi psm startup fds_gc().\n");
+		NRF_LOG_ERROR("mi psm startup fds_gc().\n");
 		ret = fds_gc();
 		if (ret != FDS_SUCCESS)
 			NRF_LOG_ERROR("WTF? \n");
@@ -157,7 +161,7 @@ int mi_psm_record_read(uint16_t rec_key, uint8_t *out, uint16_t out_len)
     {
         if (fds_record_open(&record_desc, &flash_record) != FDS_SUCCESS)
         {
-            NRF_LOG_INFO("mi psm cann't find KEY %X! \n", rec_key);
+            NRF_LOG_ERROR("mi psm cann't find KEY %X! \n", rec_key);
             ret = MI_ERR_INVALID_PARAM;
         }
 
@@ -169,12 +173,12 @@ int mi_psm_record_read(uint16_t rec_key, uint8_t *out, uint16_t out_len)
 
         if (fds_record_close(&record_desc) != FDS_SUCCESS)
         {
-            NRF_LOG_INFO("mi psm close file failed! \n");
+            NRF_LOG_ERROR("mi psm close file failed! \n");
             ret = MI_ERR_INTERNAL;
         }
     }
 	else {
-		NRF_LOG_INFO("mi psm cann't find record file. \n");
+		NRF_LOG_ERROR("mi psm cann't read the record %X. \n", rec_key);
 	    ret = MI_ERR_INVALID_PARAM;
 	}
 	
@@ -192,12 +196,12 @@ int mi_psm_record_delete(uint16_t rec_key)
     {
         if (fds_record_delete(&record_desc) != FDS_SUCCESS)
         {
-            NRF_LOG_INFO("mi psm delete record failed! \n");
+            NRF_LOG_ERROR("mi psm delete record failed! \n");
             ret = MI_ERR_INTERNAL;
         }
     }
 	else {
-		NRF_LOG_INFO("mi psm cann't find the record. \n");
+		NRF_LOG_ERROR("mi psm cann't delete the record %X. \n", rec_key);
 	    ret = MI_ERR_INVALID_PARAM;
 	}
 	

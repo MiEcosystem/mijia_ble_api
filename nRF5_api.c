@@ -884,8 +884,8 @@ mible_status_t mible_record_create(uint16_t record_id, uint8_t len)
 mible_status_t mible_record_delete(uint16_t record_id)
 {
 	mible_status_t errno;
-	errno = mi_psm_record_delete(record_id);
-	return errno;
+//	errno = mi_psm_record_delete(record_id);
+	return MI_SUCCESS;
 }
 
 /*
