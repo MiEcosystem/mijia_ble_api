@@ -372,6 +372,24 @@ typedef enum {
     MIBLE_TIMER_REPEATED,
 } mible_timer_mode;
 
+/* IIC related */
+typedef enum {
+    IIC_100K = 1,
+    IIC_400K,
+} iic_freq_t;
+
+typedef struct {
+    uint8_t scl;
+    uint8_t sda;
+    iic_freq_t freq;
+} iic_config_t;
+
+typedef enum {
+    IIC_EVT_XFER_DONE,
+    IIC_EVT_ADDRESS_NACK,
+    IIC_EVT_DATA_NACK
+} iic_event_t;
+
 typedef enum {
     MI_SUCCESS      = 0x00,
     MI_ERR_INTERNAL,

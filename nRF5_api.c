@@ -26,53 +26,12 @@
 #include "ble_gatts.h"
 
 #include "app_timer.h"
+#include "app_util_platform.h"
+#include "nrf_drv_twi_patched.h"
 
 #include "mi_psm.h"
 
-
 #define TIMER_MAX_NUM             4
-
-typedef struct {
-	mible_handler_t handler;
-	void *arg;
-} mible_task_t;
-
-typedef struct {
-	uint8_t is_avail;
-	app_timer_t data;
-} timer_item_t;
-
-static timer_item_t m_timer_pool[TIMER_MAX_NUM] = {
-	[0] = { .is_avail = 1},
-	[1] = { .is_avail = 1},
-	[2] = { .is_avail = 1},
-	[3] = { .is_avail = 1}
-};
-
-static app_timer_t* find_timer()
-{
-	uint8_t i;
-	for (i = 0; i < TIMER_MAX_NUM; i++) {
-		if (m_timer_pool[i].is_avail) {
-			m_timer_pool[i].is_avail = 0;
-			return (void*)&m_timer_pool[i].data ;
-		}
-	}
-	return NULL;
-}
-
-static int free_timer(void* timer_id)
-{
-	for (uint8_t i = 0; i < TIMER_MAX_NUM; i++) {
-		if (timer_id == &m_timer_pool[i].data) {
-			m_timer_pool[i].is_avail = 1;
-			return i;
-		}
-	}
-	return -1;
-}
-
-NRF_QUEUE_DEF(mible_task_t, task_queue, 4, NRF_QUEUE_MODE_OVERFLOW);
 
 /*
  * @brief 	Get BLE mac address.
@@ -760,6 +719,41 @@ mible_status_t mible_gattc_write_cmd(uint16_t conn_handle, uint16_t handle,
 }
 
 /*TIMER related function*/
+typedef struct {
+	uint8_t is_avail;
+	app_timer_t data;
+} timer_item_t;
+
+static timer_item_t m_timer_pool[TIMER_MAX_NUM] = {
+	[0] = { .is_avail = 1},
+	[1] = { .is_avail = 1},
+	[2] = { .is_avail = 1},
+	[3] = { .is_avail = 1}
+};
+
+static app_timer_t* acquire_time()
+{
+	uint8_t i;
+	for (i = 0; i < TIMER_MAX_NUM; i++) {
+		if (m_timer_pool[i].is_avail) {
+			m_timer_pool[i].is_avail = 0;
+			return (void*)&m_timer_pool[i].data ;
+		}
+	}
+	return NULL;
+}
+
+static int release_timer(void* timer_id)
+{
+	for (uint8_t i = 0; i < TIMER_MAX_NUM; i++) {
+		if (timer_id == &m_timer_pool[i].data) {
+			m_timer_pool[i].is_avail = 1;
+			return i;
+		}
+	}
+	return -1;
+}
+
 
 
 /*
@@ -783,7 +777,7 @@ mible_status_t mible_timer_create(void** p_timer_id,
 {
 	mible_status_t errno;
 	
-	app_timer_id_t id  = find_timer();
+	app_timer_id_t id  = acquire_time();
 	if (id == NULL)
 		return MI_ERR_NO_MEM;
 
@@ -803,7 +797,7 @@ mible_status_t mible_timer_create(void** p_timer_id,
 mible_status_t mible_timer_delete(void * timer_id) 
 {
 	mible_status_t errno;
-	int id = free_timer(timer_id);
+	int id = release_timer(timer_id);
 	if (id == -1)
 		return MI_ERR_INVALID_PARAM;
 
@@ -857,7 +851,7 @@ mible_status_t mible_timer_stop(void* timer_id)
  * @return 	MI_SUCCESS 				Create successfully.
  * 			MI_ERR_INVALID_LENGTH   Size was 0, or higher than the maximum
  *allowed size.
- *   		MI_ERR_NO_MEM,			Not enough flash memory to be assigned 
+ *   		MI_ERR_NO_MEM 			Not enough flash memory to be assigned 
  * 				
  * */
 mible_status_t mible_record_create(uint16_t record_id, uint8_t len)
@@ -879,7 +873,7 @@ mible_status_t mible_record_create(uint16_t record_id, uint8_t len)
  * @brief  	Delete a record in flash
  * @param 	[in] record_id: identify a record in flash  
  * @return 	MI_SUCCESS 				Delete successfully. 
- * 			MI_ERR_INVALID_PARAMS   Invalid record id supplied.
+ * 			MI_ERR_INVALID_PARAM   Invalid record id supplied.
  * */
 mible_status_t mible_record_delete(uint16_t record_id)
 {
@@ -896,7 +890,7 @@ mible_status_t mible_record_delete(uint16_t record_id)
  * @return  MI_SUCCESS              The command was accepted.
  *          MI_ERR_INVALID_LENGTH   Size was 0, or higher than the maximum
  *allowed size.
- *          MI_ERR_INVALID_PARAMS   Invalid record id supplied.
+ *          MI_ERR_INVALID_PARAM   Invalid record id supplied.
  *          MI_ERR_INVALID_ADDR     Invalid pointer supplied.
  * */
 mible_status_t mible_record_read(uint16_t record_id, uint8_t* p_data,
@@ -915,7 +909,7 @@ mible_status_t mible_record_read(uint16_t record_id, uint8_t* p_data,
  * @return  MI_SUCCESS              The command was accepted.
  *          MI_ERR_INVALID_LENGTH   Size was 0, or higher than the maximum
  * allowed size.
- *          MI_ERR_INVALID_PARAMS   p_data is not aligned to a 4 byte boundary.
+ *          MI_ERR_INVALID_PARAM    p_data is not aligned to a 4 byte boundary.
  * @note  	Should use asynchronous mode to implement this function.
  *          The data to be written to flash has to be kept in memory until the
  * operation has terminated, i.e., an event is received.
@@ -980,6 +974,15 @@ mible_status_t mible_aes128_encrypt(const uint8_t* key,
     return errno;
 }
 
+
+/* TASK schedulor related function  */
+typedef struct {
+	mible_handler_t handler;
+	void *arg;
+} mible_task_t;
+
+NRF_QUEUE_DEF(mible_task_t, task_queue, 4, NRF_QUEUE_MODE_OVERFLOW);
+
 /*
  * @brief 	Post a task to a task quene, which can be executed in a right place(maybe a task in RTOS or while(1) in the main function).
  * @param 	[in] handler: a pointer to function 
@@ -1003,6 +1006,12 @@ mible_status_t mible_task_post(mible_handler_t handler, void *arg)
 		return MI_SUCCESS;
 }
 
+/*
+ * @brief 	Function for executing all enqueued tasks.
+ *
+ * @note    This function must be called from within the main loop. It will 
+ * execute all events scheduled since the last time it was called.
+ * */
 void mible_tasks_exec(void)
 {
 	uint32_t errno = 0;
@@ -1014,29 +1023,113 @@ void mible_tasks_exec(void)
 	}
 }
 
-typedef void (*irq_handler_t)(void * p_context, ...);
-
-typedef struct {
-    uint8_t scl;
-    uint8_t sda;
-    uint8_t speed;
-} iic_config_t;
-
-mible_status_t mible_iic_init(iic_config_t config, irq_handler_t handler)
+/* IIC related function */
+const nrf_drv_twi_t TWI0 = NRF_DRV_TWI_INSTANCE(0);
+static mible_handler_t m_iic_handler;
+static void twi0_handler(nrf_drv_twi_evt_t const * p_event, void * p_context)
 {
-    
-    
-    return MI_SUCCESS;
+    iic_event_t event;
+	switch (p_event->type) {
+	case NRF_DRV_TWI_EVT_DONE:
+        event = IIC_EVT_ADDRESS_NACK;
+		break;
+    case NRF_DRV_TWI_EVT_ADDRESS_NACK:
+        event = IIC_EVT_ADDRESS_NACK;
+        break;
+    case NRF_DRV_TWI_EVT_DATA_NACK:
+        event = IIC_EVT_DATA_NACK;
+        break;
+    }
+    m_iic_handler(&event);
 }
 
-mible_status_t mible_iic_write(uint16_t addr, uint8_t * p_out, uint16_t len)
+/*
+ * @brief 	Function for initializing the IIC driver instance.
+ * @param 	[in] p_config: Pointer to the initial configuration.
+ * 			[in] handler: Event handler provided by the user. 
+ * @return 	MI_SUCCESS 				Initialized successfully.
+ * 			MI_ERR_INVALID_PARAM    p_config or handler is a NULL pointer.
+ * 				
+ * */
+mible_status_t mible_iic_init(iic_config_t * p_config, mible_handler_t handler)
 {
+    uint32_t errno;
+    if (p_config == NULL || handler == NULL) {
+        return MI_ERR_INVALID_PARAM;
+    } else {
+        m_iic_handler = handler;
+    }
+
+    const nrf_drv_twi_config_t msc_config = {
+       .scl                = p_config->scl,
+       .sda                = p_config->sda,
+       .frequency          = p_config->freq == IIC_100K ? NRF_TWI_FREQ_100K : NRF_TWI_FREQ_400K,
+       .interrupt_priority = APP_IRQ_PRIORITY_HIGH,
+       .clear_bus_init     = true
+    };
+
+    errno = nrf_drv_twi_init(&TWI0, &msc_config, twi0_handler, NULL);
+    MI_ERR_CHECK(errno);
+
+    nrf_drv_twi_enable(&TWI0);
     
-    return MI_SUCCESS;
+    return errno;
 }
 
-mible_status_t mible_iic_read(uint16_t addr, uint8_t * p_in, uint16_t len)
+/*
+ * @brief 	Function for uninitializing the IIC driver instance.
+ * 
+ * 				
+ * */
+void mible_iic_uninit(void)
 {
-    
-    return MI_SUCCESS;
+    nrf_drv_twi_uninit(&TWI0);
+}
+
+/*
+ * @brief 	Function for sending data to a IIC slave.
+ * @param 	[in] addr:   Address of a specific slave device (only 7 LSB).
+ * 			[in] p_out:  Pointer to tx data
+ * 			[in] len:    Data length
+ * 			[in] no_stop: If set, the stop condition is not generated on the bus
+ *          after the transfer has completed successfully (allowing for a repeated start in the next transfer).
+ * @return  MI_SUCCESS              The command was accepted.
+ *          MI_ERR_BUSY             If a transfer is ongoing.
+ *          MI_ERR_INVALID_PARAM    p_out is not vaild address.
+ * @note  	This function should be implemented in non-blocking mode.
+ * 			When tx procedure complete, the handler provided by mible_iic_init() should be called,
+ * and the iic event should be passed as a argument. 
+ * */
+mible_status_t mible_iic_tx(uint8_t addr, uint8_t * p_out, uint16_t len, bool no_stop)
+{
+    uint32_t errno;
+    if (p_out == NULL)
+        return MI_ERR_INVALID_PARAM;
+
+    errno = nrf_drv_twi_tx(&TWI0, addr, p_out, len, no_stop);
+    MI_ERR_CHECK(errno);
+    return errno;
+}
+
+/*
+ * @brief 	Function for reciving data to a IIC slave.
+ * @param 	[in] addr:   Address of a specific slave device (only 7 LSB).
+ * 			[out] p_in:  Pointer to rx data
+ * 			[in] len:    Data length
+ * @return  MI_SUCCESS              The command was accepted.
+ *          MI_ERR_BUSY             If a transfer is ongoing.
+ *          MI_ERR_INVALID_PARAM    p_in is not vaild address.
+ * @note  	This function should be implemented in non-blocking mode.
+ * 			When rx procedure complete, the handler provided by mible_iic_init() should be called,
+ * and the iic event should be passed as a argument. 
+ * */
+mible_status_t mible_iic_rx(uint8_t addr, uint8_t * p_in, uint16_t len)
+{
+    uint32_t errno;
+    if (p_in == NULL)
+        return MI_ERR_INVALID_PARAM;
+
+    errno = nrf_drv_twi_rx(&TWI0, addr, p_in, len);
+    MI_ERR_CHECK(errno);
+    return errno;
 }
