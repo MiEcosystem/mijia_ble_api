@@ -1027,7 +1027,7 @@ uint16_t Log_Printf(char * format,...)
         va_start(ap, format);
         n = vsnprintf(pStr, SHELL_CB_SIZE, format, ap);
         //va_end(ap); /* follow MISRA... */
-        Serial_SyncWrite(gAppSerMgrIf, (uint8_t*)pStr, n);
+        Serial_AsyncWrite(gAppSerMgrIf, (uint8_t*)pStr, n, NULL, NULL);
         MEM_BufferFree(pStr);
     }
 
