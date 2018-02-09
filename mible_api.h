@@ -118,7 +118,16 @@ mible_status_t mible_rand_num_generator(uint8_t* p_buf, uint8_t len);
 mible_status_t mible_aes128_encrypt(const uint8_t* key,
     const uint8_t* plaintext, uint8_t plen,
     uint8_t* ciphertext);
+
 mible_status_t mible_task_post(mible_handler_t handler, void *param);
+
 void mible_tasks_exec(void);
 
+mible_status_t mible_iic_init(iic_config_t * p_config, mible_handler_t handler);
+
+void mible_iic_uninit(void);
+
+mible_status_t mible_iic_tx(uint8_t addr, uint8_t * p_out, uint16_t len, bool no_stop);
+    
+mible_status_t mible_iic_rx(uint8_t addr, uint8_t * p_in, uint16_t len);
 #endif

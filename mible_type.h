@@ -207,7 +207,7 @@ typedef struct{
 	mible_gatts_char_db_t *p_char_db;                  // p_char_db[charnum-1]
 } mible_gatts_srv_db_t;                                // Regardless of service inclusion service
 
-typedef struct{
+typedef struct{ 
 	mible_gatts_srv_db_t *p_srv_db;                    // p_srv_db[srv_num] 
 	uint8_t srv_num; 
 } mible_gatts_db_t;
@@ -301,8 +301,7 @@ typedef enum {
  * */
 typedef struct {
     mible_handle_range_t primary_srv_range;
-    mible_uuid_t uuid_type;
-    mible_uuid_t* srv_uuid;
+    mible_uuid_t srv_uuid;
     bool succ; // true : exist the specified primary service and return correctly
 } mible_gattc_prim_srv_disc_rsp_t;
 
@@ -373,9 +372,28 @@ typedef enum {
     MIBLE_TIMER_REPEATED,
 } mible_timer_mode;
 
+/* IIC related */
+typedef enum {
+    IIC_100K = 1,
+    IIC_400K,
+} iic_freq_t;
+
+typedef struct {
+    uint8_t scl;
+    uint8_t sda;
+    iic_freq_t freq;
+} iic_config_t;
+
+typedef enum {
+    IIC_EVT_XFER_DONE,
+    IIC_EVT_ADDRESS_NACK,
+    IIC_EVT_DATA_NACK
+} iic_event_t;
+
 typedef enum {
     MI_SUCCESS      = 0x00,
     MI_ERR_INTERNAL,
+    MI_ERR_NOT_FOUND,
     MI_ERR_NO_EVENT,
     MI_ERR_NO_MEM,
     MI_ERR_INVALID_ADDR,     // Invalid pointer supplied

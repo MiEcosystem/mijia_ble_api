@@ -666,7 +666,8 @@ __WEAK mible_status_t mible_aes128_encrypt(const uint8_t* key,
 
 
 /*
- * @brief   Post a task to a task quene, which can be executed in a right place(maybe a task in RTOS or while(1) in the main function).
+ * @brief   Post a task to a task quene, which can be executed in a right place 
+ * (maybe a task in RTOS or while(1) in the main function).
  * @param   [in] handler: a pointer to function 
  *          [in] param: function parameters 
  * @return  MI_SUCCESS              Successfully put the handler to quene.
@@ -676,8 +677,74 @@ __WEAK mible_status_t mible_aes128_encrypt(const uint8_t* key,
 __WEAK mible_status_t mible_task_post(mible_handler_t handler, void *arg)
 {
 	return MI_SUCCESS;
-} 
+}
 
-
+/*
+ * @brief 	Function for executing all enqueued tasks.
+ *
+ * @note    This function must be called from within the main loop. It will 
+ * execute all events scheduled since the last time it was called.
+ * */
 __WEAK void mible_tasks_exec(void)
-{}
+{
+
+}
+
+/*
+ * @brief 	Function for initializing the IIC driver instance.
+ * @param 	[in] p_config: Pointer to the initial configuration.
+ * 			[in] handler: Event handler provided by the user. 
+ * @return 	MI_SUCCESS 				Initialized successfully.
+ * 			MI_ERR_INVALID_PARAM    p_config or handler is a NULL pointer.
+ * 				
+ * */
+__WEAK mible_status_t mible_iic_init(iic_config_t * p_config, mible_handler_t handler)
+{
+    return MI_SUCCESS;
+}
+
+/*
+ * @brief 	Function for uninitializing the IIC driver instance.
+ * 
+ * 				
+ * */
+__WEAK void mible_iic_uninit(void)
+{
+
+}
+
+/*
+ * @brief 	Function for sending data to a IIC slave.
+ * @param 	[in] addr:   Address of a specific slave device (only 7 LSB).
+ * 			[in] p_out:  Pointer to tx data
+ * 			[in] len:    Data length
+ * 			[in] no_stop: If set, the stop condition is not generated on the bus
+ *          after the transfer has completed successfully (allowing for a repeated start in the next transfer).
+ * @return  MI_SUCCESS              The command was accepted.
+ *          MI_ERR_BUSY             If a transfer is ongoing.
+ *          MI_ERR_INVALID_PARAM    p_out is not vaild address.
+ * @note  	This function should be implemented in non-blocking mode.
+ * 			When tx procedure complete, the handler provided by mible_iic_init() should be called,
+ * and the iic event should be passed as a argument. 
+ * */
+__WEAK mible_status_t mible_iic_tx(uint8_t addr, uint8_t * p_out, uint16_t len, bool no_stop)
+{
+    return MI_SUCCESS;
+}
+
+/*
+ * @brief 	Function for reciving data to a IIC slave.
+ * @param 	[in] addr:   Address of a specific slave device (only 7 LSB).
+ * 			[out] p_in:  Pointer to rx data
+ * 			[in] len:    Data length
+ * @return  MI_SUCCESS              The command was accepted.
+ *          MI_ERR_BUSY             If a transfer is ongoing.
+ *          MI_ERR_INVALID_PARAM    p_in is not vaild address.
+ * @note  	This function should be implemented in non-blocking mode.
+ * 			When rx procedure complete, the handler provided by mible_iic_init() should be called,
+ * and the iic event should be passed as a argument. 
+ * */
+__WEAK mible_status_t mible_iic_rx(uint8_t addr, uint8_t * p_in, uint16_t len)
+{
+    return MI_SUCCESS;
+}
