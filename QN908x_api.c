@@ -879,7 +879,7 @@ mible_status_t mible_record_delete(uint16_t record_id)
     
     record_id  += 100;
 
-    //err = nvds_del(record_id);
+    err = nvds_del(record_id);   //need to add 0x030254c5 A nvds_del to fw_symbols_mdk.h 
     return (mible_status_t)err;
 }
 
