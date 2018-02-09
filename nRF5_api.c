@@ -17,6 +17,7 @@
 
 #include "nrf_soc.h"
 #include "nrf_queue.h"
+#include "nrf_error.h"
 
 #include "ble_types.h"
 #include "ble.h"
@@ -31,7 +32,52 @@
 
 #include "mi_psm.h"
 
-#define TIMER_MAX_NUM             4
+#define TIMER_MAX_NUM                   4
+#define APP_TIMER_PRESCALER             0                                           /**< Value of the RTC1 PRESCALER register. */
+
+
+static mible_status_t err_code_convert(uint32_t errno)
+{
+    mible_status_t stat;
+    switch (errno) {
+    case NRF_SUCCESS:
+        stat = MI_SUCCESS;
+        break;
+    case NRF_ERROR_INTERNAL:
+        stat = MI_ERR_INTERNAL;
+        break;
+    case NRF_ERROR_NOT_FOUND:
+        stat = MI_ERR_NOT_FOUND;
+        break;
+    case NRF_ERROR_NO_MEM:
+        stat = MI_ERR_NO_MEM;
+        break;
+    case NRF_ERROR_INVALID_ADDR:
+        stat = MI_ERR_INVALID_ADDR;
+        break;
+    case NRF_ERROR_INVALID_PARAM:
+        stat = MI_ERR_INVALID_PARAM;
+        break;
+    case NRF_ERROR_INVALID_STATE:
+        stat = MI_ERR_INVALID_STATE;
+        break;
+    case NRF_ERROR_INVALID_LENGTH:
+        stat = MI_ERR_INVALID_LENGTH;
+        break;
+    case NRF_ERROR_DATA_SIZE:
+        stat = MI_ERR_DATA_SIZE;
+        break;
+    case NRF_ERROR_BUSY:
+        stat = MI_ERR_BUSY;
+        break;
+    case NRF_ERROR_TIMEOUT:
+        stat = MI_ERR_TIMEOUT;
+        break;
+
+    }
+
+    return stat;
+}
 
 /*
  * @brief 	Get BLE mac address.
@@ -142,7 +188,7 @@ mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_adv_param)
 	errno = sd_ble_gap_adv_start(&adv_params);
 	MI_ERR_CHECK(errno);
 	
-    return MI_SUCCESS;
+    return errno;
 }
 
 /*
@@ -552,14 +598,13 @@ mible_status_t mible_gatts_notify_or_indicate(uint16_t conn_handle, uint16_t srv
 
 	ble_gatts_hvx_params_t hvx = {
 		.handle = char_value_handle,
-		.type   = type,
+		.type   = type == 1 ? BLE_GATT_HVX_NOTIFICATION : BLE_GATT_HVX_INDICATION,
 		.offset = offset,
 		.p_data = p_value,
 		.p_len  = &length
 	};
 	errno = sd_ble_gatts_hvx(conn_handle, &hvx);
-	MI_ERR_CHECK(errno);
-    return MI_SUCCESS;
+    return errno;
 }
 
 
@@ -782,7 +827,7 @@ mible_status_t mible_timer_create(void** p_timer_id,
 		return MI_ERR_NO_MEM;
 
 	app_timer_mode_t m = mode == MIBLE_TIMER_SINGLE_SHOT ? APP_TIMER_MODE_SINGLE_SHOT : APP_TIMER_MODE_REPEATED;
-	app_timer_timeout_handler_t handler = (void*)timeout_handler;
+	app_timer_timeout_handler_t handler = timeout_handler;
 	errno = app_timer_create(&id, m, handler);
 	*p_timer_id = id;
 	return errno;
@@ -824,7 +869,7 @@ mible_status_t mible_timer_start(void* timer_id, uint32_t timeout_value,
     void* p_context)
 {
 	mible_status_t errno;
-	errno = app_timer_start((app_timer_id_t)timer_id, APP_TIMER_TICKS(timeout_value, 0), p_context);
+	errno = app_timer_start((app_timer_id_t)timer_id, APP_TIMER_TICKS(timeout_value, APP_TIMER_PRESCALER), p_context);
     return errno;
 }
 
@@ -863,7 +908,7 @@ mible_status_t mible_record_create(uint16_t record_id, uint8_t len)
 		mi_psm_init();
 	}
 	
-	// actually it does not need record_id and len
+	// actually it does not need record_id and len.
 
 	return MI_SUCCESS;	
 }
@@ -878,8 +923,8 @@ mible_status_t mible_record_create(uint16_t record_id, uint8_t len)
 mible_status_t mible_record_delete(uint16_t record_id)
 {
 	mible_status_t errno;
-//	errno = mi_psm_record_delete(record_id);
-	return MI_SUCCESS;
+	errno = mi_psm_record_delete(record_id);
+	return errno;
 }
 
 /*
@@ -1031,7 +1076,7 @@ static void twi0_handler(nrf_drv_twi_evt_t const * p_event, void * p_context)
     iic_event_t event;
 	switch (p_event->type) {
 	case NRF_DRV_TWI_EVT_DONE:
-        event = IIC_EVT_ADDRESS_NACK;
+        event = IIC_EVT_XFER_DONE;
 		break;
     case NRF_DRV_TWI_EVT_ADDRESS_NACK:
         event = IIC_EVT_ADDRESS_NACK;

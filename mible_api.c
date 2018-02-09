@@ -666,7 +666,8 @@ __WEAK mible_status_t mible_aes128_encrypt(const uint8_t* key,
 
 
 /*
- * @brief   Post a task to a task quene, which can be executed in a right place(maybe a task in RTOS or while(1) in the main function).
+ * @brief   Post a task to a task quene, which can be executed in a right place 
+ * (maybe a task in RTOS or while(1) in the main function).
  * @param   [in] handler: a pointer to function 
  *          [in] param: function parameters 
  * @return  MI_SUCCESS              Successfully put the handler to quene.
