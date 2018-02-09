@@ -19,96 +19,8 @@
  * Add your own include file
  *
  * */
-#include "fsl_os_abstraction.h"
-#include "ble_general.h"
-#include "gap_types.h"
 #include "gatt_client_interface.h"
 #include "gatt_server_interface.h"
-#include "gap_interface.h"
-#include "ApplMain.h"
-#include "TimersManager.h"
-#include "SecLib.h"
-#include "RNG_Interface.h"
-#include "NVM_Interface.h"
-#include "ble_conn_manager.h"
-#include "gatt_db_app_interface.h"
-#include "nvds.h"
-#include "MemManager.h"
-
-/* Host to Application Messages Types */
-typedef enum {
-    gAppGapGenericMsg_c = 0,
-    gAppGapConnectionMsg_c,
-    gAppGapAdvertisementMsg_c,
-    gAppGapScanMsg_c,
-    gAppGattServerMsg_c,
-    gAppGattClientProcedureMsg_c,
-    gAppGattClientNotificationMsg_c,
-    gAppGattClientIndicationMsg_c,
-    gAppL2caLeDataMsg_c,
-    gAppL2caLeControlMsg_c,
-}appHostMsgType_tag;
-
-typedef uint8_t appHostMsgType_t;
-
-/* Host to Application Connection Message */
-typedef struct connectionMsg_tag{
-    deviceId_t              deviceId;
-    gapConnectionEvent_t    connEvent;
-}connectionMsg_t;
-
-/* Host to Application GATT Server Message */
-typedef struct gattServerMsg_tag{
-    deviceId_t          deviceId;
-    gattServerEvent_t   serverEvent;
-}gattServerMsg_t;
-
-/* Host to Application GATT Client Procedure Message */
-typedef struct gattClientProcMsg_tag{
-    deviceId_t              deviceId;
-    gattProcedureType_t     procedureType;
-    gattProcedureResult_t   procedureResult;
-    bleResult_t             error;
-}gattClientProcMsg_t;
-
-/* Host to Application GATT Client Notification/Indication Message */
-typedef struct gattClientNotifIndMsg_tag{
-    uint8_t*    aValue;
-    uint16_t    characteristicValueHandle;
-    uint16_t    valueLength;
-    deviceId_t  deviceId;
-}gattClientNotifIndMsg_t;
-
-/* L2ca to Application Data Message */
-typedef struct l2caLeCbDataMsg_tag{
-    deviceId_t  deviceId;
-    uint16_t    lePsm;
-    uint16_t    packetLength;
-    uint8_t     aPacket[0];
-}l2caLeCbDataMsg_t;
-
-/* L2ca to Application Control Message */
-typedef struct l2caLeCbControlMsg_tag{
-    l2capControlMessageType_t   messageType;
-    uint16_t                    padding;
-    uint8_t                     aMessage[0];
-}l2caLeCbControlMsg_t;
-
-typedef struct appMsgFromHost_tag{
-    appHostMsgType_t    msgType;
-    union {
-        gapGenericEvent_t       genericMsg;
-        gapAdvertisingEvent_t   advMsg;
-        connectionMsg_t         connMsg;
-        gapScanningEvent_t      scanMsg;
-        gattServerMsg_t         gattServerMsg;
-        gattClientProcMsg_t     gattClientProcMsg;
-        gattClientNotifIndMsg_t gattClientNotifIndMsg;
-        l2caLeCbDataMsg_t       l2caLeCbDataMsg;
-        l2caLeCbControlMsg_t    l2caLeCbControlMsg;
-    } msgData;
-}appMsgFromHost_t;
-
 
 void mible_ConnectionCallback (deviceId_t peerDeviceId, gapConnectionEvent_t* pConnectionEvent)
 {
@@ -169,8 +81,7 @@ void mible_GattServerCallback (deviceId_t deviceId, gattServerEvent_t* pServerEv
         case gEvtAttributeWritten_c:
         {
             gatts_params.write.len = pServerEvent->eventData.attributeWrittenEvent.cValueLength;
-            //FLib_MemCpy(gatts_params.write.data, pServerEvent->eventData.attributeWrittenEvent.aValue, gatts_params.write.len);
-			gatts_params.write.data = pServerEvent->eventData.attributeWrittenEvent.aValue;
+            gatts_params.write.data = pServerEvent->eventData.attributeWrittenEvent.aValue;
             gatts_params.write.offset = 0;
 //            gatts_params.write.permit;
             gatts_params.write.value_handle = pServerEvent->eventData.attributeWrittenEvent.handle;;
@@ -181,7 +92,7 @@ void mible_GattServerCallback (deviceId_t deviceId, gattServerEvent_t* pServerEv
         case gEvtAttributeWrittenWithoutResponse_c:
         {
             gatts_params.write.len = pServerEvent->eventData.attributeWrittenEvent.cValueLength;
-            FLib_MemCpy(gatts_params.write.data, pServerEvent->eventData.attributeWrittenEvent.aValue, gatts_params.write.len);
+            gatts_params.write.data = pServerEvent->eventData.attributeWrittenEvent.aValue;
             gatts_params.write.offset = 0;
 //            gatts_params.write.permit;
             gatts_params.write.value_handle = pServerEvent->eventData.attributeWrittenEvent.handle;;
