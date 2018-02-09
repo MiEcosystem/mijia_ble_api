@@ -19,25 +19,17 @@
  * Add your own include file
  *
  * */
-#include "fsl_os_abstraction.h"
-#include "ble_general.h"
-#include "gap_types.h"
 #include "gatt_client_interface.h"
 #include "gatt_server_interface.h"
 #include "gap_interface.h"
 #include "ApplMain.h"
 #include "TimersManager.h"
 #include "SecLib.h"
-#include "RNG_Interface.h"
-#include "NVM_Interface.h"
+#include "RNG_Interface.h"  
 #include "ble_conn_manager.h"
 #include "gatt_db_app_interface.h"
 #include "nvds.h"
 #include "MemManager.h"
-
-extern uint8_t gAppSerMgrIf;
-    
-static osaEventId_t  mMiBleEvent;
 
 /*
  * @brief 	Get BLE mac address.
@@ -141,7 +133,7 @@ mible_status_t mible_gap_adv_data_set(mible_gap_adv_data_t *p_data)
     while(idx < p_data->adv_len)
     {
         gAppAdvertisingData.aAdStructures[numAd].length = p_data->adv_data[idx];
-        gAppAdvertisingData.aAdStructures[numAd].adType = p_data->adv_data[idx+1];
+        gAppAdvertisingData.aAdStructures[numAd].adType = (gapAdType_t)p_data->adv_data[idx+1];
         gAppAdvertisingData.aAdStructures[numAd].aData = p_data->adv_data + idx + 2;
         
         idx += gAppAdvertisingData.aAdStructures[numAd].length + 1;
@@ -154,7 +146,7 @@ mible_status_t mible_gap_adv_data_set(mible_gap_adv_data_t *p_data)
     while(idx < p_data->scan_rsp_len)
     {
         gAppScanRspData.aAdStructures[numAd].length = p_data->scan_rsp_data[idx];
-        gAppScanRspData.aAdStructures[numAd].adType = p_data->scan_rsp_data[idx+1];
+        gAppScanRspData.aAdStructures[numAd].adType = (gapAdType_t)p_data->scan_rsp_data[idx+1];
         gAppScanRspData.aAdStructures[numAd].aData = p_data->scan_rsp_data + idx + 2;
         
         idx += gAppScanRspData.aAdStructures[numAd].length + 1;
@@ -163,6 +155,8 @@ mible_status_t mible_gap_adv_data_set(mible_gap_adv_data_t *p_data)
     gAppScanRspData.cNumAdStructures = numAd;
     
     BleConnManager_GapPeripheralConfig();
+    
+    return MI_SUCCESS;
 }
 
 /*
@@ -268,7 +262,7 @@ mible_status_t mible_gap_update_conn_params(uint16_t conn_handle,
  * */
  
 #define MIBLE_SRV_UUID                         	0XFE95//{0x95,0xFE}  
-#define MIBLE_STD_CHAR_NUM					   	7
+#define MIBLE_STD_CHAR_NUM                      7
 #define MIBLE_CHAR_UUID_TOKEN                  	0x0001
 #define MIBLE_CHAR_UUID_PRODUCTID              	0x0002
 #define MIBLE_CHAR_UUID_VERSION                	0x0004
@@ -413,7 +407,7 @@ mible_status_t mible_gatts_service_init(mible_gatts_db_t *p_server_db)
     }
     
     static mible_arch_evt_param_t param;
-    memset(&param, 0, sizeof(param));
+    FLib_MemSet(&param, 0, sizeof(param));
     param.srv_init_cmp.status = MI_SUCCESS;
     param.srv_init_cmp.p_gatts_db = p_server_db;
     mible_arch_event_callback(MIBLE_ARCH_EVT_GATTS_SRV_INIT_CMP, &param);
@@ -854,15 +848,9 @@ mible_status_t mible_timer_stop(void* timer_id)
  *   		MI_ERR_NO_MEM,			Not enough flash memory to be assigned 
  * 				
  * */
-//NVM_RegisterDataSet(aBondingHeader, gMaxBondedDevices_c, gBleBondIdentityHeaderSize_c, nvmId_BondingHeaderId_c, gNVM_NotMirroredInRamAutoRestore_c);
-extern  bleBondDataDescriptorBlob_t* aBondingDataDescriptor[gMaxBondedDevices_c * gcGapMaximumSavedCccds_c];
 mible_status_t mible_record_create(uint16_t record_id, uint8_t len)
 {
     uint8_t err = MI_SUCCESS;
-//    
-//    record_id  += 100;
-
-//    err = nvds_put(record_id, len, NULL);
     return (mible_status_t)err;
 }
 
@@ -879,7 +867,7 @@ mible_status_t mible_record_delete(uint16_t record_id)
     
     record_id  += 100;
 
-    //err = nvds_del(record_id);
+    err = nvds_del(record_id);   //need to add 0x030254c5 A nvds_del to fw_symbols_mdk.h 
     return (mible_status_t)err;
 }
 
@@ -929,13 +917,13 @@ mible_status_t mible_record_write(uint16_t record_id, uint8_t* p_data,
     record_id  += 100;
 
     err = nvds_put(record_id, len, p_data);
-	
-	mible_arch_evt_param_t par;
-	par.record_write_cmp.record_id = record_id;
-	par.record_write_cmp.status = (mible_status_t)err;
 
-	mible_arch_event_callback(MIBLE_ARCH_EVT_RECORD_WRITE_CMP, &par);
-	
+    mible_arch_evt_param_t par;
+    par.record_write_cmp.record_id = record_id;
+    par.record_write_cmp.status = (mible_status_t)err;
+
+    mible_arch_event_callback(MIBLE_ARCH_EVT_RECORD_WRITE_CMP, &par);
+
     return (mible_status_t)err;
 }
 
@@ -1014,7 +1002,7 @@ mible_status_t mible_aes128_encrypt(const uint8_t* key,
  * */
 mible_status_t mible_task_post(mible_handler_t handler, void *arg)
 {
-	App_PostCallbackMessage((appCallbackHandler_t)handler,(appCallbackParam_t)arg);
+    App_PostCallbackMessage((appCallbackHandler_t)handler,(appCallbackParam_t)arg);
     return MI_SUCCESS;
 } 
 
@@ -1025,6 +1013,8 @@ void mible_tasks_exec(void)
 
 #include <stdio.h>
 #include <stdarg.h>
+extern uint8_t gAppSerMgrIf;
+
 #define SHELL_CB_SIZE 64
 uint16_t Log_Printf(char * format,...)
 {
@@ -1037,7 +1027,7 @@ uint16_t Log_Printf(char * format,...)
         va_start(ap, format);
         n = vsnprintf(pStr, SHELL_CB_SIZE, format, ap);
         //va_end(ap); /* follow MISRA... */
-        Serial_SyncWrite(gAppSerMgrIf, (uint8_t*)pStr, n);
+        Serial_AsyncWrite(gAppSerMgrIf, (uint8_t*)pStr, n, NULL, NULL);
         MEM_BufferFree(pStr);
     }
 

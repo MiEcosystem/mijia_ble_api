@@ -18,6 +18,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "SerialManager.h"
+
 #if defined(__CC_ARM)
 #pragma anon_unions
 #elif defined(__ICCARM__)
@@ -106,7 +108,9 @@
     }
 #endif
 
-#define MI_LOG_PRINTF(...)             SDK_PRINTF( __VA_ARGS__)
-#define MI_LOG_HEXDUMP(...)            SDK_HEXDUMP( __VA_ARGS__)
+extern uint16_t Log_Printf(char * format,...);
+extern void Log_Hexdump(uint8_t* hex, uint8_t len);
+#define MI_LOG_PRINTF(...)             Log_Printf( __VA_ARGS__)
+#define MI_LOG_HEXDUMP(...)            Log_Hexdump( __VA_ARGS__)
 
 #endif // MIBLE_PORT_H__
