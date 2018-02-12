@@ -16,7 +16,7 @@ typedef enum {
 	REC_MKPK_KEY           = 0x0010,
 } mi_psm_record_t;
 
-extern uint8_t m_psm_done;
+extern volatile uint8_t m_psm_done;
 
 void mi_psm_init(void);
 

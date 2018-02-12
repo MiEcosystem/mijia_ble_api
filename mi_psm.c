@@ -9,54 +9,69 @@
 #include "nrf_log_ctrl.h"
 
 #define MI_RECORD_FILE_ID              0x4D49		// file used to storage
+volatile uint8_t m_psm_done;
+extern void mible_arch_event_callback(mible_arch_event_t evt, 
+		mible_arch_evt_param_t* param);
 
-uint8_t m_psm_done;
 static void mi_psm_fds_evt_handler(fds_evt_t const * const p_fds_evt)
 {
+    mible_arch_evt_param_t param;
+    mible_arch_event_t event;
     switch (p_fds_evt->id) {
 	case FDS_EVT_INIT:
 		if (p_fds_evt->result == FDS_SUCCESS) {
-			NRF_LOG_INFO("FDS_EVT_INIT SUCCESS\n");
+			NRF_LOG_INFO("MI PSM INIT SUCCESS\n");
 		}else{
-			NRF_LOG_INFO("FDS_EVT_INIT FAILED\n");
+			NRF_LOG_ERROR("MI PSM INIT FAILED\n");
 		}
 		break;
 		
 	case FDS_EVT_WRITE:
-        NRF_LOG_INFO("KEY %X \n", p_fds_evt->write.record_key);
-		if (p_fds_evt->result == FDS_SUCCESS) {
-			NRF_LOG_INFO("FDS_EVT_WR SUCCESS\n");
-			if ((uint32_t)p_fds_evt->write.file_id == MI_RECORD_FILE_ID) {
-				m_psm_done = 1;
-			}
-		} else {
-			NRF_LOG_INFO("FDS_EVT_WR FAILED\n");
-		}
+        NRF_LOG_INFO("REC %X \n", p_fds_evt->write.record_key);
+        event = MIBLE_ARCH_EVT_RECORD_WRITE;
+        if ((uint32_t)p_fds_evt->write.file_id == MI_RECORD_FILE_ID) {
+            param.record.id = (uint16_t)p_fds_evt->write.record_key;
+            if (p_fds_evt->result == FDS_SUCCESS) {
+                NRF_LOG_INFO("WRITE SUCCESS\n");
+				param.record.status = MI_SUCCESS;
+            } else {
+                NRF_LOG_ERROR("WRITE FAILED\n");
+                param.record.status = MIBLE_ERR_UNKNOWN;
+            }
+            mible_arch_event_callback(event, &param);
+        }
 		break;
 		
 	case FDS_EVT_UPDATE:
-        NRF_LOG_INFO("KEY %X \n", p_fds_evt->write.record_key);
-
-		if (p_fds_evt->result == FDS_SUCCESS) {
-			NRF_LOG_INFO("FDS_EVT_UPDATE SUCCESS\n");
-			if ((uint32_t)p_fds_evt->write.file_id == MI_RECORD_FILE_ID) {
-				m_psm_done = 1;
-			}
-		}else{
-			NRF_LOG_INFO("FDS_EVT_UPDATE FAILED\n");
-		}
+        NRF_LOG_INFO("REC %X \n", p_fds_evt->write.record_key);
+        event = MIBLE_ARCH_EVT_RECORD_WRITE;
+        if ((uint32_t)p_fds_evt->write.file_id == MI_RECORD_FILE_ID) {
+            param.record.id = (uint16_t)p_fds_evt->write.record_key;
+            if (p_fds_evt->result == FDS_SUCCESS) {
+                NRF_LOG_INFO("REWRITE SUCCESS\n");
+				param.record.status = MI_SUCCESS;
+            } else {
+                NRF_LOG_ERROR("REWRITE FAILED\n");
+                param.record.status = MIBLE_ERR_UNKNOWN;
+            }
+            mible_arch_event_callback(event, &param);
+        }
 		break;
-			
+		
 	case FDS_EVT_DEL_RECORD:
-        NRF_LOG_INFO("KEY %X \n", p_fds_evt->del.record_key);
-		if (p_fds_evt->result == FDS_SUCCESS) {
-			NRF_LOG_INFO("FDS_EVT_DEL_RECORD SUCCESS\n");
-			if ((uint32_t)p_fds_evt->del.file_id == MI_RECORD_FILE_ID) {
-				m_psm_done = 1;
-			}
-		}else{
-			NRF_LOG_INFO("FDS_EVT_DEL_RECORD FAILED\n");
-		}
+        NRF_LOG_INFO("REC %X \n", p_fds_evt->del.record_key);
+        event = MIBLE_ARCH_EVT_RECORD_DELETE;
+        if ((uint32_t)p_fds_evt->del.file_id == MI_RECORD_FILE_ID) {
+            param.record.id = (uint16_t)p_fds_evt->del.record_key;
+            if (p_fds_evt->result == FDS_SUCCESS) {
+                NRF_LOG_INFO("DELETE SUCCESS\n");
+				param.record.status = MI_SUCCESS;
+            } else {
+                NRF_LOG_ERROR("DELETE FAILED\n");
+                param.record.status = MIBLE_ERR_UNKNOWN;
+            }
+            mible_arch_event_callback(event, &param);
+        }
 		break;
 
 	case FDS_EVT_DEL_FILE:
