@@ -88,7 +88,7 @@ static mible_status_t err_code_convert(uint32_t errno)
  * */
 mible_status_t mible_gap_address_get(mible_addr_t mac)
 {
-	mible_status_t errno;
+	uint32_t errno;
 	ble_gap_addr_t gap_addr;
 	#if (NRF_SD_BLE_API_VERSION == 3)
         errno = sd_ble_gap_addr_get(&gap_addr);
@@ -96,7 +96,7 @@ mible_status_t mible_gap_address_get(mible_addr_t mac)
         errno = sd_ble_gap_address_get(&gap_addr);
     #endif
 	memcpy(mac, gap_addr.addr, 6);
-	return errno;
+	return err_code_convert(errno);
 }
 
 /* GAP related function.  You should complement these functions. */
@@ -119,14 +119,14 @@ mible_status_t mible_gap_address_get(mible_addr_t mac)
 mible_status_t mible_gap_scan_start(mible_gap_scan_type_t scan_type,
     mible_gap_scan_param_t scan_param)
 {
-	mible_status_t errno;
+	uint32_t errno;
 	ble_gap_scan_params_t  sdk_param = {0};
 	sdk_param.active = scan_type == MIBLE_SCAN_TYPE_ACTIVE ? 1 : 0;
 	sdk_param.interval = scan_param.scan_interval;
 	sdk_param.window   = scan_param.scan_window;
 	sdk_param.timeout  = scan_param.timeout;
 	errno = sd_ble_gap_scan_start(&sdk_param);
-    return errno;
+    return err_code_convert(errno);
 }
 
 /*
@@ -137,9 +137,9 @@ mible_status_t mible_gap_scan_start(mible_gap_scan_type_t scan_type,
  * */
 mible_status_t mible_gap_scan_stop(void)
 {
-	mible_status_t errno;
+	uint32_t errno;
 	errno = sd_ble_gap_scan_stop() == MI_SUCCESS ?  MI_SUCCESS : MI_ERR_INVALID_STATE;
-	return errno; 
+	return err_code_convert(errno); 
 }
 
 /*
@@ -159,7 +159,7 @@ mible_status_t mible_gap_scan_stop(void)
  * */
 mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_adv_param)
 {
-	mible_status_t errno;
+	uint32_t errno;
 	if (p_adv_param == NULL )
 		return MI_ERR_INVALID_PARAM;
 
@@ -188,7 +188,7 @@ mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_adv_param)
 	errno = sd_ble_gap_adv_start(&adv_params);
 	MI_ERR_CHECK(errno);
 	
-    return errno;
+    return err_code_convert(errno);
 }
 
 /*
@@ -201,10 +201,10 @@ mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_adv_param)
  * */
 mible_status_t mible_gap_adv_data_set(mible_gap_adv_data_t *p_data)
 {
-	mible_status_t errno;
+	uint32_t errno;
 	errno = sd_ble_gap_adv_data_set(p_data->adv_data, p_data->adv_len, p_data->scan_rsp_data, p_data->scan_rsp_len);
     MI_ERR_CHECK(errno);
-	return errno;
+	return err_code_convert(errno);
 }
 
 
@@ -216,10 +216,10 @@ mible_status_t mible_gap_adv_data_set(mible_gap_adv_data_t *p_data)
  * */
 mible_status_t mible_gap_adv_stop(void)
 {
-	mible_status_t errno;
+	uint32_t errno;
 	errno = sd_ble_gap_adv_stop();
 	errno = errno == NRF_SUCCESS ? MI_SUCCESS : MI_ERR_INVALID_STATE;
-	return errno;
+	return err_code_convert(errno);
 }
 
 /*
@@ -243,7 +243,7 @@ mible_status_t mible_gap_adv_stop(void)
 mible_status_t mible_gap_connect(mible_gap_scan_param_t scan_param,
     mible_gap_connect_t conn_param)
 {
-	mible_status_t errno;
+	uint32_t errno;
 	ble_gap_addr_t mac;
 	ble_gap_scan_params_t sdk_scan_param = {0};
 	ble_gap_conn_params_t sdk_conn_param = {0};
@@ -267,7 +267,7 @@ mible_status_t mible_gap_connect(mible_gap_scan_param_t scan_param,
 	sdk_conn_param.slave_latency     = conn_param.conn_param.slave_latency;
 	sdk_conn_param.conn_sup_timeout  = conn_param.conn_param.conn_sup_timeout;
 	errno = sd_ble_gap_connect(&mac, &sdk_scan_param, &sdk_conn_param);
-    return errno;
+    return err_code_convert(errno);
 }
 
 /*
@@ -281,10 +281,10 @@ mible_status_t mible_gap_connect(mible_gap_scan_param_t scan_param,
  * */
 mible_status_t mible_gap_disconnect(uint16_t conn_handle)
 {
-	mible_status_t errno;
+	uint32_t errno;
 	errno = sd_ble_gap_disconnect(conn_handle, BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
 	errno = errno == NRF_SUCCESS ? MI_SUCCESS : MI_ERR_INVALID_STATE;
-	return errno;
+	return err_code_convert(errno);
 }
 
 /*
@@ -305,17 +305,17 @@ mible_status_t mible_gap_disconnect(uint16_t conn_handle)
 mible_status_t mible_gap_update_conn_params(uint16_t conn_handle,
     mible_gap_conn_param_t conn_params)
 {
-	mible_status_t errno;
+	uint32_t errno;
 	errno = sd_ble_gap_conn_param_update(conn_handle, (ble_gap_conn_params_t*)&conn_params);
 	errno = errno == NRF_SUCCESS ? MI_SUCCESS : MI_ERR_INVALID_STATE;
-	return errno;
+	return err_code_convert(errno);
 }
 
 /* GATTS related function  */
 
 static ble_uuid_t convert_uuid(mible_uuid_t *p_uuid)
 {
-	mible_status_t errno;
+	uint32_t errno;
 	ble_uuid_t uuid16 = {0};
 	if (p_uuid->type == 0) {
 		uuid16.type = BLE_UUID_TYPE_BLE;
@@ -340,7 +340,7 @@ static uint32_t char_add(uint16_t                       service_handle,
                          uint16_t                       *p_value_handle,
 	bool is_vlen, bool rd_auth, bool wr_auth)
 {
-	mible_status_t errno;
+	uint32_t errno;
     ble_gatts_char_md_t char_md;
     ble_gatts_attr_t    attr_char_value;
     ble_gatts_attr_md_t attr_md;
@@ -388,7 +388,7 @@ static uint32_t char_add(uint16_t                       service_handle,
 	                                       &handles);
 
 	*p_value_handle = handles.value_handle;
-	return errno;
+	return err_code_convert(errno);
 }
 
 /*
@@ -403,7 +403,7 @@ static uint32_t char_add(uint16_t                       service_handle,
  * */
 mible_status_t mible_gatts_service_init(mible_gatts_db_t *p_server_db)
 {
-	mible_status_t errno;
+	uint32_t errno;
 	ble_uuid_t uuid16 = {0};
 	
 	if (p_server_db == NULL)
@@ -462,7 +462,7 @@ mible_status_t mible_gatts_value_set(uint16_t srv_handle, uint16_t value_handle,
     uint8_t offset, uint8_t* p_value,
     uint8_t len)
 {
-	mible_status_t errno;
+	uint32_t errno;
 	ble_gatts_value_t value = {
 		.len     = len,
 		.offset  = offset,
@@ -470,7 +470,7 @@ mible_status_t mible_gatts_value_set(uint16_t srv_handle, uint16_t value_handle,
 	};
     errno = sd_ble_gatts_value_set(BLE_CONN_HANDLE_INVALID, value_handle, &value);
 	MI_ERR_CHECK(errno);
-	return errno;
+	return err_code_convert(errno);
 }
 
 /*
@@ -488,13 +488,13 @@ mible_status_t mible_gatts_value_set(uint16_t srv_handle, uint16_t value_handle,
 mible_status_t mible_gatts_value_get(uint16_t srv_handle, uint16_t char_handle,
     uint8_t* p_value, uint8_t *p_len)
 {
-	mible_status_t errno;
+	uint32_t errno;
 	ble_gatts_value_t value = {0};
     errno = sd_ble_gatts_value_get(BLE_CONN_HANDLE_INVALID, char_handle, &value);
 	MI_ERR_CHECK(errno);
 	memcpy(p_value, value.p_value, value.len);
 	*p_len = value.len;
-    return errno;
+    return err_code_convert(errno);
 }
 
 /*
@@ -558,7 +558,7 @@ mible_status_t mible_gatts_rw_auth_reply(uint16_t conn_handle, uint8_t status_co
 
 	uint32_t errno = sd_ble_gatts_rw_authorize_reply(conn_handle, &reply);
 	
-	return errno;
+	return err_code_convert(errno);
 }
 
 // this function set char value and notify/indicate it to client
@@ -593,7 +593,7 @@ mible_status_t mible_gatts_notify_or_indicate(uint16_t conn_handle, uint16_t srv
     uint16_t char_value_handle, uint8_t offset, uint8_t* p_value,
     uint8_t len, uint8_t type)
 {
-	mible_status_t errno;
+	uint32_t errno;
 	uint16_t length = len;
 
 	ble_gatts_hvx_params_t hvx = {
@@ -604,7 +604,7 @@ mible_status_t mible_gatts_notify_or_indicate(uint16_t conn_handle, uint16_t srv
 		.p_len  = &length
 	};
 	errno = sd_ble_gatts_hvx(conn_handle, &hvx);
-    return errno;
+    return err_code_convert(errno);
 }
 
 
@@ -630,11 +630,11 @@ mible_status_t mible_gatts_notify_or_indicate(uint16_t conn_handle, uint16_t srv
 mible_status_t mible_gattc_primary_service_discover_by_uuid(uint16_t conn_handle,
     mible_handle_range_t handle_range, mible_uuid_t* p_srv_uuid)
 {
-	mible_status_t errno;
+	uint32_t errno;
 	ble_uuid_t srv_uuid;
 	srv_uuid = convert_uuid(p_srv_uuid);
 	errno = sd_ble_gattc_primary_services_discover(conn_handle, handle_range.begin_handle, &srv_uuid);
-    return errno;
+    return err_code_convert(errno);
 }
 
 /*
@@ -724,7 +724,7 @@ mible_status_t mible_gattc_read_char_value_by_uuid(uint16_t conn_handle,
 mible_status_t mible_gattc_write_with_rsp(uint16_t conn_handle, uint16_t handle,
     uint8_t* p_value, uint8_t len)
 {
-	mible_status_t errno;
+	uint32_t errno;
 	ble_gattc_write_params_t params = {0};
 	params.write_op = BLE_GATT_OP_WRITE_REQ;
 	params.handle   = handle;
@@ -732,7 +732,7 @@ mible_status_t mible_gattc_write_with_rsp(uint16_t conn_handle, uint16_t handle,
 	params.len      = len;
 	
 	errno = sd_ble_gattc_write(conn_handle, &params);
-    return errno;
+    return err_code_convert(errno);
 }
 
 /*
@@ -752,7 +752,7 @@ mible_status_t mible_gattc_write_with_rsp(uint16_t conn_handle, uint16_t handle,
 mible_status_t mible_gattc_write_cmd(uint16_t conn_handle, uint16_t handle,
     uint8_t* p_value, uint8_t len)
 {
-	mible_status_t errno;
+	uint32_t errno;
 	ble_gattc_write_params_t params = {0};
 	params.write_op = BLE_GATT_OP_WRITE_CMD;
 	params.handle   = handle;
@@ -760,7 +760,7 @@ mible_status_t mible_gattc_write_cmd(uint16_t conn_handle, uint16_t handle,
 	params.len      = len;
 	
 	errno = sd_ble_gattc_write(conn_handle, &params);
-    return errno;
+    return err_code_convert(errno);
 }
 
 /*TIMER related function*/
@@ -820,7 +820,7 @@ mible_status_t mible_timer_create(void** p_timer_id,
     mible_timer_handler timeout_handler,
     mible_timer_mode mode)
 {
-	mible_status_t errno;
+	uint32_t errno;
 	
 	app_timer_id_t id  = acquire_time();
 	if (id == NULL)
@@ -830,7 +830,7 @@ mible_status_t mible_timer_create(void** p_timer_id,
 	app_timer_timeout_handler_t handler = timeout_handler;
 	errno = app_timer_create(&id, m, handler);
 	*p_timer_id = id;
-	return errno;
+	return err_code_convert(errno);
 }
 
 /*
@@ -841,13 +841,13 @@ mible_status_t mible_timer_create(void** p_timer_id,
  * */
 mible_status_t mible_timer_delete(void * timer_id) 
 {
-	mible_status_t errno;
+	uint32_t errno;
 	int id = release_timer(timer_id);
 	if (id == -1)
 		return MI_ERR_INVALID_PARAM;
 
 	errno = app_timer_stop((app_timer_id_t)timer_id);
-	return errno;
+	return err_code_convert(errno);
 }
 
 /*
@@ -868,9 +868,9 @@ mible_status_t mible_timer_delete(void * timer_id)
 mible_status_t mible_timer_start(void* timer_id, uint32_t timeout_value,
     void* p_context)
 {
-	mible_status_t errno;
+	uint32_t errno;
 	errno = app_timer_start((app_timer_id_t)timer_id, APP_TIMER_TICKS(timeout_value, APP_TIMER_PRESCALER), p_context);
-    return errno;
+    return err_code_convert(errno);
 }
 
 /*
@@ -882,9 +882,9 @@ mible_status_t mible_timer_start(void* timer_id, uint32_t timeout_value,
  * */
 mible_status_t mible_timer_stop(void* timer_id) 
 {
-	mible_status_t errno;
+	uint32_t errno;
 	errno = app_timer_stop((app_timer_id_t)timer_id);
-	return errno; 
+	return err_code_convert(errno); 
 }
 
 /* FLASH related function*/
@@ -922,9 +922,9 @@ mible_status_t mible_record_create(uint16_t record_id, uint8_t len)
  * */
 mible_status_t mible_record_delete(uint16_t record_id)
 {
-	mible_status_t errno;
+	uint32_t errno;
 	errno = mi_psm_record_delete(record_id);
-	return errno;
+	return err_code_convert(errno);
 }
 
 /*
@@ -941,9 +941,9 @@ mible_status_t mible_record_delete(uint16_t record_id)
 mible_status_t mible_record_read(uint16_t record_id, uint8_t* p_data,
     uint8_t len)
 {
-	mible_status_t errno;
+	uint32_t errno;
 	errno = mi_psm_record_read(record_id, p_data, len);
-    return errno;
+    return err_code_convert(errno);
 }
 
 /*
@@ -963,9 +963,9 @@ mible_status_t mible_record_read(uint16_t record_id, uint8_t* p_data,
 mible_status_t mible_record_write(uint16_t record_id, uint8_t* p_data,
     uint8_t len)
 {
-	mible_status_t errno;
+	uint32_t errno;
 	errno = mi_psm_record_write(record_id, p_data, len);
-    return errno;
+    return err_code_convert(errno);
 }
 
 /*
@@ -1003,7 +1003,7 @@ mible_status_t mible_aes128_encrypt(const uint8_t* key,
     const uint8_t* plaintext, uint8_t plen,
     uint8_t* ciphertext)
 {
-	mible_status_t errno;
+	uint32_t errno;
 	nrf_ecb_hal_data_t ctx = {0};
 
 	if ( plaintext == NULL || key == NULL)
@@ -1016,7 +1016,7 @@ mible_status_t mible_aes128_encrypt(const uint8_t* key,
 	errno = sd_ecb_block_encrypt(&ctx);
 	memcpy(ciphertext, ctx.ciphertext, plen);
 
-    return errno;
+    return err_code_convert(errno);
 }
 
 
@@ -1038,7 +1038,7 @@ NRF_QUEUE_DEF(mible_task_t, task_queue, 4, NRF_QUEUE_MODE_OVERFLOW);
  * */
 mible_status_t mible_task_post(mible_handler_t handler, void *arg)
 {
-	mible_status_t errno;
+	uint32_t errno;
 	if (handler == NULL)
 		return MI_ERR_INVALID_PARAM;
 
@@ -1118,7 +1118,7 @@ mible_status_t mible_iic_init(iic_config_t * p_config, mible_handler_t handler)
 
     nrf_drv_twi_enable(&TWI0);
     
-    return errno;
+    return err_code_convert(errno);
 }
 
 /*
@@ -1153,7 +1153,7 @@ mible_status_t mible_iic_tx(uint8_t addr, uint8_t * p_out, uint16_t len, bool no
 
     errno = nrf_drv_twi_tx(&TWI0, addr, p_out, len, no_stop);
     MI_ERR_CHECK(errno);
-    return errno;
+    return err_code_convert(errno);
 }
 
 /*
@@ -1176,5 +1176,5 @@ mible_status_t mible_iic_rx(uint8_t addr, uint8_t * p_in, uint16_t len)
 
     errno = nrf_drv_twi_rx(&TWI0, addr, p_in, len);
     MI_ERR_CHECK(errno);
-    return errno;
+    return err_code_convert(errno);
 }

@@ -1,12 +1,14 @@
-#include "mi_psm.h"
 #include "mible_type.h"
 
 #include "fds.h"
 #include "fstorage.h"
 
+#undef  NRF_LOG_MODULE_NAME
 #define NRF_LOG_MODULE_NAME "PSM"
 #include "nrf_log.h"
 #include "nrf_log_ctrl.h"
+
+#include "mi_psm.h"
 
 #define MI_RECORD_FILE_ID              0x4D49		// file used to storage
 volatile uint8_t m_psm_done;

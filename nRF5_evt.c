@@ -7,8 +7,10 @@
 #include "ble_gatts.h"
 
 #include "mible_api.h"
-#include "mible_log.h"
+
+#undef  MI_LOG_MODULE_NAME
 #define MI_LOG_MODULE_NAME "nRF"
+#include "mible_log.h"
 
 static void gap_evt_dispatch(ble_evt_t *p_ble_evt)
 {
@@ -23,7 +25,7 @@ static void gap_evt_dispatch(ble_evt_t *p_ble_evt)
 		conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
 		gap_params.conn_handle = conn_handle;
 		
-		gap_params.connect.type = p_ble_evt->evt.gap_evt.params.connected.peer_addr.addr_type;
+        gap_params.connect.type = p_ble_evt->evt.gap_evt.params.connected.peer_addr.addr_type == BLE_GAP_ADDR_TYPE_PUBLIC ? MIBLE_ADDRESS_TYPE_PUBLIC : MIBLE_ADDRESS_TYPE_RANDOM;
 		memcpy(gap_params.connect.peer_addr, p_ble_evt->evt.gap_evt.params.connected.peer_addr.addr, 6);;
 		
 		gap_params.connect.conn_param.max_conn_interval = p_ble_evt->evt.gap_evt.params.connected.conn_params.max_conn_interval;
@@ -31,7 +33,7 @@ static void gap_evt_dispatch(ble_evt_t *p_ble_evt)
 		gap_params.connect.conn_param.slave_latency     = p_ble_evt->evt.gap_evt.params.connected.conn_params.slave_latency;
 		gap_params.connect.conn_param.conn_sup_timeout  = p_ble_evt->evt.gap_evt.params.connected.conn_params.conn_sup_timeout;
 
-		gap_params.connect.role = p_ble_evt->evt.gap_evt.params.connected.role;
+        gap_params.connect.role = p_ble_evt->evt.gap_evt.params.connected.role == BLE_GAP_ROLE_PERIPH ? MIBLE_GAP_PERIPHERAL : MIBLE_GAP_CENTRAL;
 
 		gap_evt_availble = 1;
 		break;
@@ -77,11 +79,12 @@ static void gap_evt_dispatch(ble_evt_t *p_ble_evt)
 static void gatts_evt_dispatch(ble_evt_t *p_ble_evt)
 {
 	uint32_t errno;
-	uint8_t gatts_evt_availble = 0;
 	mible_gatts_evt_t evt;
 	mible_gatts_evt_param_t gatts_params = {0};
 	gatts_params.conn_handle = p_ble_evt->evt.gatts_evt.conn_handle;
+    ble_gatts_value_t gatts_value = {0};
 	ble_gatts_evt_rw_authorize_request_t rw_req = {0};
+    ble_gatts_rw_authorize_reply_params_t reply = {0};
 
 	switch(p_ble_evt->header.evt_id) {
 	case BLE_GATTS_EVT_WRITE:
@@ -112,11 +115,9 @@ static void gatts_evt_dispatch(ble_evt_t *p_ble_evt)
 
 		mible_gatts_event_callback(evt, &gatts_params);
 		
-		ble_gatts_value_t gatts_value = {0};
 		errno = sd_ble_gatts_value_get(gatts_params.conn_handle, gatts_params.read.value_handle, &gatts_value);
 		MI_ERR_CHECK(errno);
 
-		ble_gatts_rw_authorize_reply_params_t reply = {0};
 		if (BLE_GATTS_AUTHORIZE_TYPE_READ == p_ble_evt->evt.gatts_evt.params.authorize_request.type) {
 			if (gatts_params.read.permit != true) {
 				reply = (ble_gatts_rw_authorize_reply_params_t) {
@@ -143,8 +144,8 @@ static void gatts_evt_dispatch(ble_evt_t *p_ble_evt)
 					.type = BLE_GATTS_AUTHORIZE_TYPE_WRITE,
 					.params.write.gatt_status = BLE_GATT_STATUS_SUCCESS,
 					.params.write.update      = 1,
-					.params.write.len         = gatts_value.len,
 					.params.write.p_data      = gatts_value.p_value,
+					.params.write.len         = gatts_value.len,
 					.params.write.offset      = gatts_value.offset
 					};
 			}
@@ -170,12 +171,13 @@ static void gattc_evt_dispatch(ble_evt_t *p_ble_evt)
 	mible_gattc_evt_t evt;
 	mible_gattc_evt_param_t gattc_params = {0};
 	gattc_params.conn_handle = p_ble_evt->evt.gattc_evt.conn_handle;
-
+    ble_gattc_evt_prim_srvc_disc_rsp_t prim_srv;
+    ble_gattc_evt_hvx_t hvx;
+    
 	switch(p_ble_evt->header.evt_id) {
 	case BLE_GATTC_EVT_PRIM_SRVC_DISC_RSP:
 		evt = MIBLE_GATTC_EVT_PRIMARY_SERVICE_DISCOVER_RESP;
-		ble_gattc_evt_prim_srvc_disc_rsp_t prim_srv =
-			p_ble_evt->evt.gattc_evt.params.prim_srvc_disc_rsp;
+		prim_srv = p_ble_evt->evt.gattc_evt.params.prim_srvc_disc_rsp;
 		gattc_params.srv_disc_rsp.primary_srv_range.begin_handle = prim_srv.services[0].handle_range.start_handle;
 		gattc_params.srv_disc_rsp.primary_srv_range.end_handle = prim_srv.services[0].handle_range.end_handle;
 		uint8_t uuid_len, uuid128[16];
@@ -186,8 +188,7 @@ static void gattc_evt_dispatch(ble_evt_t *p_ble_evt)
 		break;
 
 	case BLE_GATTC_EVT_HVX:
-		evt = 0;
-		ble_gattc_evt_hvx_t hvx = p_ble_evt->evt.gattc_evt.params.hvx;
+		hvx = p_ble_evt->evt.gattc_evt.params.hvx;
 		if (hvx.type == BLE_GATT_HVX_INDICATION)
 			evt = MIBLE_GATTC_EVT_INDICATION;
 		else if (hvx.type == BLE_GATT_HVX_NOTIFICATION)
