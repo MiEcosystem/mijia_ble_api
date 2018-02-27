@@ -427,12 +427,12 @@ typedef struct{
 typedef struct{
 	uint16_t id;
 	mible_status_t status;	
-}mible_arch_record_evt_t;
+}mible_arch_record_t;
 
 typedef struct{
 	union {
 		mible_arch_gatts_srv_init_cmp_t srv_init_cmp;
-		mible_arch_record_evt_t record;
+		mible_arch_record_t record;
 	};
 }mible_arch_evt_param_t;
 
