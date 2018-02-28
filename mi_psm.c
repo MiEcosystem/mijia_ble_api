@@ -95,6 +95,13 @@ static void mi_psm_fds_evt_handler(fds_evt_t const * const p_fds_evt)
 		}
 		break;
     }
+
+#ifdef DEBUG
+    fds_stat_t stat;
+    fds_stat(&stat);
+    NRF_LOG_WARNING("FDS STAT:\n");
+    NRF_LOG_RAW_INFO(" used:\t %d\n free:\t %d\n gc:\t %d\n", stat.words_used<<2, stat.largest_contig<<2, stat.freeable_words<<2);
+#endif
 }
 
 
