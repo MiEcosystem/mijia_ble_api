@@ -7,10 +7,17 @@
 #include "ble_gatts.h"
 
 #include "mible_api.h"
+#include "mi_config.h"
 
 #undef  MI_LOG_MODULE_NAME
 #define MI_LOG_MODULE_NAME "nRF"
 #include "mible_log.h"
+
+static uint8_t m_gap_users, m_gattc_users, m_gatts_users, m_arch_users;
+static mible_gap_callback_t   m_gap_cb_table[MIBLE_MAX_USERS];
+static mible_gatts_callback_t m_gatts_cb_table[MIBLE_MAX_USERS];
+static mible_gattc_callback_t m_gattc_cb_table[MIBLE_MAX_USERS];
+static mible_arch_callback_t  m_arch_cb_table[MIBLE_MAX_USERS];
 
 static void gap_evt_dispatch(ble_evt_t *p_ble_evt)
 {
@@ -214,5 +221,129 @@ void mible_on_ble_evt(ble_evt_t *p_ble_evt)
 	gap_evt_dispatch(p_ble_evt);
 	gatts_evt_dispatch(p_ble_evt);
 	gattc_evt_dispatch(p_ble_evt);
+}
+
+void mible_gap_event_callback(mible_gap_evt_t evt,
+    mible_gap_evt_param_t* param)
+{
+    for (int user = 0; user < MIBLE_MAX_USERS; user++) {
+        if (m_gap_cb_table[user] != NULL) {
+            m_gap_cb_table[user](evt, param);
+        }
+    }
+}
+
+void mible_gatts_event_callback(mible_gatts_evt_t evt,
+    mible_gatts_evt_param_t* param)
+{
+    for (int user = 0; user < MIBLE_MAX_USERS; user++) {
+        if (m_gatts_cb_table[user] != NULL) {
+            m_gatts_cb_table[user](evt, param);
+        }
+    }
+}
+
+void mible_gattc_event_callback(mible_gattc_evt_t evt,
+    mible_gattc_evt_param_t* param)
+{
+    for (int user = 0; user < MIBLE_MAX_USERS; user++) {
+        if (m_gattc_cb_table[user] != NULL) {
+            m_gattc_cb_table[user](evt, param);
+        }
+    }
+}
+
+void mible_arch_event_callback(mible_arch_event_t evt, 
+		mible_arch_evt_param_t* param)
+{
+    for (int user = 0; user < MIBLE_MAX_USERS; user++) {
+        if (m_arch_cb_table[user] != NULL) {
+            m_arch_cb_table[user](evt, param);
+        }
+    }
+}
+
+int mible_gap_register(mible_gap_callback_t cb)
+{
+    int ret;
+
+    CRITICAL_SECTION_ENTER();
+    if (m_gap_users == MIBLE_MAX_USERS)
+    {
+        ret = MI_ERR_RESOURCES;
+    }
+    else
+    {
+        m_gap_cb_table[m_gap_users] = cb;
+        m_gap_users++;
+
+        ret = MI_SUCCESS;
+    }
+    CRITICAL_SECTION_EXIT();
+
+    return MI_SUCCESS;
+}
+
+int mible_gattc_register(mible_gattc_callback_t cb)
+{
+    int ret;
+
+    CRITICAL_SECTION_ENTER();
+    if (m_gattc_users == MIBLE_MAX_USERS)
+    {
+        ret = MI_ERR_RESOURCES;
+    }
+    else
+    {
+        m_gattc_cb_table[m_gattc_users] = cb;
+        m_gattc_users++;
+
+        ret = MI_SUCCESS;
+    }
+    CRITICAL_SECTION_EXIT();
+
+    return MI_SUCCESS;
+}
+
+int mible_gatts_register(mible_gatts_callback_t cb)
+{
+    int ret;
+
+    CRITICAL_SECTION_ENTER();
+    if (m_gatts_users == MIBLE_MAX_USERS)
+    {
+        ret = MI_ERR_RESOURCES;
+    }
+    else
+    {
+        m_gatts_cb_table[m_gatts_users] = cb;
+        m_gatts_users++;
+
+        ret = MI_SUCCESS;
+    }
+    CRITICAL_SECTION_EXIT();
+
+    return MI_SUCCESS;
+}
+
+int mible_arch_register(mible_arch_callback_t cb)
+{
+    int ret;
+
+    CRITICAL_SECTION_ENTER();
+    if (m_arch_users == MIBLE_MAX_USERS)
+    {
+        ret = MI_ERR_RESOURCES;
+    }
+    else
+    {
+        m_arch_cb_table[m_arch_users] = cb;
+        m_arch_users++;
+
+        ret = MI_SUCCESS;
+    }
+    CRITICAL_SECTION_EXIT();
+
+    return MI_SUCCESS;
 }
 

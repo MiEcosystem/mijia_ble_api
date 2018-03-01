@@ -15,10 +15,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/*
- *
- *
- *  */
 #include "mible_port.h"
 
 #define MIBLE_GAP_EVT_BASE   0x00
@@ -437,5 +433,17 @@ typedef struct{
 		mible_arch_record_t record;
 	};
 }mible_arch_evt_param_t;
+
+typedef void (*mible_gap_callback_t)(mible_gap_evt_t evt,
+    mible_gap_evt_param_t* param);
+
+typedef void (*mible_gatts_callback_t)(mible_gatts_evt_t evt,
+    mible_gatts_evt_param_t* param);
+
+typedef void (*mible_gattc_callback_t)(mible_gattc_evt_t evt,
+    mible_gattc_evt_param_t* param);
+
+typedef void (*mible_arch_callback_t)(mible_arch_event_t evt, 
+		mible_arch_evt_param_t* param);
 
 #endif

@@ -22,6 +22,28 @@
 
 /* GAP, GATTS, GATTC event callback function */
 
+
+
+__WEAK int mible_gap_register(mible_gap_callback_t cb)
+{
+    return MI_SUCCESS;
+}
+
+__WEAK int mible_gattc_register(mible_gattc_callback_t cb)
+{
+    return MI_SUCCESS;
+}
+
+__WEAK int mible_gatts_register(mible_gatts_callback_t cb)
+{
+    return MI_SUCCESS;
+}
+
+__WEAK int mible_arch_register(mible_arch_callback_t cb)
+{
+    return MI_SUCCESS;
+}
+
 /**
  *@brief    This function is MIBLE GAP related event callback function.
  *@param    [in] evt : GAP EVENT
