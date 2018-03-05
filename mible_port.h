@@ -109,8 +109,7 @@
 #define CRITICAL_SECTION_ENTER()
 #define CRITICAL_SECTION_EXIT()
 
-#include "nrf_log.h"
-#define MI_LOG_PRINTF(...)             NRF_LOG_RAW_INFO(__VA_ARGS__)
-#define MI_LOG_HEXDUMP(...)            NRF_LOG_RAW_HEXDUMP_INFO(__VA_ARGS__)
+#define MI_LOG_PRINTF(...)
+#define MI_LOG_HEXDUMP(...)
 
 #endif // MIBLE_PORT_H__

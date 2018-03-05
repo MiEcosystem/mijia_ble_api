@@ -377,8 +377,12 @@ typedef enum {
 } iic_freq_t;
 
 typedef struct {
-    uint8_t scl;
-    uint8_t sda;
+    uint8_t scl_port;
+	uint8_t scl_pin;
+	uint8_t scl_location;
+	uint8_t sda_port;
+    uint8_t sda_pin;
+	uint8_t sda_location;
     iic_freq_t freq;
 } iic_config_t;
 
