@@ -240,8 +240,8 @@ typedef enum {
  * NOTE: Stack SHOULD decide whether to response to gatt client. And if need to reply, just reply success or failure according to [permit]
  * */
 typedef struct {
-	uint8_t permit; // [OUT] true: permit to change value ; false: reject to change value 
     uint16_t value_handle; // char value_handle
+	uint8_t permit; // [OUT] true: permit to change value ; false: reject to change value 
     uint8_t offset;
     uint8_t len;
     uint8_t* data;
@@ -252,9 +252,9 @@ typedef struct {
  * NOTE: Stack SHOULD decide to reply the char value or refuse according to [permit]
  * */
 typedef struct {
+    uint16_t value_handle;  // char value handle 
 	uint8_t permit; // [OUT] true: permit to be read; false: reject read request 
     uint16_t conn_handle;
-    uint16_t value_handle;  // char value handle 
 } mible_gatts_read_t;
 
 /*

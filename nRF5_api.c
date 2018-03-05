@@ -444,6 +444,7 @@ mible_status_t mible_gatts_service_init(mible_gatts_db_t *p_server_db)
 			mible_gatts_char_db_t *p_char = p_service->p_char_db + idx;
 			ble_gatt_char_props_t props = {0};
 			memcpy((uint8_t*)&props, &p_char->char_property, 1);
+            
 			uuid16 = convert_uuid(&p_char->char_uuid);
 			errno = char_add(p_service->srv_handle, &uuid16, p_char->p_value, p_char->char_value_len,
 					    props, &p_char->char_value_handle,
@@ -488,6 +489,7 @@ mible_status_t mible_gatts_value_set(uint16_t srv_handle, uint16_t value_handle,
 	};
     errno = sd_ble_gatts_value_set(BLE_CONN_HANDLE_INVALID, value_handle, &value);
 	MI_ERR_CHECK(errno);
+    
 	return err_code_convert(errno);
 }
 
@@ -512,6 +514,7 @@ mible_status_t mible_gatts_value_get(uint16_t srv_handle, uint16_t char_handle,
 	MI_ERR_CHECK(errno);
 	memcpy(p_value, value.p_value, value.len);
 	*p_len = value.len;
+
     return err_code_convert(errno);
 }
 

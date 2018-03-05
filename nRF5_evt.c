@@ -29,7 +29,10 @@ static void gap_evt_dispatch(ble_evt_t *p_ble_evt)
 	switch(p_ble_evt->header.evt_id) {
 	case BLE_GAP_EVT_CONNECTED:
 		evt = MIBLE_GAP_EVT_CONNECTED;
+
 		conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
+        sd_ble_gatts_sys_attr_set(conn_handle, NULL, 0, 0);
+
 		gap_params.conn_handle = conn_handle;
 		
         gap_params.connect.type = p_ble_evt->evt.gap_evt.params.connected.peer_addr.addr_type == BLE_GAP_ADDR_TYPE_PUBLIC ? MIBLE_ADDRESS_TYPE_PUBLIC : MIBLE_ADDRESS_TYPE_RANDOM;
@@ -122,10 +125,10 @@ static void gatts_evt_dispatch(ble_evt_t *p_ble_evt)
 
 		mible_gatts_event_callback(evt, &gatts_params);
 		
-		errno = sd_ble_gatts_value_get(gatts_params.conn_handle, gatts_params.read.value_handle, &gatts_value);
-		MI_ERR_CHECK(errno);
+//		errno = sd_ble_gatts_value_get(gatts_params.conn_handle, gatts_params.read.value_handle, &gatts_value);
+//		MI_ERR_CHECK(errno);
 
-		if (BLE_GATTS_AUTHORIZE_TYPE_READ == p_ble_evt->evt.gatts_evt.params.authorize_request.type) {
+		if (BLE_GATTS_AUTHORIZE_TYPE_READ == rw_req.type) {
 			if (gatts_params.read.permit != true) {
 				reply = (ble_gatts_rw_authorize_reply_params_t) {
 					.type = BLE_GATTS_AUTHORIZE_TYPE_READ,
@@ -140,7 +143,7 @@ static void gatts_evt_dispatch(ble_evt_t *p_ble_evt)
 					.params.read.offset      = gatts_value.offset
 				};
 			}
-		} else if (BLE_GATTS_AUTHORIZE_TYPE_WRITE == p_ble_evt->evt.gatts_evt.params.authorize_request.type) {
+		} else if (BLE_GATTS_AUTHORIZE_TYPE_WRITE == rw_req.type) {
 			if (gatts_params.write.permit != true) {
 				reply = (ble_gatts_rw_authorize_reply_params_t) {
 					.type = BLE_GATTS_AUTHORIZE_TYPE_WRITE,
