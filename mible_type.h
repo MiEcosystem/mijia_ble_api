@@ -15,10 +15,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/*
- *
- *
- *  */
 #include "mible_port.h"
 
 #define MIBLE_GAP_EVT_BASE   0x00
@@ -75,6 +71,8 @@ typedef struct {
     uint8_t adv_len;                           // advertising data length
     uint8_t scan_rsp_data[31];                 // response data in active scanning
     uint8_t scan_rsp_len;                      // response data length in active scanning
+    uint8_t clear_adv_data;
+    uint8_t clear_scan_data;
 } mible_gap_adv_data_t;
 
 typedef enum {
@@ -242,8 +240,8 @@ typedef enum {
  * NOTE: Stack SHOULD decide whether to response to gatt client. And if need to reply, just reply success or failure according to [permit]
  * */
 typedef struct {
-	uint8_t permit; // [OUT] true: permit to change value ; false: reject to change value 
     uint16_t value_handle; // char value_handle
+	uint8_t permit; // [OUT] true: permit to change value ; false: reject to change value 
     uint8_t offset;
     uint8_t len;
     uint8_t* data;
@@ -254,9 +252,9 @@ typedef struct {
  * NOTE: Stack SHOULD decide to reply the char value or refuse according to [permit]
  * */
 typedef struct {
+    uint16_t value_handle;  // char value handle 
 	uint8_t permit; // [OUT] true: permit to be read; false: reject read request 
     uint16_t conn_handle;
-    uint16_t value_handle;  // char value handle 
 } mible_gatts_read_t;
 
 /*
@@ -427,13 +425,25 @@ typedef struct{
 typedef struct{
 	uint16_t id;
 	mible_status_t status;	
-}mible_arch_record_evt_t;
+}mible_arch_record_t;
 
 typedef struct{
 	union {
 		mible_arch_gatts_srv_init_cmp_t srv_init_cmp;
-		mible_arch_record_evt_t record;
+		mible_arch_record_t record;
 	};
 }mible_arch_evt_param_t;
+
+typedef void (*mible_gap_callback_t)(mible_gap_evt_t evt,
+    mible_gap_evt_param_t* param);
+
+typedef void (*mible_gatts_callback_t)(mible_gatts_evt_t evt,
+    mible_gatts_evt_param_t* param);
+
+typedef void (*mible_gattc_callback_t)(mible_gattc_evt_t evt,
+    mible_gattc_evt_param_t* param);
+
+typedef void (*mible_arch_callback_t)(mible_arch_event_t evt, 
+		mible_arch_evt_param_t* param);
 
 #endif
