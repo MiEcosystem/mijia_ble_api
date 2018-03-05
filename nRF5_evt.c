@@ -13,12 +13,6 @@
 #define MI_LOG_MODULE_NAME "nRF"
 #include "mible_log.h"
 
-static uint8_t m_gap_users, m_gattc_users, m_gatts_users, m_arch_users;
-static mible_gap_callback_t   m_gap_cb_table[MIBLE_MAX_USERS];
-static mible_gatts_callback_t m_gatts_cb_table[MIBLE_MAX_USERS];
-static mible_gattc_callback_t m_gattc_cb_table[MIBLE_MAX_USERS];
-static mible_arch_callback_t  m_arch_cb_table[MIBLE_MAX_USERS];
-
 static void gap_evt_dispatch(ble_evt_t *p_ble_evt)
 {
 	static uint16_t conn_handle = BLE_CONN_HANDLE_INVALID;
@@ -88,14 +82,10 @@ static void gap_evt_dispatch(ble_evt_t *p_ble_evt)
 
 static void gatts_evt_dispatch(ble_evt_t *p_ble_evt)
 {
-	uint32_t errno;
+    bool gatts_evt_availble = false;
 	mible_gatts_evt_t evt;
 	mible_gatts_evt_param_t gatts_params = {0};
 	gatts_params.conn_handle = p_ble_evt->evt.gatts_evt.conn_handle;
-    ble_gatts_value_t gatts_value = {0};
-	ble_gatts_evt_rw_authorize_request_t rw_req = {0};
-    ble_gatts_rw_authorize_reply_params_t reply = {0};
-
 	switch(p_ble_evt->header.evt_id) {
 	case BLE_GATTS_EVT_WRITE:
 		gatts_params.write.value_handle = p_ble_evt->evt.gatts_evt.params.write.handle;
@@ -106,63 +96,24 @@ static void gatts_evt_dispatch(ble_evt_t *p_ble_evt)
 			evt = MIBLE_GATTS_EVT_WRITE_PERMIT_REQ;
 		else
 			evt = MIBLE_GATTS_EVT_WRITE;
-
-		mible_gatts_event_callback(evt, &gatts_params);
+        
+        gatts_evt_availble = true;
 		break;
 		
 	case BLE_GATTS_EVT_RW_AUTHORIZE_REQUEST:
-		rw_req = p_ble_evt->evt.gatts_evt.params.authorize_request;
 		if (p_ble_evt->evt.gatts_evt.params.authorize_request.type == BLE_GATTS_AUTHORIZE_TYPE_READ) {
-			gatts_params.read.value_handle = rw_req.request.read.handle;
+			gatts_params.read.value_handle = p_ble_evt->evt.gatts_evt.params.authorize_request.request.read.handle;
 			evt = MIBLE_GATTS_EVT_READ_PERMIT_REQ;
 		} else if (p_ble_evt->evt.gatts_evt.params.authorize_request.type == BLE_GATTS_AUTHORIZE_TYPE_WRITE) {
-			gatts_params.write.value_handle = rw_req.request.write.handle;
-			gatts_params.write.data = rw_req.request.write.data;
-			gatts_params.write.len = rw_req.request.write.len;
-			gatts_params.write.offset = rw_req.request.write.offset;
+			gatts_params.write.value_handle = p_ble_evt->evt.gatts_evt.params.authorize_request.request.write.handle;
+			gatts_params.write.data = p_ble_evt->evt.gatts_evt.params.authorize_request.request.write.data;
+			gatts_params.write.len = p_ble_evt->evt.gatts_evt.params.authorize_request.request.write.len;
+			gatts_params.write.offset = p_ble_evt->evt.gatts_evt.params.authorize_request.request.write.offset;
 			evt = MIBLE_GATTS_EVT_WRITE_PERMIT_REQ;
 		}
+//        MI_LOG_HEXDUMP(gatts_params.write.data, gatts_params.write.len);
 
-		mible_gatts_event_callback(evt, &gatts_params);
-		
-//		errno = sd_ble_gatts_value_get(gatts_params.conn_handle, gatts_params.read.value_handle, &gatts_value);
-//		MI_ERR_CHECK(errno);
-
-		if (BLE_GATTS_AUTHORIZE_TYPE_READ == rw_req.type) {
-			if (gatts_params.read.permit != true) {
-				reply = (ble_gatts_rw_authorize_reply_params_t) {
-					.type = BLE_GATTS_AUTHORIZE_TYPE_READ,
-					.params.read.gatt_status = BLE_GATT_STATUS_ATTERR_READ_NOT_PERMITTED
-				};
-			} else {
-				reply = (ble_gatts_rw_authorize_reply_params_t) {
-					.type = BLE_GATTS_AUTHORIZE_TYPE_READ,
-					.params.read.gatt_status = BLE_GATT_STATUS_SUCCESS,
-					.params.read.p_data      = gatts_value.p_value,
-					.params.read.len         = gatts_value.len,
-					.params.read.offset      = gatts_value.offset
-				};
-			}
-		} else if (BLE_GATTS_AUTHORIZE_TYPE_WRITE == rw_req.type) {
-			if (gatts_params.write.permit != true) {
-				reply = (ble_gatts_rw_authorize_reply_params_t) {
-					.type = BLE_GATTS_AUTHORIZE_TYPE_WRITE,
-					.params.write.gatt_status = BLE_GATT_STATUS_ATTERR_WRITE_NOT_PERMITTED
-					};
-			} else {
-				reply = (ble_gatts_rw_authorize_reply_params_t) {
-					.type = BLE_GATTS_AUTHORIZE_TYPE_WRITE,
-					.params.write.gatt_status = BLE_GATT_STATUS_SUCCESS,
-					.params.write.update      = 1,
-					.params.write.p_data      = gatts_value.p_value,
-					.params.write.len         = gatts_value.len,
-					.params.write.offset      = gatts_value.offset
-					};
-			}
-		}
-		errno = sd_ble_gatts_rw_authorize_reply(gatts_params.conn_handle, &reply);
-		MI_ERR_CHECK(errno);
-		
+        gatts_evt_availble = true;
 		break;
 		
 	case BLE_GATTS_EVT_HVC:
@@ -173,6 +124,8 @@ static void gatts_evt_dispatch(ble_evt_t *p_ble_evt)
 		break;
 	}
 
+	if (gatts_evt_availble)
+		mible_gatts_event_callback(evt, &gatts_params) ;
 }
 
 static void gattc_evt_dispatch(ble_evt_t *p_ble_evt)
@@ -224,129 +177,5 @@ void mible_on_ble_evt(ble_evt_t *p_ble_evt)
 	gap_evt_dispatch(p_ble_evt);
 	gatts_evt_dispatch(p_ble_evt);
 	gattc_evt_dispatch(p_ble_evt);
-}
-
-void mible_gap_event_callback(mible_gap_evt_t evt,
-    mible_gap_evt_param_t* param)
-{
-    for (int user = 0; user < MIBLE_MAX_USERS; user++) {
-        if (m_gap_cb_table[user] != NULL) {
-            m_gap_cb_table[user](evt, param);
-        }
-    }
-}
-
-void mible_gatts_event_callback(mible_gatts_evt_t evt,
-    mible_gatts_evt_param_t* param)
-{
-    for (int user = 0; user < MIBLE_MAX_USERS; user++) {
-        if (m_gatts_cb_table[user] != NULL) {
-            m_gatts_cb_table[user](evt, param);
-        }
-    }
-}
-
-void mible_gattc_event_callback(mible_gattc_evt_t evt,
-    mible_gattc_evt_param_t* param)
-{
-    for (int user = 0; user < MIBLE_MAX_USERS; user++) {
-        if (m_gattc_cb_table[user] != NULL) {
-            m_gattc_cb_table[user](evt, param);
-        }
-    }
-}
-
-void mible_arch_event_callback(mible_arch_event_t evt, 
-		mible_arch_evt_param_t* param)
-{
-    for (int user = 0; user < MIBLE_MAX_USERS; user++) {
-        if (m_arch_cb_table[user] != NULL) {
-            m_arch_cb_table[user](evt, param);
-        }
-    }
-}
-
-int mible_gap_register(mible_gap_callback_t cb)
-{
-    int ret;
-
-    CRITICAL_SECTION_ENTER();
-    if (m_gap_users == MIBLE_MAX_USERS)
-    {
-        ret = MI_ERR_RESOURCES;
-    }
-    else
-    {
-        m_gap_cb_table[m_gap_users] = cb;
-        m_gap_users++;
-
-        ret = MI_SUCCESS;
-    }
-    CRITICAL_SECTION_EXIT();
-
-    return MI_SUCCESS;
-}
-
-int mible_gattc_register(mible_gattc_callback_t cb)
-{
-    int ret;
-
-    CRITICAL_SECTION_ENTER();
-    if (m_gattc_users == MIBLE_MAX_USERS)
-    {
-        ret = MI_ERR_RESOURCES;
-    }
-    else
-    {
-        m_gattc_cb_table[m_gattc_users] = cb;
-        m_gattc_users++;
-
-        ret = MI_SUCCESS;
-    }
-    CRITICAL_SECTION_EXIT();
-
-    return MI_SUCCESS;
-}
-
-int mible_gatts_register(mible_gatts_callback_t cb)
-{
-    int ret;
-
-    CRITICAL_SECTION_ENTER();
-    if (m_gatts_users == MIBLE_MAX_USERS)
-    {
-        ret = MI_ERR_RESOURCES;
-    }
-    else
-    {
-        m_gatts_cb_table[m_gatts_users] = cb;
-        m_gatts_users++;
-
-        ret = MI_SUCCESS;
-    }
-    CRITICAL_SECTION_EXIT();
-
-    return MI_SUCCESS;
-}
-
-int mible_arch_register(mible_arch_callback_t cb)
-{
-    int ret;
-
-    CRITICAL_SECTION_ENTER();
-    if (m_arch_users == MIBLE_MAX_USERS)
-    {
-        ret = MI_ERR_RESOURCES;
-    }
-    else
-    {
-        m_arch_cb_table[m_arch_users] = cb;
-        m_arch_users++;
-
-        ret = MI_SUCCESS;
-    }
-    CRITICAL_SECTION_EXIT();
-
-    return MI_SUCCESS;
 }
 

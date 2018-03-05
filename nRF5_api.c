@@ -519,66 +519,70 @@ mible_status_t mible_gatts_value_get(uint16_t srv_handle, uint16_t char_handle,
 }
 
 /*
- * @brief 	GATT Read or Write Authorize Reply parameters.
+ * @brief 	Respond to a Read/Write user authorization request.
  * @param 	[in] conn_handle: conn handle
- *          [in] status_code: permitted = 1; not permitted = 2;
- *          [in] type : read = 1; write = 2;
+ *          [in] status:  1: permit to change value ; 0: reject to change value 
+ * 			[in] char_value_handle: characteristic handle
  * 			[in] offset: the offset from which the attribute value has to
  * be updated
+ * 			[in] p_value: Pointer to new value used to update the attribute value.
  * 			[in] len: data length
- * 			[in] pdata: pointer to data
+ *          [in] type : read response = 1; write response = 2;
  *
- * @return  MI_SUCCESS             Successfully queued a response to the peer, 
- * and in the case of a write operation, Attribute Table updated.
+ * @return  MI_SUCCESS             Successfully queued a response to the peer, and in the case of a write operation, GATT updated.
  *          MI_ERR_INVALID_ADDR    Invalid pointer supplied.
  *          MI_ERR_INVALID_PARAM   Invalid parameter (offset) supplied.
  *          MI_ERR_INVALID_STATE   Invalid Connection State or no authorization request pending.
- *          MI_ERR_INVALID_LENGTH   Invalid length supplied.
+ *          MI_ERR_INVALID_LENGTH  Invalid length supplied.
  *          MI_ERR_BUSY            Procedure already in progress.
  *          MIBLE_ERR_ATT_INVALID_HANDLE     Attribute not found.
- *          MIBLE_ERR_GATT_INVALID_ATT_TYPE   Attributes are not modifiable by
- * the application.
+ * @note    This call should only be used as a response to a MIBLE_GATTS_EVT_READ/WRITE_PERMIT_REQ
+ * event issued to the application.
  * */
-mible_status_t mible_gatts_rw_auth_reply(uint16_t conn_handle, uint8_t status_code,
-	uint8_t type, uint16_t offset, uint16_t len, uint8_t *pdata)
+mible_status_t mible_gatts_rw_auth_reply(uint16_t conn_handle, uint8_t status,
+    uint16_t char_value_handle, uint8_t offset, uint8_t* p_value,
+    uint8_t len, uint8_t type)
 {
 	ble_gatts_rw_authorize_reply_params_t reply = {0};
 	
-	if (status_code == 1) {
+	if (status == 1) {
 		switch (type) {
 		case 1:
 			reply = (ble_gatts_rw_authorize_reply_params_t) {
 				.type = BLE_GATTS_AUTHORIZE_TYPE_READ,
 				.params.read.gatt_status = BLE_GATT_STATUS_SUCCESS,
-				.params.read.p_data      = pdata,
-				.params.read.len         = len
+                .params.read.offset      = offset,
+				.params.read.p_data      = p_value,
+				.params.read.len         = len,
 			};
-			break;
+		break;
 
 		case 2:
 			reply = (ble_gatts_rw_authorize_reply_params_t) {
 				.type = BLE_GATTS_AUTHORIZE_TYPE_WRITE,
 				.params.write.gatt_status = BLE_GATT_STATUS_SUCCESS,
 				.params.write.update      = 1,
-				.params.write.p_data      = pdata,
+                .params.write.offset      = offset,
+				.params.write.p_data      = p_value,
 				.params.write.len         = len
 			};
-			break;
+		break;
 		}
-	} else if (status_code == 2) {
+	} else if (status == 0) {
 		switch (type) {
 		case 1:
 			reply.params.read.gatt_status = BLE_GATT_STATUS_ATTERR_READ_NOT_PERMITTED;
-			break;
+		break;
 
 		case 2:
 			reply.params.write.gatt_status = BLE_GATT_STATUS_ATTERR_WRITE_NOT_PERMITTED;
-			break;
+		break;
 		}
 	}
 
 	uint32_t errno = sd_ble_gatts_rw_authorize_reply(conn_handle, &reply);
-	
+	MI_ERR_CHECK(errno);
+
 	return err_code_convert(errno);
 }
 
@@ -1127,8 +1131,8 @@ mible_status_t mible_iic_init(iic_config_t * p_config, mible_handler_t handler)
     }
 
     const nrf_drv_twi_config_t msc_config = {
-       .scl                = p_config->scl,
-       .sda                = p_config->sda,
+       .scl                = p_config->scl_pin,
+       .sda                = p_config->sda_pin,
        .frequency          = p_config->freq == IIC_100K ? NRF_TWI_FREQ_100K : NRF_TWI_FREQ_400K,
        .interrupt_priority = APP_IRQ_PRIORITY_HIGH,
        .clear_bus_init     = true
