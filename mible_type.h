@@ -178,7 +178,7 @@ typedef struct{
  * */
 typedef struct{
 	mible_gatts_char_desc_ext_prop_t  *extend_prop;
-	mible_gatts_char_desc_cpf_t       *char_format;      // See more details at Bluetooth SPEC 4.2 [Vol 3, Part G] Page 539
+	mible_gatts_char_desc_cpf_t       *char_format;     // See more details at Bluetooth SPEC 4.2 [Vol 3, Part G] Page 539
 	mible_gatts_char_desc_user_desc_t *user_desc;     	// read only
 } mible_gatts_char_desc_db_t;
 
@@ -190,10 +190,10 @@ typedef struct{
 	uint8_t char_property;                             // See TYPE mible_gatts_char_property for details 
 	uint8_t *p_value;                                  // initial characteristic value
 	uint8_t char_value_len;
-	uint16_t char_value_handle;                        // [out] where the assigned handle will be stored.
+	uint16_t char_value_handle;                        // [out] where the assigned handle be stored.
 	bool is_variable_len;
-	bool rd_author;                                 // read authorization. Enabel or Disable MIBLE_GATTS_READ_PERMIT_REQ event
-	bool wr_author;                                 // write authorization. Enabel or Disable MIBLE_GATTS_WRITE_PERMIT_REQ event
+	bool rd_author;                                    // read authorization. Enabel or Disable MIBLE_GATTS_READ_PERMIT_REQ event
+	bool wr_author;                                    // write authorization. Enabel or Disable MIBLE_GATTS_WRITE_PERMIT_REQ event
 	mible_gatts_char_desc_db_t char_desc_db;
 } mible_gatts_char_db_t;
 
@@ -222,15 +222,9 @@ typedef enum {
 } mible_gatts_char_property;
 
 typedef enum {
-    MIBLE_GATTS_EVT_WRITE = MIBLE_GATTS_EVT_BASE,
-    // When this event is called, the characteristic has been modified.
-    MIBLE_GATTS_EVT_READ_PERMIT_REQ,
-    // If charicteristic's rd_auth = TRUE, the event will be called.
-    // When this event is called, the characteristic hasn't been read.
-    MIBLE_GATTS_EVT_WRITE_PERMIT_REQ,
-    // If charicteristic's wr_auth = TRUE, the event will be called
-    // When this event is called, the characteristic hasn't been modified.
-	// Application may use mible_gatts_value_set to finalise the writing operation.
+    MIBLE_GATTS_EVT_WRITE = MIBLE_GATTS_EVT_BASE,      // When this event is called, the characteristic has been modified.
+    MIBLE_GATTS_EVT_READ_PERMIT_REQ,                   // If charicteristic's rd_auth = TRUE, this event will be generated.
+    MIBLE_GATTS_EVT_WRITE_PERMIT_REQ,                  // If charicteristic's wr_auth = TRUE, this event will be generated, meanwhile the char value hasn't been modified. mible_gatts_rw_auth_reply().
 	MIBLE_GATTS_EVT_IND_CONFIRM
 } mible_gatts_evt_t;
 
@@ -241,10 +235,9 @@ typedef enum {
  * */
 typedef struct {
     uint16_t value_handle; // char value_handle
-	uint8_t permit; // [OUT] true: permit to change value ; false: reject to change value 
     uint8_t offset;
-    uint8_t len;
     uint8_t* data;
+    uint8_t len;
 } mible_gatts_write_t;
 
 /*
@@ -253,8 +246,6 @@ typedef struct {
  * */
 typedef struct {
     uint16_t value_handle;  // char value handle 
-	uint8_t permit; // [OUT] true: permit to be read; false: reject read request 
-    uint16_t conn_handle;
 } mible_gatts_read_t;
 
 /*
@@ -449,5 +440,6 @@ typedef void (*mible_gattc_callback_t)(mible_gattc_evt_t evt,
 
 typedef void (*mible_arch_callback_t)(mible_arch_event_t evt, 
 		mible_arch_evt_param_t* param);
+
 
 #endif

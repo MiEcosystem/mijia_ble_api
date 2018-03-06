@@ -15,32 +15,97 @@
 #include "mible_api.h"
 #include "mible_port.h"
 #include "mible_type.h"
-/*
- * Add your own include file
- *
- * */
+
+#define MIBLE_MAX_USERS 4
 
 /* GAP, GATTS, GATTC event callback function */
+static uint8_t m_gap_users, m_gattc_users, m_gatts_users, m_arch_users;
+static mible_gap_callback_t   m_gap_cb_table[MIBLE_MAX_USERS];
+static mible_gatts_callback_t m_gatts_cb_table[MIBLE_MAX_USERS];
+static mible_gattc_callback_t m_gattc_cb_table[MIBLE_MAX_USERS];
+static mible_arch_callback_t  m_arch_cb_table[MIBLE_MAX_USERS];
 
-
-
-__WEAK int mible_gap_register(mible_gap_callback_t cb)
+int mible_gap_register(mible_gap_callback_t cb)
 {
+    int ret;
+
+    CRITICAL_SECTION_ENTER();
+    if (m_gap_users == MIBLE_MAX_USERS)
+    {
+        ret = MI_ERR_RESOURCES;
+    }
+    else
+    {
+        m_gap_cb_table[m_gap_users] = cb;
+        m_gap_users++;
+
+        ret = MI_SUCCESS;
+    }
+    CRITICAL_SECTION_EXIT();
+
     return MI_SUCCESS;
 }
 
-__WEAK int mible_gattc_register(mible_gattc_callback_t cb)
+int mible_gattc_register(mible_gattc_callback_t cb)
 {
+    int ret;
+
+    CRITICAL_SECTION_ENTER();
+    if (m_gattc_users == MIBLE_MAX_USERS)
+    {
+        ret = MI_ERR_RESOURCES;
+    }
+    else
+    {
+        m_gattc_cb_table[m_gattc_users] = cb;
+        m_gattc_users++;
+
+        ret = MI_SUCCESS;
+    }
+    CRITICAL_SECTION_EXIT();
+
     return MI_SUCCESS;
 }
 
-__WEAK int mible_gatts_register(mible_gatts_callback_t cb)
+int mible_gatts_register(mible_gatts_callback_t cb)
 {
+    int ret;
+
+    CRITICAL_SECTION_ENTER();
+    if (m_gatts_users == MIBLE_MAX_USERS)
+    {
+        ret = MI_ERR_RESOURCES;
+    }
+    else
+    {
+        m_gatts_cb_table[m_gatts_users] = cb;
+        m_gatts_users++;
+
+        ret = MI_SUCCESS;
+    }
+    CRITICAL_SECTION_EXIT();
+
     return MI_SUCCESS;
 }
 
-__WEAK int mible_arch_register(mible_arch_callback_t cb)
+int mible_arch_register(mible_arch_callback_t cb)
 {
+    int ret;
+
+    CRITICAL_SECTION_ENTER();
+    if (m_arch_users == MIBLE_MAX_USERS)
+    {
+        ret = MI_ERR_RESOURCES;
+    }
+    else
+    {
+        m_arch_cb_table[m_arch_users] = cb;
+        m_arch_users++;
+
+        ret = MI_SUCCESS;
+    }
+    CRITICAL_SECTION_EXIT();
+
     return MI_SUCCESS;
 }
 
@@ -54,24 +119,18 @@ __WEAK int mible_arch_register(mible_arch_callback_t cb)
  *function
  *          and pass in the corresponding parameters.
 */
-__WEAK void mible_gap_event_callback(mible_gap_evt_t evt,
+
+void mible_gap_event_callback(mible_gap_evt_t evt,
     mible_gap_evt_param_t* param)
 {
-    switch (evt) {
-    case MIBLE_GAP_EVT_CONNECTED:
-		// mible_std_server_gap_evt_connected(param); 
-        break;
-    case MIBLE_GAP_EVT_DISCONNET:
-		// mible_std_server_gap_evt_disconnected(param);
-        break;
-    case MIBLE_GAP_EVT_ADV_REPORT:
-        // mible_std_server_gap_evt_scan_report(param); 
-		break;
-    case MIBLE_GAP_EVT_CONN_PARAM_UPDATED:
-		// mible_std_server_gap_evt_conn_params_updated(param);
-        break;
+    for (int user = 0; user < MIBLE_MAX_USERS; user++) {
+        if (m_gap_cb_table[user] != NULL) {
+            m_gap_cb_table[user](evt, param);
+        }
     }
 }
+
+
 /**
  *@brief    This function is MIBLE GATTS related event callback function.
  *@param    [in] evt : GATTS EVENT
@@ -81,26 +140,17 @@ __WEAK void mible_gap_event_callback(mible_gap_evt_t evt,
             Make sure when the corresponding event occurs, be able to call this
  function and pass in the corresponding parameters.
 */
-__WEAK void mible_gatts_event_callback(mible_gatts_evt_t evt,
+void mible_gatts_event_callback(mible_gatts_evt_t evt,
     mible_gatts_evt_param_t* param)
 {
-    switch (evt) {
-    case MIBLE_GATTS_EVT_WRITE:
-		// mible_std_server_gatts_evt_write(param);
-        break;
-
-    case MIBLE_GATTS_EVT_READ_PERMIT_REQ:
-		// mible_std_server_gatts_evt_read_permit_req(param);
-        break;
-
-    case MIBLE_GATTS_EVT_WRITE_PERMIT_REQ:
-		// mible_std_server_gatts_evt_write_permit_req(param);
-        break;
-
-	case MIBLE_GATTS_EVT_IND_CONFIRM:
-		break;
+    for (int user = 0; user < MIBLE_MAX_USERS; user++) {
+        if (m_gatts_cb_table[user] != NULL) {
+            m_gatts_cb_table[user](evt, param);
+        }
     }
 }
+
+
 /**
  *@brief    This function is MIBLE GATTC related event callback function.
  *@param    [in] evt : GATTC EVENT
@@ -110,24 +160,17 @@ __WEAK void mible_gatts_event_callback(mible_gatts_evt_t evt,
             Make sure when the corresponding event occurs, be able to call this
  function and pass in the corresponding parameters.
 */
-__WEAK void mible_gattc_event_callback(mible_gattc_evt_t evt,
+void mible_gattc_event_callback(mible_gattc_evt_t evt,
     mible_gattc_evt_param_t* param)
 {
-    switch (evt) {
-    case MIBLE_GATTC_EVT_PRIMARY_SERVICE_DISCOVER_RESP:
-        break;
-    case MIBLE_GATTC_EVT_CHR_DISCOVER_BY_UUID_RESP:
-        break;
-    case MIBLE_GATTC_EVT_CCCD_DISCOVER_RESP:
-        break;
-    case MIBLE_GATTC_EVT_READ_CHAR_VALUE_BY_UUID_RESP:
-        break;
-    case MIBLE_GATTC_EVT_WRITE_RESP:
-        break;
-    default:
-		;
+    for (int user = 0; user < MIBLE_MAX_USERS; user++) {
+        if (m_gattc_cb_table[user] != NULL) {
+            m_gattc_cb_table[user](evt, param);
+        }
     }
 }
+
+
 /*
  *@brief 	This function is mible_arch api related event callback function.
  *@param 	[in] evt: asynchronous function complete event 
@@ -135,12 +178,21 @@ __WEAK void mible_gattc_event_callback(mible_gattc_evt_t evt,
  *@note  	You should support this function in corresponding asynchronous function. 
  *          For now, mible_gatts_service_int and mible_record_write is asynchronous. 
  * */
-__WEAK void mible_arch_event_callback(mible_arch_event_t evt, 
+void mible_arch_event_callback(mible_arch_event_t evt, 
 		mible_arch_evt_param_t* param)
 {
-
+    for (int user = 0; user < MIBLE_MAX_USERS; user++) {
+        if (m_arch_cb_table[user] != NULL) {
+            m_arch_cb_table[user](evt, param);
+        }
+    }
 }
 
+
+
+/**
+ *        GAP APIs
+ */
 
 
 /*
@@ -223,6 +275,21 @@ __WEAK mible_status_t mible_gap_adv_data_set(mible_gap_adv_data_t *p_data)
 }
 
 /*
+ * @brief	Config advertising data
+ * @param 	[in] p_data : Raw data to be placed in advertising packet. If NULL, no changes are made to the current advertising packet.
+ * @param 	[in] dlen   : Data length for p_data. Max size: 31 octets. Should be 0 if p_data is NULL, can be 0 if p_data is not NULL.
+ * @param 	[in] p_sr_data : Raw data to be placed in scan response packet. If NULL, no changes are made to the current scan response packet data.
+ * @param 	[in] srdlen : Data length for p_sr_data. Max size: BLE_GAP_ADV_MAX_SIZE octets. Should be 0 if p_sr_data is NULL, can be 0 if p_data is not NULL.
+ * @return  MI_SUCCESS             Successfully set advertising data.
+ *          MI_ERR_INVALID_ADDR    Invalid pointer supplied.
+ *          MI_ERR_INVALID_PARAM   Invalid parameter(s) supplied.
+ * */	
+__WEAK mible_status_t mible_gap_advdata_set(uint8_t const * p_data, uint8_t dlen, uint8_t const *p_sr_data, uint8_t srdlen)
+{
+    return MI_SUCCESS;
+}
+
+/*
  * @brief	Stop advertising
  * @param	void
  * @return  MI_SUCCESS             Successfully stopped advertising procedure.
@@ -292,7 +359,11 @@ __WEAK mible_status_t mible_gap_update_conn_params(uint16_t conn_handle,
     return MI_SUCCESS;
 }
 
-/* GATTS related function  */
+
+
+/**
+ *        GATT Server APIs
+ */
 
 /*
  * @brief	Add a Service to a GATT server
@@ -351,12 +422,12 @@ __WEAK mible_status_t mible_gatts_value_get(uint16_t srv_handle, uint16_t value_
     return MI_SUCCESS;
 }
 
-// this function set char value and notify/indicate it to client
+
 /*
  * @brief 	Set characteristic value and notify it to client.
  * @param 	[in] conn_handle: conn handle
  *          [in] srv_handle: service handle
- * 			[in] char_value_handle: characteristic handle
+ * 			[in] char_value_handle: characteristic  value handle
  * 			[in] offset: the offset from which the attribute value has to
  * be updated
  * 			[in] p_value: pointer to data
@@ -375,8 +446,7 @@ __WEAK mible_status_t mible_gatts_value_get(uint16_t srv_handle, uint16_t value_
  *          MIBLE_ERR_GATT_INVALID_ATT_TYPE   //Attributes are not modifiable by
  * the application.
  * @note    This function checks for the relevant Client Characteristic
- * Configuration descriptor
- *          value to verify that the relevant operation (notification or
+ * Configuration descriptor value to verify that the relevant operation (notification or
  * indication) has been enabled by the client.
  * */
 __WEAK mible_status_t mible_gatts_notify_or_indicate(uint16_t conn_handle, uint16_t srv_handle,
@@ -386,7 +456,38 @@ __WEAK mible_status_t mible_gatts_notify_or_indicate(uint16_t conn_handle, uint1
     return MI_SUCCESS;
 }
 
-/* GATTC related function */
+
+/*
+ * @brief 	Respond to a Read/Write user authorization request.
+ * @param 	[in] conn_handle: conn handle
+ *          [in] status:  1: permit to change value ; 0: reject to change value 
+ * 			[in] char_value_handle: characteristic handle
+ * 			[in] offset: the offset from which the attribute value has to
+ * be updated
+ * 			[in] p_value: Pointer to new value used to update the attribute value.
+ * 			[in] len: data length
+ *          [in] type : read response = 1; write response = 2;
+ *
+ * @return  MI_SUCCESS             Successfully queued a response to the peer, and in the case of a write operation, GATT updated.
+ *          MI_ERR_INVALID_ADDR    Invalid pointer supplied.
+ *          MI_ERR_INVALID_PARAM   Invalid parameter (offset) supplied.
+ *          MI_ERR_INVALID_STATE   Invalid Connection State or no authorization request pending.
+ *          MI_ERR_INVALID_LENGTH  Invalid length supplied.
+ *          MI_ERR_BUSY            Procedure already in progress.
+ *          MIBLE_ERR_ATT_INVALID_HANDLE     Attribute not found.
+ * @note    This call should only be used as a response to a MIBLE_GATTS_EVT_READ/WRITE_PERMIT_REQ
+ * event issued to the application.
+ * */
+__WEAK mible_status_t mible_gatts_rw_auth_reply(uint16_t conn_handle, uint8_t status,
+    uint16_t char_value_handle, uint8_t offset, uint8_t* p_value,
+    uint8_t len, uint8_t type)
+{
+    return MI_SUCCESS;
+}
+
+/**
+ *        GATT Client APIs
+ */
 
 /*
  * @brief	Discover primary service by service UUID.
@@ -517,7 +618,9 @@ __WEAK mible_status_t mible_gattc_write_cmd(uint16_t conn_handle, uint16_t att_h
     return MI_SUCCESS;
 }
 
-/*TIMER related function*/
+/**
+ *        SOFT TIMER APIs
+ */
 
 /*
  * @brief 	Create a timer.
@@ -583,7 +686,9 @@ __WEAK mible_status_t mible_timer_stop(void* timer_id)
 	return MI_SUCCESS; 
 }
 
-/* FLASH related function*/
+/**
+ *        NVM APIs
+ */
 
 /*
  * @brief 	Create a record in flash 
@@ -649,6 +754,10 @@ __WEAK mible_status_t mible_record_write(uint16_t record_id, uint8_t* p_data,
     return MI_SUCCESS;
 }
 
+/**
+ *        MISC APIs
+ */
+
 /*
  * @brief   Get ture random bytes .
  * @param   [out] p_buf: pointer to data
@@ -711,6 +820,10 @@ __WEAK void mible_tasks_exec(void)
 {
 
 }
+
+/**
+ *        IIC APIs
+ */
 
 /*
  * @brief 	Function for initializing the IIC driver instance.
