@@ -137,8 +137,7 @@ mible_status_t mible_iic_tx(uint8_t addr, uint8_t * p_out, uint16_t len, bool no
     
 mible_status_t mible_iic_rx(uint8_t addr, uint8_t * p_in, uint16_t len);
 
-void mible_arch_event_dispatch(mible_arch_event_t evt, 
-		mible_arch_evt_param_t* param);
+int mible_iic_scl_pin_read(uint8_t port, uint8_t pin);
 
 int mible_gap_register(mible_gap_callback_t cb);
 
@@ -147,4 +146,5 @@ int mible_gattc_register(mible_gattc_callback_t cb);
 int mible_gatts_register(mible_gatts_callback_t cb);
 
 int mible_arch_register(mible_arch_callback_t cb);
+
 #endif

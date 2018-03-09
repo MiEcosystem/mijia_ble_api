@@ -195,7 +195,7 @@ void mible_arch_event_callback(mible_arch_event_t evt,
  */
 
 
-/*
+/**
  * @brief 	Get BLE mac address.
  * @param 	[out] mac: pointer to data
  * @return  MI_SUCCESS			The requested mac address were written to mac
@@ -208,7 +208,7 @@ __WEAK mible_status_t mible_gap_address_get(mible_addr_t mac)
 }
 
 
-/*
+/**
  * @brief	Start scanning
  * @param 	[in] scan_type:	passive or active scaning
  * 			[in] scan_param: scan parameters including interval, windows
@@ -229,7 +229,7 @@ __WEAK mible_status_t mible_gap_scan_start(mible_gap_scan_type_t scan_type,
     return MI_SUCCESS;
 }
 
-/*
+/**
  * @brief	Stop scanning
  * @param 	void
  * @return  MI_SUCCESS             Successfully stopped scanning procedure.
@@ -240,7 +240,7 @@ __WEAK mible_status_t mible_gap_scan_stop(void)
 	return MI_SUCCESS; 
 }
 
-/*
+/**
  * @brief	Start advertising
  * @param 	[in] p_adv_param : pointer to advertising parameters, see
  * mible_gap_adv_param_t for details
@@ -260,7 +260,7 @@ __WEAK mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_param)
     return MI_SUCCESS;
 }
 
-/*
+/**
  * @brief	Config advertising
  * @param 	[in] p_adv_data : pointer to advertising data, see
  * mible_gap_adv_data_t for details
@@ -273,7 +273,7 @@ __WEAK mible_status_t mible_gap_adv_data_set(mible_gap_adv_data_t *p_data)
     return MI_SUCCESS;
 }
 
-/*
+/**
  * @brief	Config advertising data
  * @param 	[in] p_data : Raw data to be placed in advertising packet. If NULL, no changes are made to the current advertising packet.
  * @param 	[in] dlen   : Data length for p_data. Max size: 31 octets. Should be 0 if p_data is NULL, can be 0 if p_data is not NULL.
@@ -288,7 +288,7 @@ __WEAK mible_status_t mible_gap_advdata_set(uint8_t const * p_data, uint8_t dlen
     return MI_SUCCESS;
 }
 
-/*
+/**
  * @brief	Stop advertising
  * @param	void
  * @return  MI_SUCCESS             Successfully stopped advertising procedure.
@@ -299,7 +299,7 @@ __WEAK mible_status_t mible_gap_adv_stop(void)
 	return MI_SUCCESS; 
 }
 
-/*
+/**
  * @brief  	Create a Direct connection
  * @param   [in] scan_param : scanning parameters, see TYPE
  * mible_gap_scan_param_t for details.
@@ -323,7 +323,7 @@ __WEAK mible_status_t mible_gap_connect(mible_gap_scan_param_t scan_param,
     return MI_SUCCESS;
 }
 
-/*
+/**
  * @brief	Disconnect from peer
  * @param 	[in] conn_handle: the connection handle
  * @return  MI_SUCCESS             Successfully disconnected.
@@ -337,7 +337,7 @@ __WEAK mible_status_t mible_gap_disconnect(uint16_t conn_handle)
 	return MI_SUCCESS; 
 }
 
-/*
+/**
  * @brief	Update the connection parameters.
  * @param  	[in] conn_handle: the connection handle.
  *			[in] conn_params: the connection parameters.
@@ -364,7 +364,7 @@ __WEAK mible_status_t mible_gap_update_conn_params(uint16_t conn_handle,
  *        GATT Server APIs
  */
 
-/*
+/**
  * @brief	Add a Service to a GATT server
  * @param 	[in|out] p_server_db: pointer to mible service data type 
  * of mible_gatts_db_t, see TYPE mible_gatts_db_t for details. 
@@ -379,7 +379,7 @@ __WEAK mible_status_t mible_gatts_service_init(mible_gatts_db_t *p_server_db)
     return MI_SUCCESS;
 }
 
-/*
+/**
  * @brief	Set characteristic value
  * @param	[in] srv_handle: service handle
  *			[in] value_handle: characteristic value handle
@@ -403,7 +403,7 @@ __WEAK mible_status_t mible_gatts_value_set(uint16_t srv_handle, uint16_t value_
     return MI_SUCCESS;
 }
 
-/*
+/**
  * @brief	Get charicteristic value as a GATTS.
  * @param 	[in] srv_handle: service handle
  * 			[in] value_handle: characteristic value handle
@@ -422,7 +422,7 @@ __WEAK mible_status_t mible_gatts_value_get(uint16_t srv_handle, uint16_t value_
 }
 
 
-/*
+/**
  * @brief 	Set characteristic value and notify it to client.
  * @param 	[in] conn_handle: conn handle
  *          [in] srv_handle: service handle
@@ -456,7 +456,7 @@ __WEAK mible_status_t mible_gatts_notify_or_indicate(uint16_t conn_handle, uint1
 }
 
 
-/*
+/**
  * @brief 	Respond to a Read/Write user authorization request.
  * @param 	[in] conn_handle: conn handle
  *          [in] status:  1: permit to change value ; 0: reject to change value 
@@ -488,7 +488,7 @@ __WEAK mible_status_t mible_gatts_rw_auth_reply(uint16_t conn_handle, uint8_t st
  *        GATT Client APIs
  */
 
-/*
+/**
  * @brief	Discover primary service by service UUID.
  * @param 	[in] conn_handle: connect handle
  * 			[in] handle_range: search range for primary sevice
@@ -510,7 +510,7 @@ __WEAK mible_status_t mible_gattc_primary_service_discover_by_uuid(uint16_t conn
     return MI_SUCCESS;
 }
 
-/*
+/**
  * @brief	Discover characteristic by characteristic UUID.
  * @param	[in] conn_handle: connect handle
  * 			[in] handle_range: search range for characteristic discovery
@@ -532,7 +532,7 @@ mible_gattc_char_discover_by_uuid(uint16_t conn_handle,
     return MI_SUCCESS;
 }
 
-/*
+/**
  * @brief	Discover characteristic client configuration descriptor
  * @param 	[in] conn_handle: connection handle
  * 			[in] handle_range: search range
@@ -556,7 +556,7 @@ mible_gattc_clt_cfg_descriptor_discover(uint16_t conn_handle,
     return MI_SUCCESS;
 }
 
-/*
+/**
  * @brief	Read characteristic value by UUID
  * @param 	[in] conn_handle: connnection handle
  * 			[in] handle_range: search range
@@ -575,7 +575,7 @@ __WEAK mible_status_t mible_gattc_read_char_value_by_uuid(uint16_t conn_handle,
     return MI_SUCCESS;
 }
 
-/*
+/**
  * @brief	Write value by handle with response
  * @param 	[in] conn_handle: connection handle
  * 			[in] handle: handle to the attribute to be written.
@@ -597,7 +597,7 @@ __WEAK mible_status_t mible_gattc_write_with_rsp(uint16_t conn_handle, uint16_t 
     return MI_SUCCESS;
 }
 
-/*
+/**
  * @brief 	Write value by handle without response
  * @param   [in] conn_handle: connection handle
  * 			[in] att_handle: handle to the attribute to be written.
@@ -621,7 +621,7 @@ __WEAK mible_status_t mible_gattc_write_cmd(uint16_t conn_handle, uint16_t att_h
  *        SOFT TIMER APIs
  */
 
-/*
+/**
  * @brief 	Create a timer.
  * @param 	[out] p_timer_id: a pointer to timer id address which can uniquely identify the timer.
  * 			[in] timeout_handler: a pointer to a function which can be
@@ -641,7 +641,7 @@ __WEAK mible_status_t mible_timer_create(void** p_timer_id,
     return MI_SUCCESS;
 }
 
-/*
+/**
  * @brief 	Delete a timer.
  * @param 	[in] timer_id: timer id
  * @return  MI_SUCCESS             If the timer was successfully deleted.
@@ -652,7 +652,7 @@ __WEAK mible_status_t mible_timer_delete(void* timer_id)
 	return MI_SUCCESS; 
 }
 
-/*
+/**
  * @brief 	Start a timer.
  * @param 	[in] timer_id: timer id
  *          [in] timeout_value: Number of milliseconds to time-out event
@@ -673,7 +673,7 @@ __WEAK mible_status_t mible_timer_start(void* timer_id, uint32_t timeout_value,
     return MI_SUCCESS;
 }
 
-/*
+/**
  * @brief 	Stop a timer.
  * @param 	[in] timer_id: timer id
  * @return  MI_SUCCESS             If the timer was successfully stopped.
@@ -689,7 +689,7 @@ __WEAK mible_status_t mible_timer_stop(void* timer_id)
  *        NVM APIs
  */
 
-/*
+/**
  * @brief 	Create a record in flash 
  * @param 	[in] record_id: identify a record in flash 
  * 			[in] len: record length
@@ -705,7 +705,7 @@ __WEAK mible_status_t mible_record_create(uint16_t record_id, uint8_t len)
 }
 
 
-/*
+/**
  * @brief  	Delete a record in flash
  * @param 	[in] record_id: identify a record in flash  
  * @return 	MI_SUCCESS 				Delete successfully. 
@@ -716,7 +716,7 @@ __WEAK mible_status_t mible_record_delete(uint16_t record_id)
 	return MI_SUCCESS;
 }
 
-/*
+/**
  * @brief 	Restore data to flash
  * @param 	[in] record_id: identify an area in flash
  * 			[out] p_data: pointer to data
@@ -733,7 +733,7 @@ __WEAK mible_status_t mible_record_read(uint16_t record_id, uint8_t* p_data,
     return MI_SUCCESS;
 }
 
-/*
+/**
  * @brief 	Store data to flash
  * @param 	[in] record_id: identify an area in flash
  * 			[in] p_data: pointer to data
@@ -757,7 +757,7 @@ __WEAK mible_status_t mible_record_write(uint16_t record_id, uint8_t* p_data,
  *        MISC APIs
  */
 
-/*
+/**
  * @brief   Get ture random bytes .
  * @param   [out] p_buf: pointer to data
  *          [in] len: Number of bytes to take from pool and place in
@@ -773,7 +773,7 @@ __WEAK mible_status_t mible_rand_num_generator(uint8_t* p_buf, uint8_t len)
     return MI_SUCCESS;
 }
 
-/*
+/**
  * @brief   Encrypts a block according to the specified parameters. 128-bit
  * AES encryption. (zero padding)
  * @param   [in] key: encryption key
@@ -795,7 +795,7 @@ __WEAK mible_status_t mible_aes128_encrypt(const uint8_t* key,
 }
 
 
-/*
+/**
  * @brief   Post a task to a task quene, which can be executed in a right place 
  * (maybe a task in RTOS or while(1) in the main function).
  * @param   [in] handler: a pointer to function 
@@ -809,7 +809,7 @@ __WEAK mible_status_t mible_task_post(mible_handler_t handler, void *arg)
 	return MI_SUCCESS;
 }
 
-/*
+/**
  * @brief 	Function for executing all enqueued tasks.
  *
  * @note    This function must be called from within the main loop. It will 
@@ -824,7 +824,7 @@ __WEAK void mible_tasks_exec(void)
  *        IIC APIs
  */
 
-/*
+/**
  * @brief 	Function for initializing the IIC driver instance.
  * @param 	[in] p_config: Pointer to the initial configuration.
  * 			[in] handler: Event handler provided by the user. 
@@ -837,7 +837,7 @@ __WEAK mible_status_t mible_iic_init(iic_config_t * p_config, mible_handler_t ha
     return MI_SUCCESS;
 }
 
-/*
+/**
  * @brief 	Function for uninitializing the IIC driver instance.
  * 
  * 				
@@ -847,7 +847,7 @@ __WEAK void mible_iic_uninit(void)
 
 }
 
-/*
+/**
  * @brief 	Function for sending data to a IIC slave.
  * @param 	[in] addr:   Address of a specific slave device (only 7 LSB).
  * 			[in] p_out:  Pointer to tx data
@@ -866,7 +866,7 @@ __WEAK mible_status_t mible_iic_tx(uint8_t addr, uint8_t * p_out, uint16_t len, 
     return MI_SUCCESS;
 }
 
-/*
+/**
  * @brief 	Function for reciving data to a IIC slave.
  * @param 	[in] addr:   Address of a specific slave device (only 7 LSB).
  * 			[out] p_in:  Pointer to rx data
@@ -881,4 +881,16 @@ __WEAK mible_status_t mible_iic_tx(uint8_t addr, uint8_t * p_out, uint16_t len, 
 __WEAK mible_status_t mible_iic_rx(uint8_t addr, uint8_t * p_in, uint16_t len)
 {
     return MI_SUCCESS;
+}
+
+/**
+ * @brief 	Function for checking IIC SCL pin.
+ * @param 	[in] port:   SCL port
+ * 			[in] pin :   SCL pin
+ * @return  1: High (Idle)
+ *          0: Low (Busy)
+ * */
+__WEAK int mible_iic_scl_pin_read(uint8_t port, uint8_t pin)
+{
+    return 0;
 }

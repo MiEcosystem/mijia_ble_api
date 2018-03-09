@@ -228,7 +228,6 @@ int mi_psm_record_delete(uint16_t rec_key)
 		NRF_LOG_ERROR("mi psm cann't delete the record %X. \n", rec_key);
 	    ret = MI_ERR_INVALID_PARAM;
 	}
-	
 	return ret;
 }
 
