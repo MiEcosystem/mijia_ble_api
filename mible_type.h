@@ -419,7 +419,7 @@ typedef struct{
 
 typedef struct{
 	uint16_t id;
-	mible_status_t status;	
+	mible_status_t status;
 }mible_arch_record_t;
 
 typedef struct{
