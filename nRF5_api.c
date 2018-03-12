@@ -1123,9 +1123,10 @@ static void twi0_handler(nrf_drv_twi_evt_t const * p_event, void * p_context)
  *          MI_ERR_INVALID_PARAM    p_config or handler is a NULL pointer.
  *              
  * */
-mible_status_t mible_iic_init(iic_config_t * p_config, mible_handler_t handler)
+mible_status_t mible_iic_init(const iic_config_t * p_config, mible_handler_t handler)
 {
     uint32_t errno;
+    
     if (p_config == NULL || handler == NULL) {
         return MI_ERR_INVALID_PARAM;
     } else {

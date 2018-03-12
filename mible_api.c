@@ -16,7 +16,9 @@
 #include "mible_port.h"
 #include "mible_type.h"
 
+#ifndef MIBLE_MAX_USERS
 #define MIBLE_MAX_USERS 4
+#endif
 
 /* GAP, GATTS, GATTC event callback function */
 static uint8_t m_gap_users, m_gattc_users, m_gatts_users, m_arch_users;
@@ -803,7 +805,7 @@ __WEAK void mible_tasks_exec(void)
  *          MI_ERR_INVALID_PARAM    p_config or handler is a NULL pointer.
  *              
  * */
-__WEAK mible_status_t mible_iic_init(iic_config_t * p_config,
+__WEAK mible_status_t mible_iic_init(const iic_config_t * p_config,
         mible_handler_t handler)
 {
     return MI_SUCCESS;

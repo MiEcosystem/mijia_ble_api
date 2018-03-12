@@ -125,7 +125,7 @@ mible_status_t mible_task_post(mible_handler_t handler, void *param);
 
 void mible_tasks_exec(void);
 
-mible_status_t mible_iic_init(iic_config_t * p_config, mible_handler_t handler);
+mible_status_t mible_iic_init(const iic_config_t * p_config, mible_handler_t handler);
 
 void mible_iic_uninit(void);
 

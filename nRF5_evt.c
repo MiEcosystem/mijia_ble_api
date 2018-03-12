@@ -7,7 +7,6 @@
 #include "ble_gatts.h"
 
 #include "mible_api.h"
-#include "mi_config.h"
 
 #undef  MI_LOG_MODULE_NAME
 #define MI_LOG_MODULE_NAME "nRF"
