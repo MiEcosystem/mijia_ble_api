@@ -18,6 +18,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#ifndef NULL
+#define NULL 0
+#endif
+
 #if defined(__CC_ARM)
 #pragma anon_unions
 #elif defined(__ICCARM__)
@@ -113,10 +117,11 @@
 #define CRITICAL_SECTION_EXIT()
 
 #define MI_LOG_PRINTF(...)     SEGGER_RTT_printf(0, __VA_ARGS__)
-#define MI_LOG_HEXDUMP(array_base, array_size)                                 \
-	do {                                                                       \
-		for(int i = 0; i<(array_size); i++) SEGGER_RTT_printf(0, "%02X ", ((char*)(array_base))[i]);\
-		SEGGER_RTT_printf(0, "\n");                                            \
+#define MI_LOG_HEXDUMP(array_base, array_size)                                     \
+	do {                                                                           \
+        for (int i = 0; i<(array_size); i++)                                       \
+            SEGGER_RTT_printf(0, (i+1)%16?"%02X ":"%02X\n", ((char*)(array_base))[i]);\
+		if (array_size%16) SEGGER_RTT_printf(0,"\n");                               \
 	} while(0)
 
 #endif // MIBLE_PORT_H__

@@ -20,7 +20,7 @@
 
 extern uint8_t txData[TX_BUFFER_SIZE];    
 extern uint8_t rxData[RX_BUFFER_SIZE];   
-extern cbFunc i2cCallback;
+
 
 int main2(void)
 {
@@ -43,9 +43,9 @@ int main2(void)
   CMU_HFRCOBandSet(cmuHFRCOFreq_38M0Hz);  
   
   // Set up I2C
-  i2cCallback = transferComplete;
-  iic_config_t i2cConfig = I2C_CONF_DEFAULT;
-  mible_iic_init(&i2cConfig, i2cCallback);
+//  i2cCallback = transferComplete;
+//  iic_config_t i2cConfig = I2C_CONF_DEFAULT;
+//  mible_iic_init(&i2cConfig, i2cCallback);
 
   // Enable Si7021 sensor isolation switch on STK for testing
 #if defined(EFR32MG13P732F512GM48)

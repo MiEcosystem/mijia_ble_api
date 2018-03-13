@@ -80,20 +80,6 @@
 #define TX_BUFFER_SIZE  512
 #define RX_BUFFER_SIZE  16
 
-// Default I2C configuration
-#define I2C_CONF_DEFAULT        \
-{                               \
-  I2C_SCL_PORT,                 \
-  I2C_SCL_PIN,                  \
-  I2C_SCL_LOC,                  \
-  I2C_SDA_PORT,                 \
-  I2C_SDA_PIN,                  \
-  I2C_SDA_LOC,                  \
-  IIC_100K                      \
-}
-
-typedef mible_timer_handler cbFunc;
-
 void transferComplete(void *data);
 void waitUntilTransferDone(void);
 mible_status_t mible_iic_tx_rx(uint8_t addr, uint8_t *p_out, uint8_t outlen, uint8_t * p_in, uint16_t inlen);

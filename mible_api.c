@@ -42,7 +42,7 @@ int mible_gap_register(mible_gap_callback_t cb)
     }
     CRITICAL_SECTION_EXIT();
 
-    return MI_SUCCESS;
+    return ret;
 }
 
 int mible_gattc_register(mible_gattc_callback_t cb)
@@ -60,7 +60,7 @@ int mible_gattc_register(mible_gattc_callback_t cb)
     }
     CRITICAL_SECTION_EXIT();
 
-    return MI_SUCCESS;
+    return ret;
 }
 
 int mible_gatts_register(mible_gatts_callback_t cb)
@@ -78,7 +78,7 @@ int mible_gatts_register(mible_gatts_callback_t cb)
     }
     CRITICAL_SECTION_EXIT();
 
-    return MI_SUCCESS;
+    return ret;
 }
 
 int mible_arch_register(mible_arch_callback_t cb)
@@ -96,7 +96,7 @@ int mible_arch_register(mible_arch_callback_t cb)
     }
     CRITICAL_SECTION_EXIT();
 
-    return MI_SUCCESS;
+    return ret;
 }
 
 /**
