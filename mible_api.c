@@ -243,19 +243,6 @@ __WEAK mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_param)
 }
 
 /**
- * @brief   Config advertising
- * @param   [in] p_adv_data : pointer to advertising data, see
- * mible_gap_adv_data_t for details
- * @return  MI_SUCCESS             Successfully set advertising data.
- *          MI_ERR_INVALID_ADDR    Invalid pointer supplied.
- *          MI_ERR_INVALID_PARAM   Invalid parameter(s) supplied.
- * */
-__WEAK mible_status_t mible_gap_adv_data_set(mible_gap_adv_data_t *p_data)
-{
-    return MI_SUCCESS;
-}
-
-/**
  * @brief   Config advertising data
  * @param   [in] p_data : Raw data to be placed in advertising packet. If NULL, no changes are made to the current advertising packet.
  * @param   [in] dlen   : Data length for p_data. Max size: 31 octets. Should be 0 if p_data is NULL, can be 0 if p_data is not NULL.
@@ -265,7 +252,7 @@ __WEAK mible_status_t mible_gap_adv_data_set(mible_gap_adv_data_t *p_data)
  *          MI_ERR_INVALID_ADDR    Invalid pointer supplied.
  *          MI_ERR_INVALID_PARAM   Invalid parameter(s) supplied.
  * */
-__WEAK mible_status_t mible_gap_advdata_set(uint8_t const * p_data,
+__WEAK mible_status_t mible_gap_adv_data_set(uint8_t const * p_data,
         uint8_t dlen, uint8_t const *p_sr_data, uint8_t srdlen)
 {
     return MI_SUCCESS;
@@ -842,7 +829,7 @@ bool no_stop)
 }
 
 /**
- * @brief   Function for reciving data to a IIC slave.
+ * @brief   Function for receiving data from a IIC slave.
  * @param   [in] addr:   Address of a specific slave device (only 7 LSB).
  *          [out] p_in:  Pointer to rx data
  *          [in] len:    Data length

@@ -42,9 +42,7 @@ mible_status_t mible_gap_scan_stop(void);
 
 mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_adv_param);
 
-mible_status_t mible_gap_adv_data_set(mible_gap_adv_data_t *p_data);
-
-mible_status_t mible_gap_advdata_set(uint8_t const * p_data, uint8_t dlen,
+mible_status_t mible_gap_adv_data_set(uint8_t const * p_data, uint8_t dlen,
 		uint8_t const *p_sr_data, uint8_t srdlen);
 
 mible_status_t mible_gap_adv_stop(void);
