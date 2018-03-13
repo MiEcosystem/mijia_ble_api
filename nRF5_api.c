@@ -193,22 +193,6 @@ mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_adv_param)
 
 /*
  * @brief   Config advertising data
- * @param   [in] p_adv_data : pointer to advertising data, see
- * mible_gap_adv_data_t for details
- * @return  MI_SUCCESS             Successfully set advertising data.
- *          MI_ERR_INVALID_ADDR    Invalid pointer supplied.
- *          MI_ERR_INVALID_PARAM   Invalid parameter(s) supplied.
- * */
-mible_status_t mible_gap_adv_data_set(mible_gap_adv_data_t *p_data)
-{
-    uint32_t errno;
-    errno = sd_ble_gap_adv_data_set(p_data->adv_data, p_data->adv_len, p_data->scan_rsp_data, p_data->scan_rsp_len);
-    MI_ERR_CHECK(errno);
-    return err_code_convert(errno);
-}
-
-/*
- * @brief   Config advertising data
  * @param   [in] p_data : Raw data to be placed in advertising packet. If NULL, no changes are made to the current advertising packet.
  * @param   [in] dlen   : Data length for p_data. Max size: 31 octets. Should be 0 if p_data is NULL, can be 0 if p_data is not NULL.
  * @param   [in] p_sr_data : Raw data to be placed in scan response packet. If NULL, no changes are made to the current scan response packet data.
@@ -217,7 +201,7 @@ mible_status_t mible_gap_adv_data_set(mible_gap_adv_data_t *p_data)
  *          MI_ERR_INVALID_ADDR    Invalid pointer supplied.
  *          MI_ERR_INVALID_PARAM   Invalid parameter(s) supplied.
  * */   
-mible_status_t mible_gap_advdata_set(uint8_t const * p_data, uint8_t dlen, uint8_t const *p_sr_data, uint8_t srdlen)
+mible_status_t mible_gap_adv_data_set(uint8_t const * p_data, uint8_t dlen, uint8_t const *p_sr_data, uint8_t srdlen)
 {
     uint32_t errno;
     errno = sd_ble_gap_adv_data_set(p_data, dlen, p_sr_data, srdlen);
