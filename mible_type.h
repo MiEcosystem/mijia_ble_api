@@ -370,10 +370,10 @@ typedef enum {
 typedef struct {
     uint8_t scl_port;
 	uint8_t scl_pin;
-	uint8_t scl_location;
+	uint8_t scl_extra_conf;
 	uint8_t sda_port;
     uint8_t sda_pin;
-	uint8_t sda_location;
+	uint8_t sda_extra_conf;
     iic_freq_t freq;
 } iic_config_t;
 
@@ -419,7 +419,7 @@ typedef struct{
 
 typedef struct{
 	uint16_t id;
-	mible_status_t status;	
+	mible_status_t status;
 }mible_arch_record_t;
 
 typedef struct{
