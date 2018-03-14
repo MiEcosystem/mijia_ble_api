@@ -66,15 +66,6 @@ typedef struct {
 	} ch_mask;
 } mible_gap_adv_param_t;
 
-typedef struct {
-    uint8_t adv_data[31];                      // advertising data
-    uint8_t adv_len;                           // advertising data length
-    uint8_t scan_rsp_data[31];                 // response data in active scanning
-    uint8_t scan_rsp_len;                      // response data length in active scanning
-    uint8_t clear_adv_data;
-    uint8_t clear_scan_data;
-} mible_gap_adv_data_t;
-
 typedef enum {
     ADV_DATA,           // advertising data
     SCAN_RSP_DATA,      // response data from active scanning

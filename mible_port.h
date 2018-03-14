@@ -18,6 +18,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#ifndef NULL
+#define NULL 0
+#endif
+
 #if defined(__CC_ARM)
 #pragma anon_unions
 #elif defined(__ICCARM__)

@@ -1,6 +1,6 @@
 # mijia BLE Low level API
 ## 主分支
-mijia BLE 底层通用 API 定义。mible_api.c 中函数为弱定义实现。
+mijia BLE 底层通用 API 定义。mible_api.c 中函数为弱定义实现。api的具体说明详见https://miecosystem.github.io/mijia_ble_api/
 ## 芯片厂分支
 各芯片厂提供兼容层适配：
 保持原有主分支文件不变，增加各自平台上的适配文件，以芯片型号命名 xxxx_api.c，
