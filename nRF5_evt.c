@@ -110,7 +110,6 @@ static void gatts_evt_dispatch(ble_evt_t *p_ble_evt)
 			gatts_params.write.offset = p_ble_evt->evt.gatts_evt.params.authorize_request.request.write.offset;
 			evt = MIBLE_GATTS_EVT_WRITE_PERMIT_REQ;
 		}
-//        MI_LOG_HEXDUMP(gatts_params.write.data, gatts_params.write.len);
 
         gatts_evt_availble = true;
 		break;
