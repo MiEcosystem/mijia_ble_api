@@ -2,13 +2,12 @@
 #define EFR32_API_H
 
 #include "mible_type.h"
-#include "i2cspm.h"
 
 /* Always define this for now, nonblocking hasn't been implemented so that it could cause problem if the user call the mible APIs earlier than system boot event recieved*/
 #define BLOCKING_WAITING_FOR_BOOT_EVT
 
 /* AES block size, always be 16 */
-#define AES_BLOCK_SIZE                                  16
+#define AES_BLOCK_SIZE                          16
 
 /*
  * Record related configurations
@@ -60,8 +59,9 @@
 /** Stop timer. */
 #define TIMER_STOP                              0
 
-#define UINT32_TO_BITSTREAM(p, n)   { *(p)++ = (uint8_t)(n); *(p)++ = (uint8_t)((n) >> 8); \
-                                      *(p)++ = (uint8_t)((n) >> 16); *(p)++ = (uint8_t)((n) >> 24); }
+#define UINT32_TO_BITSTREAM(p, n)                                              \
+{ *(p)++ = (uint8_t)(n); *(p)++ = (uint8_t)((n) >> 8);                         \
+*(p)++ = (uint8_t)((n) >> 16); *(p)++ = (uint8_t)((n) >> 24); }
 
 #define RECORD_TO_STORE_BYTES(rid, len) {(uint8_t)((rid) >> 8), (uint8_t)(rid), (uint8_t)(len)};
 
@@ -74,22 +74,19 @@
 #define TIMERS_FOR_STACK                        1
 #define MAX_TIMERS                              5
 #define TOTAL_TIMERS                            MAX_TIMERS+TIMERS_FOR_STACK
-#define TASK_QUEUE_LENGTH                       5
 
 typedef enum {
-    idle_s, scanning_s, connecting_s, connected_s, conn_update_sent_s
+    idle_s,
+	scanning_s,
+	connecting_s,
+	connected_s,
+	conn_update_sent_s
 } state_t;
 
 typedef struct {
     state_t cur_state;
     mible_gap_connect_t target_to_connect;
 } target_connect_t;
-
-typedef struct {
-    uint16_t record_id;
-    uint8_t len;
-    uint8_t page_id; // one page contains 3 ps keys
-} record_item_t;
 
 typedef struct {
     uint8_t timer_id;
@@ -109,12 +106,6 @@ typedef struct {
     void *args;
 } handler_item_t;
 
-typedef struct {
-    uint8_t active_handlers;
-    handler_item_t task[TASK_QUEUE_LENGTH];
-} handler_pool_t;
+void mible_stack_event_handler(struct gecko_cmd_packet* event);
 
-void stack_event_handler(void);
-void silabs_bluetooth_init(void);
-int8_t SearchDatabaseFromHandle(uint16_t handle);
 #endif

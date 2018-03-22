@@ -1,6 +1,3 @@
-#include "stdio.h"
-#include "retargetserial.h"
-
 /* Bluetooth stack headers */
 #include "bg_types.h"
 #include "native_gecko.h"
@@ -16,27 +13,6 @@
 
 #define MAX_TASK_NUM 4
 
-/* Variables */
-uint8_t bluetooth_stack_heap[DEFAULT_BLUETOOTH_HEAP(MAX_CONNECTIONS)];
-
-// Gecko configuration parameters (see gecko_configuration.h)
-static const gecko_configuration_t config = {
-        .config_flags = 0,
-        .sleep.flags = SLEEP_FLAGS_DEEP_SLEEP_ENABLE,
-        .bluetooth.max_connections = MAX_CONNECTIONS,
-        .bluetooth.heap = bluetooth_stack_heap,
-        .bluetooth.heap_size = sizeof(bluetooth_stack_heap),
-        .bluetooth.sleep_clock_accuracy = 100, // ppm
-        .gattdb = &bg_gattdb_data,
-        .ota.flags = 0,
-        .ota.device_name_len = 3,
-        .ota.device_name_ptr = "OTA",
-        .max_timers = TOTAL_TIMERS,
-#if (HAL_PA_ENABLE) && defined(FEATURE_PA_HIGH_POWER)
-        .pa.config_enable = 1, // Enable high power PA
-        .pa.input = GECKO_RADIO_PA_INPUT_VBAT,// Configure PA input to VBAT
-#endif // (HAL_PA_ENABLE) && defined(FEATURE_PA_HIGH_POWER)
-};
 
 /* For AES usage */
 mbedtls_aes_context aes_ctx;
@@ -54,19 +30,17 @@ uint8_t advertising = 0;
 
 // All retry caches
 mible_gap_conn_param_t conn_param_for_retry;
-uint8_t scan_timeout_for_retry = 0;
+uint8_t scan_timeout_for_retry;
 uint8_t connect_param_for_retry = 0xFF;
 
 // Set the target to connect
 target_connect_t target_connect;
 
-// Pools for timers and async handlers
-timer_pool_t timer_pool;
-
 extern gatt_database_t gatt_database;
 
-static struct gecko_cmd_packet* gecko_process_evt(struct gecko_cmd_packet *evt);
+static void gecko_process_evt(struct gecko_cmd_packet *evt);
 
+static timer_pool_t timer_pool;
 /* Find the timer index in timer pool, return -1 if no match */
 static int8_t get_idx_by_timer_id(void *p_timer_id)
 {
@@ -88,7 +62,7 @@ static int8_t find_avail_timer(void)
     return -1;
 }
 
-int8_t SearchDatabaseFromHandle(uint16_t handle)
+static int8_t SearchDatabaseFromHandle(uint16_t handle)
 {
     uint8_t i = 0;
     for (i = 0; i < gatt_database.number_of_characteristics; i++) {
@@ -99,52 +73,12 @@ int8_t SearchDatabaseFromHandle(uint16_t handle)
     return -1;
 }
 
-void silabs_bluetooth_init(void)
+void mible_stack_event_handler(struct gecko_cmd_packet* p_evt)
 {
-    /* Event pointer for handling events */
-    struct gecko_cmd_packet* evt;
-
-// Initialize stack
-    gecko_init(&config);
-
-    RETARGET_SerialInit();
-
-#ifdef BLOCKING_WAITING_FOR_BOOT_EVT
-    while (1) {
-        /* Check for stack event. */
-        evt = gecko_peek_event();
-        if ((evt != NULL) && (BGLIB_MSG_ID(evt->header) == gecko_evt_system_boot_id)) {
-            MI_LOG_PRINTF("System boot\r\n");
-            break;
-        }
-    }
-#endif
-
-    /* Init the timer pool */
-    memset(&timer_pool, 0, sizeof(timer_pool));
-    memset(&conn_param_for_retry, 0, sizeof(mible_gap_conn_param_t));
-    memset(&target_connect, 0, sizeof(target_connect_t));
-
-    mbedtls_aes_init(&aes_ctx);
-
-    MI_LOG_PRINTF("Amount of characteristics = %d\r\n", gatt_database.number_of_characteristics);
+    gecko_process_evt(p_evt);
 }
 
-void stack_event_handler(void)
-{
-    /* Event pointer for handling events */
-    struct gecko_cmd_packet* evt;
-
-    /* Check for stack event. */
-    evt = gecko_peek_event();
-
-    if (evt == NULL)
-        return;
-
-    gecko_process_evt(evt);
-}
-
-static struct gecko_cmd_packet* gecko_process_evt(struct gecko_cmd_packet *evt)
+static void gecko_process_evt(struct gecko_cmd_packet *evt)
 {
 
     mible_gap_evt_param_t gap_evt_param = {0};;
@@ -415,7 +349,7 @@ static struct gecko_cmd_packet* gecko_process_evt(struct gecko_cmd_packet *evt)
     break;
     }
     /* Block all stack events */
-    return NULL;
+    return ;
 }
 
 /*
@@ -1276,6 +1210,8 @@ mible_status_t mible_aes128_encrypt(const uint8_t* key, const uint8_t* plaintext
 {
     uint8_t tmpPlain[AES_BLOCK_SIZE];
     uint8_t tmpCipher[AES_BLOCK_SIZE];
+
+    mbedtls_aes_init(&aes_ctx);
 
     if (key == NULL || plaintext == NULL || ciphertext == NULL) {
         return MI_ERR_INVALID_ADDR;
