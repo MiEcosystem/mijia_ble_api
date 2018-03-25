@@ -14,13 +14,6 @@
 #define MAX_TASK_NUM 4
 
 
-/* For AES usage */
-mbedtls_aes_context aes_ctx;
-/* Variable to indicate page usage by bit,  1 - used, 0 - unused */
-uint32_t page_bit_map = 0;
-// Flag for indicating DFU Reset must be performed
-uint8_t boot_to_dfu = 0;
-
 // connection handle
 uint8_t connection_handle = DISCONNECTION;
 
@@ -44,7 +37,7 @@ static timer_pool_t timer_pool;
 /* Find the timer index in timer pool, return -1 if no match */
 static int8_t get_idx_by_timer_id(void *p_timer_id)
 {
-    for (uint8_t i = 0; i < MAX_TIMERS; i++) {
+    for (uint8_t i = 0; i < TIMERS_FOR_USER; i++) {
         if (*(uint8_t *) p_timer_id == timer_pool.timer[i].timer_id) {
             return i;
         }
@@ -54,7 +47,7 @@ static int8_t get_idx_by_timer_id(void *p_timer_id)
 /* Find the available timer index in timer pool, return -1 if pool is full */
 static int8_t find_avail_timer(void)
 {
-    for (uint8_t i = 0; i < MAX_TIMERS; i++) {
+    for (uint8_t i = 0; i < TIMERS_FOR_USER; i++) {
         if (timer_pool.timer[i].timer_id == TIMER_NOT_USED)
             return i;
     }
@@ -931,7 +924,7 @@ mible_status_t mible_gatts_rw_auth_reply(uint16_t conn_handle,
 mible_status_t mible_timer_create(void** p_timer_id, mible_timer_handler timeout_handler,
         mible_timer_mode mode)
 {
-    if (timer_pool.active_timers == MAX_TIMERS) {
+    if (timer_pool.active_timers == TIMERS_FOR_USER) {
         return MI_ERR_NO_MEM;
     }
 
@@ -1208,8 +1201,9 @@ mible_status_t mible_rand_num_generator(uint8_t* p_buf, uint8_t len)
 mible_status_t mible_aes128_encrypt(const uint8_t* key, const uint8_t* plaintext,
         uint8_t plen, uint8_t* ciphertext)
 {
-    uint8_t tmpPlain[AES_BLOCK_SIZE];
-    uint8_t tmpCipher[AES_BLOCK_SIZE];
+    uint8_t tmpPlain[16];
+    uint8_t tmpCipher[16];
+    mbedtls_aes_context aes_ctx;
 
     mbedtls_aes_init(&aes_ctx);
 
@@ -1221,14 +1215,14 @@ mible_status_t mible_aes128_encrypt(const uint8_t* key, const uint8_t* plaintext
         return MI_ERR_INVALID_LENGTH;
     }
 
-    memset(tmpPlain, 0, AES_BLOCK_SIZE);
-    memset(tmpCipher, 0, AES_BLOCK_SIZE);
+    memset(tmpPlain, 0, 16);
+    memset(tmpCipher, 0, 16);
 
     memcpy(tmpPlain, plaintext, plen);
     mbedtls_aes_setkey_enc(&aes_ctx, key, 128);
     mbedtls_aes_crypt_ecb(&aes_ctx, MBEDTLS_AES_ENCRYPT, tmpPlain, tmpCipher);
 
-    memcpy(ciphertext, tmpCipher, AES_BLOCK_SIZE);
+    memcpy(ciphertext, tmpCipher, 16);
 #if 0
     /* Verification */
     memset(tmpPlain, 0, AES_BLOCK_SIZE);

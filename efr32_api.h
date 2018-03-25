@@ -6,28 +6,12 @@
 /* Always define this for now, nonblocking hasn't been implemented so that it could cause problem if the user call the mible APIs earlier than system boot event recieved*/
 #define BLOCKING_WAITING_FOR_BOOT_EVT
 
-/* AES block size, always be 16 */
-#define AES_BLOCK_SIZE                          16
-
-/*
- * Record related configurations
- * MAX_RECORD_NUMBER - The number of max records
- * MAX_RECORD_SIZE - Maximum size of each record
- *
- * Keep the amount of bytes to be no larger than 1600 should be safe since there is no bonding will be used
- * */
-
-#define MAX_RECORD_NUMBER                       12
-#define MAX_RECORD_SIZE                         120
-
 /*
  * RECORD_INFO_KEY - Information key index - DO NOT CHANGE IT
  * MAX_SINGLE_PS_LENGTH - Max size of each PS key - DO NOT CHANGE IT
- * PS_KEYS_FOR_EACH_RECORD - How many PS keys for each record. It can be adjusted by the user, the maximum data for each PS key is 56, so this value depends on the maximum size requirement for records.
  */
 #define RECORD_INFO_KEY                         0x4000
 #define MAX_SINGLE_PS_LENGTH                    56
-#define PS_KEYS_FOR_EACH_RECORD                 3
 
 /* Connection handle value in disconnection state */
 #define DISCONNECTION                           0xFF
@@ -48,16 +32,14 @@
 #endif
 
 /* Not used for now */
-#define RETRY_CONN_UPDATE_BIT_MASK              0x01
-#define RETRY_SCANNING_TIMEOUT_BIT_MASK         0x02
-#define RETRY_START_ADV_BIT_MASK                0x04
+#define RETRY_CONN_UPDATE_BIT_MASK              (1<<0)
+#define RETRY_SCANNING_TIMEOUT_BIT_MASK         (1<<1)
+#define RETRY_START_ADV_BIT_MASK                (1<<2)
 
 /** Timer Frequency used. */
 #define TIMER_CLK_FREQ                          ((uint32)32768)
 /** Convert msec to timer ticks. */
 #define TIMER_MS_2_TIMERTICK(ms)                ((TIMER_CLK_FREQ * ms) / 1000)
-/** Stop timer. */
-#define TIMER_STOP                              0
 
 #define UINT32_TO_BITSTREAM(p, n)                                              \
 { *(p)++ = (uint8_t)(n); *(p)++ = (uint8_t)((n) >> 8);                         \
@@ -72,8 +54,8 @@
 #define UPDATE_CON_RETRY_BIT_MASK               0x20000000
 
 #define TIMERS_FOR_STACK                        1
-#define MAX_TIMERS                              5
-#define TOTAL_TIMERS                            MAX_TIMERS+TIMERS_FOR_STACK
+#define TIMERS_FOR_USER                         5
+#define TOTAL_TIMERS                            TIMERS_FOR_USER+TIMERS_FOR_STACK
 
 typedef enum {
     idle_s,
@@ -98,7 +80,7 @@ typedef struct {
 /* timer handler - 0xFF and one timer are always reserved for GAP */
 typedef struct {
     uint8_t active_timers;
-    timer_item_t timer[MAX_TIMERS];
+    timer_item_t timer[TIMERS_FOR_USER];
 } timer_pool_t;
 
 typedef struct {

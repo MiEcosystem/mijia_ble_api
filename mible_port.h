@@ -112,10 +112,15 @@
 #endif
 
 #include "efr32bg13p632f512gm48.h"
+#include "em_core.h"
+#define CRITICAL_SECTION_ENTER()		  \
+	{                                     \
+		CORE_DECLARE_IRQ_STATE;           \
+		CORE_ENTER_ATOMIC();
+#define CRITICAL_SECTION_EXIT()			  \
+		CORE_EXIT_ATOMIC();               \
+	}
 #include "SEGGER_RTT.h"
-#define CRITICAL_SECTION_ENTER()
-#define CRITICAL_SECTION_EXIT()
-
 #define MI_LOG_PRINTF(...)     SEGGER_RTT_printf(0, __VA_ARGS__)
 #define MI_LOG_HEXDUMP(array_base, array_size)                                     \
 	do {                                                                           \
