@@ -129,4 +129,14 @@
 		if (array_size%16) SEGGER_RTT_printf(0,"\n");                               \
 	} while(0)
 
+#ifdef DEBUG
+#include "em_gpio.h"
+#define TRACE_INIT(x)   GPIO_PinModeSet(gpioPortA, 1, gpioModeWiredAndPullUp, 0)
+#define TRACE_ENTER(x)  GPIO_PinOutSet(gpioPortA, 1)
+#define TRACE_EXIT(x)   GPIO_PinOutClear(gpioPortA, 1)
+#else
+#define TRACE_INIT(x)
+#define TRACE_ENTER(x)
+#define TRACE_EXIT(x)
+#endif
 #endif // MIBLE_PORT_H__

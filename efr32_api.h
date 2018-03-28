@@ -54,7 +54,7 @@
 #define UPDATE_CON_RETRY_BIT_MASK               0x20000000
 
 #define TIMERS_FOR_STACK                        1
-#define TIMERS_FOR_USER                         5
+#define TIMERS_FOR_USER                         4
 #define TOTAL_TIMERS                            TIMERS_FOR_USER+TIMERS_FOR_STACK
 
 typedef enum {
@@ -71,17 +71,12 @@ typedef struct {
 } target_connect_t;
 
 typedef struct {
-    uint8_t timer_id;
+    bool                is_running;
+    uint8_t             timer_id;
+    mible_timer_mode    mode;
     mible_timer_handler handler;
-    mible_timer_mode mode;
-    void *args;
+    void                *args;
 } timer_item_t;
-
-/* timer handler - 0xFF and one timer are always reserved for GAP */
-typedef struct {
-    uint8_t active_timers;
-    timer_item_t timer[TIMERS_FOR_USER];
-} timer_pool_t;
 
 typedef struct {
     mible_handler_t handler;

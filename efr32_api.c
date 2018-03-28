@@ -3,7 +3,7 @@
 #include "native_gecko.h"
 #include "gatt_db.h"
 
-#include "aes.h"
+#include "mbedtls/aes.h"
 
 #include "efr32_api.h"
 #include "em_cmu.h"
@@ -33,7 +33,12 @@ extern gatt_database_t gatt_database;
 
 static void gecko_process_evt(struct gecko_cmd_packet *evt);
 
-static timer_pool_t timer_pool;
+/* timer handler - 0xFF and one timer are always reserved for GAP */
+static struct {
+    uint8_t active_timers;
+    timer_item_t timer[TIMERS_FOR_USER];
+} timer_pool;
+
 /* Find the timer index in timer pool, return -1 if no match */
 static int8_t get_idx_by_timer_id(void *p_timer_id)
 {
@@ -279,18 +284,22 @@ static void gecko_process_evt(struct gecko_cmd_packet *evt)
         }
     break;
 
-    case gecko_evt_hardware_soft_timer_id:
-        if (evt->data.evt_hardware_soft_timer.handle == SCAN_TIMEOUT_TIMER_ID) {
+    case gecko_evt_hardware_soft_timer_id: {
+        uint8_t handle = evt->data.evt_hardware_soft_timer.handle;
+        if (handle == SCAN_TIMEOUT_TIMER_ID) {
             scan_timeout_for_retry = 0;
             mible_gap_scan_stop();
-        } else {
-            int8_t index = get_idx_by_timer_id(&evt->data.evt_hardware_soft_timer.handle);
-            if (index != -1) {
-                if (timer_pool.timer[index].handler != NULL) {
+        } else if (0 < handle && handle < TIMERS_FOR_USER) {
+            int8_t index = get_idx_by_timer_id(&handle);
+            if (index != -1 ) {
+                if (timer_pool.timer[index].is_running) {
                     timer_pool.timer[index].handler(timer_pool.timer[index].args);
+                    timer_pool.timer[index].is_running =
+                    timer_pool.timer[index].mode == MIBLE_TIMER_SINGLE_SHOT ? false : true;
                 }
             }
         }
+    }
     break;
 
     case gecko_evt_system_external_signal_id:
@@ -505,10 +514,12 @@ mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_param)
     }
 }
 
-/*
- * @brief	Config advertising
- * @param 	[in] p_adv_data : pointer to advertising data, see
- * mible_gap_adv_data_t for details
+/**
+ * @brief   Config advertising data
+ * @param   [in] p_data : Raw data to be placed in advertising packet. If NULL, no changes are made to the current advertising packet.
+ * @param   [in] dlen   : Data length for p_data. Max size: 31 octets. Should be 0 if p_data is NULL, can be 0 if p_data is not NULL.
+ * @param   [in] p_sr_data : Raw data to be placed in scan response packet. If NULL, no changes are made to the current scan response packet data.
+ * @param   [in] srdlen : Data length for p_sr_data. Max size: BLE_GAP_ADV_MAX_SIZE octets. Should be 0 if p_sr_data is NULL, can be 0 if p_data is not NULL.
  * @return  MI_SUCCESS             Successfully set advertising data.
  *          MI_ERR_INVALID_ADDR    Invalid pointer supplied.
  *          MI_ERR_INVALID_PARAM   Invalid parameter(s) supplied.
@@ -937,7 +948,7 @@ mible_status_t mible_timer_create(void** p_timer_id, mible_timer_handler timeout
     timer_pool.timer[index].timer_id = index + 1;
     timer_pool.timer[index].handler = timeout_handler;
     timer_pool.timer[index].mode = mode;
-    *p_timer_id = (void *) &timer_pool.timer[index].timer_id;
+    *p_timer_id = &timer_pool.timer[index].timer_id;
     return MI_SUCCESS;
 }
 
@@ -1005,10 +1016,12 @@ mible_status_t mible_timer_start(void* timer_id, uint32_t timeout_value, void* p
 
     timer_pool.timer[index].args = p_context;
     ret = gecko_cmd_hardware_set_soft_timer(TIMER_MS_2_TIMERTICK(timeout_value),
-            timer_pool.timer[index].timer_id, !timer_pool.timer[index].mode);
+            timer_pool.timer[index].timer_id,
+            timer_pool.timer[index].mode == MIBLE_TIMER_SINGLE_SHOT ? 1 : 0);
     if (ret->result != bg_err_success) {
         return MI_ERR_NO_MEM;
     }
+    timer_pool.timer[index].is_running = true;
     return MI_SUCCESS;
 }
 
@@ -1035,7 +1048,8 @@ mible_status_t mible_timer_stop(void* timer_id)
     if (index == -1) {
         return MI_ERR_INVALID_PARAM;
     }
-    gecko_cmd_hardware_set_soft_timer(0, timer_pool.timer[index].timer_id, 0);
+    gecko_cmd_hardware_set_soft_timer(0, timer_pool.timer[index].timer_id, 1);
+    timer_pool.timer[index].is_running = false;
     return MI_SUCCESS;
 }
 
@@ -1223,20 +1237,7 @@ mible_status_t mible_aes128_encrypt(const uint8_t* key, const uint8_t* plaintext
     mbedtls_aes_crypt_ecb(&aes_ctx, MBEDTLS_AES_ENCRYPT, tmpPlain, tmpCipher);
 
     memcpy(ciphertext, tmpCipher, 16);
-#if 0
-    /* Verification */
-    memset(tmpPlain, 0, AES_BLOCK_SIZE);
-//	memset(tmpCipher, 0, AES_BLOCK_SIZE);
 
-    mbedtls_aes_setkey_dec(&aes_ctx, key, 128);
-    mbedtls_aes_crypt_ecb(&aes_ctx, MBEDTLS_AES_DECRYPT, tmpCipher, tmpPlain);
-
-    for (uint8_t i = 0; i < 16; i++) {
-        MI_LOG_PRINTF("0x%02x", tmpPlain[i]);
-        if (i != 16 - 1)
-        MI_LOG_PRINTF(", ");
-    }
-#endif
     return MI_SUCCESS;
 }
 
@@ -1291,6 +1292,7 @@ void mible_tasks_exec(void)
  *        IIC APIs
  */
 #include "em_i2c.h"
+static bool iic_is_busy;
 static iic_config_t * m_p_iic_config;
 static mible_handler_t m_iic_handler;
 static I2C_TransferSeq_TypeDef seq;
@@ -1382,6 +1384,7 @@ mible_status_t mible_iic_init(const iic_config_t * p_config,
     i2cInit.freq = p_config->freq == IIC_100K ? I2C_FREQ_STANDARD_MAX : I2C_FREQ_FAST_MAX;
     i2cInit.clhr = i2cClockHLRStandard;
     I2C_Init(I2C0, &i2cInit);
+    iic_is_busy = true;
 
     return MI_SUCCESS;
 }
@@ -1398,6 +1401,7 @@ void mible_iic_uninit(void)
     GPIO_PinModeSet(m_p_iic_config->scl_port, m_p_iic_config->scl_pin, gpioModeDisabled, 0);
     GPIO_PinModeSet(m_p_iic_config->sda_port, m_p_iic_config->sda_pin, gpioModeDisabled, 0);
     CMU_ClockEnable(cmuClock_I2C0, false);
+    iic_is_busy = false;
 }
 
 /**
