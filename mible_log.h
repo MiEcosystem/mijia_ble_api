@@ -19,7 +19,6 @@
 
 #include "mible_port.h"
 
-#define   MI_LOG_ENABLED 1
 
 #ifdef MI_LOG_ENABLED
 /**

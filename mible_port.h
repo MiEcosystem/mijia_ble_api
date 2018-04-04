@@ -112,6 +112,7 @@
     }
 #endif
 
+
 #define CRITICAL_SECTION_ENTER()
 #define CRITICAL_SECTION_EXIT()
 #ifdef MI_LOG_ENABLED
