@@ -15,10 +15,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/*
- *
- *
- *  */
 #include "mible_port.h"
 
 #define MIBLE_GAP_EVT_BASE   0x00
@@ -59,11 +55,6 @@ typedef enum {
 } mible_gap_adv_type_t;
 
 typedef struct {
-    uint8_t adv_data[31];                      // advertising data
-    uint8_t adv_len;                           // advertising data length
-    uint8_t scan_rsp_data[31];                 // response data in active scanning
-    uint8_t scan_rsp_len;                      // response data length in active scanning
-
     uint16_t adv_interval_min;               // Range: 0x0020 to 0x4000  Time = N * 0.625 msec Time Range: 20 ms to 10.24 sec
     uint16_t adv_interval_max;               // Range: 0x0020 to 0x4000  Time = N * 0.625 msec Time Range: 20 ms to 10.24 sec
 	mible_gap_adv_type_t adv_type;
@@ -178,7 +169,7 @@ typedef struct{
  * */
 typedef struct{
 	mible_gatts_char_desc_ext_prop_t  *extend_prop;
-	mible_gatts_char_desc_cpf_t       *char_format;      // See more details at Bluetooth SPEC 4.2 [Vol 3, Part G] Page 539
+	mible_gatts_char_desc_cpf_t       *char_format;     // See more details at Bluetooth SPEC 4.2 [Vol 3, Part G] Page 539
 	mible_gatts_char_desc_user_desc_t *user_desc;     	// read only
 } mible_gatts_char_desc_db_t;
 
@@ -190,10 +181,10 @@ typedef struct{
 	uint8_t char_property;                             // See TYPE mible_gatts_char_property for details 
 	uint8_t *p_value;                                  // initial characteristic value
 	uint8_t char_value_len;
-	uint16_t char_value_handle;                        // [out] where the assigned handle will be stored.
+	uint16_t char_value_handle;                        // [out] where the assigned handle be stored.
 	bool is_variable_len;
-	bool rd_author;                                 // read authorization. Enabel or Disable MIBLE_GATTS_READ_PERMIT_REQ event
-	bool wr_author;                                 // write authorization. Enabel or Disable MIBLE_GATTS_WRITE_PERMIT_REQ event
+	bool rd_author;                                    // read authorization. Enabel or Disable MIBLE_GATTS_READ_PERMIT_REQ event
+	bool wr_author;                                    // write authorization. Enabel or Disable MIBLE_GATTS_WRITE_PERMIT_REQ event
 	mible_gatts_char_desc_db_t char_desc_db;
 } mible_gatts_char_db_t;
 
@@ -205,7 +196,7 @@ typedef struct{
 	mible_gatts_char_db_t *p_char_db;                  // p_char_db[charnum-1]
 } mible_gatts_srv_db_t;                                // Regardless of service inclusion service
 
-typedef struct{
+typedef struct{ 
 	mible_gatts_srv_db_t *p_srv_db;                    // p_srv_db[srv_num] 
 	uint8_t srv_num; 
 } mible_gatts_db_t;
@@ -222,15 +213,9 @@ typedef enum {
 } mible_gatts_char_property;
 
 typedef enum {
-    MIBLE_GATTS_EVT_WRITE = MIBLE_GATTS_EVT_BASE,
-    // When this event is called, the characteristic has been modified.
-    MIBLE_GATTS_EVT_READ_PERMIT_REQ,
-    // If charicteristic's rd_auth = TRUE, the event will be called.
-    // When this event is called, the characteristic hasn't been read.
-    MIBLE_GATTS_EVT_WRITE_PERMIT_REQ,
-    // If charicteristic's wr_auth = TRUE, the event will be called
-    // When this event is called, the characteristic hasn't been modified.
-	// Application may use mible_gatts_value_set to finalise the writing operation.
+    MIBLE_GATTS_EVT_WRITE = MIBLE_GATTS_EVT_BASE,      // When this event is called, the characteristic has been modified.
+    MIBLE_GATTS_EVT_READ_PERMIT_REQ,                   // If charicteristic's rd_auth = TRUE, this event will be generated.
+    MIBLE_GATTS_EVT_WRITE_PERMIT_REQ,                  // If charicteristic's wr_auth = TRUE, this event will be generated, meanwhile the char value hasn't been modified. mible_gatts_rw_auth_reply().
 	MIBLE_GATTS_EVT_IND_CONFIRM
 } mible_gatts_evt_t;
 
@@ -240,11 +225,10 @@ typedef enum {
  * NOTE: Stack SHOULD decide whether to response to gatt client. And if need to reply, just reply success or failure according to [permit]
  * */
 typedef struct {
-	uint8_t permit; // [OUT] true: permit to change value ; false: reject to change value 
     uint16_t value_handle; // char value_handle
     uint8_t offset;
-    uint8_t len;
     uint8_t* data;
+    uint8_t len;
 } mible_gatts_write_t;
 
 /*
@@ -252,8 +236,6 @@ typedef struct {
  * NOTE: Stack SHOULD decide to reply the char value or refuse according to [permit]
  * */
 typedef struct {
-	uint8_t permit; // [OUT] true: permit to be read; false: reject read request 
-    uint16_t conn_handle;
     uint16_t value_handle;  // char value handle 
 } mible_gatts_read_t;
 
@@ -288,6 +270,10 @@ typedef enum {
     // this event generated in responses to a
     // write_charicteristic_value_with_response procedure.
     MIBLE_GATTC_EVT_WRITE_RESP,
+	// this event is generated when peer gatts device send a notification. 
+	MIBLE_GATTC_EVT_NOTIFICATION,
+	// this event is generated when peer gatts device send a indication. 
+	MIBLE_GATTC_EVT_INDICATION,
 } mible_gattc_evt_t;
 
 /*
@@ -295,8 +281,7 @@ typedef enum {
  * */
 typedef struct {
     mible_handle_range_t primary_srv_range;
-    mible_uuid_t uuid_type;
-    mible_uuid_t* srv_uuid;
+    mible_uuid_t srv_uuid;
     bool succ; // true : exist the specified primary service and return correctly
 } mible_gattc_prim_srv_disc_rsp_t;
 
@@ -336,6 +321,15 @@ typedef struct {
 } mible_gattc_write_rsp;
 
 /*
+ * MIBLE_GATTC_EVT_NOTIFICATION or MIBLE_GATTC_EVT_INDICATION event callback parameters
+ *  */
+typedef struct {
+    uint16_t handle;
+	uint8_t  len;
+	uint8_t  *pdata;
+} mible_gattc_notification_or_indication_t;
+
+/*
  * GATTC callback parameters union
  * */
 typedef struct {
@@ -346,6 +340,7 @@ typedef struct {
 		mible_gattc_read_char_value_by_uuid_rsp read_char_value_by_uuid_rsp;
 		mible_gattc_clt_cfg_desc_disc_rsp clt_cfg_desc_disc_rsp;
 		mible_gattc_write_rsp write_rsp;
+		mible_gattc_notification_or_indication_t notification;
 	};
 } mible_gattc_evt_param_t;
 
@@ -357,9 +352,32 @@ typedef enum {
     MIBLE_TIMER_REPEATED,
 } mible_timer_mode;
 
+/* IIC related */
+typedef enum {
+    IIC_100K = 1,
+    IIC_400K,
+} iic_freq_t;
+
+typedef struct {
+    uint8_t scl_port;
+	uint8_t scl_pin;
+	uint8_t scl_extra_conf;
+	uint8_t sda_port;
+    uint8_t sda_pin;
+	uint8_t sda_extra_conf;
+    iic_freq_t freq;
+} iic_config_t;
+
+typedef enum {
+    IIC_EVT_XFER_DONE,
+    IIC_EVT_ADDRESS_NACK,
+    IIC_EVT_DATA_NACK
+} iic_event_t;
+
 typedef enum {
     MI_SUCCESS      = 0x00,
     MI_ERR_INTERNAL,
+    MI_ERR_NOT_FOUND,
     MI_ERR_NO_EVENT,
     MI_ERR_NO_MEM,
     MI_ERR_INVALID_ADDR,     // Invalid pointer supplied
@@ -381,7 +399,8 @@ typedef void (*mible_handler_t) (void* arg);
 
 typedef enum{
 	MIBLE_ARCH_EVT_GATTS_SRV_INIT_CMP,
-	MIBLE_ARCH_EVT_RECORD_WRITE_CMP,
+	MIBLE_ARCH_EVT_RECORD_WRITE,
+	MIBLE_ARCH_EVT_RECORD_DELETE,
 } mible_arch_event_t;
 
 typedef struct{
@@ -390,15 +409,28 @@ typedef struct{
 }mible_arch_gatts_srv_init_cmp_t;
 
 typedef struct{
-	uint16_t record_id;
-	mible_status_t status;	
-}mible_arch_record_write_cmp_t; 
+	uint16_t id;
+	mible_status_t status;
+}mible_arch_record_t;
 
 typedef struct{
 	union {
 		mible_arch_gatts_srv_init_cmp_t srv_init_cmp;
-		mible_arch_record_write_cmp_t record_write_cmp;
+		mible_arch_record_t record;
 	};
 }mible_arch_evt_param_t;
+
+typedef void (*mible_gap_callback_t)(mible_gap_evt_t evt,
+    mible_gap_evt_param_t* param);
+
+typedef void (*mible_gatts_callback_t)(mible_gatts_evt_t evt,
+    mible_gatts_evt_param_t* param);
+
+typedef void (*mible_gattc_callback_t)(mible_gattc_evt_t evt,
+    mible_gattc_evt_param_t* param);
+
+typedef void (*mible_arch_callback_t)(mible_arch_event_t evt, 
+		mible_arch_evt_param_t* param);
+
 
 #endif

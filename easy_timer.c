@@ -11,7 +11,8 @@ Date                Author                   Description
 #include "easy_msg.h"
 #include "easy_common.h"
 #include "app_easy_msg_utils.h"
-
+#include "mijia_task.h"
+#if (BLE_MIJIA_SERVER)
 #define TIMER_MAX_NUM                         (APP_TIMER_CUS_LAST_MES - APP_TIMER_CUS_MES0 + 1)
 #define ILLG_TIMER_ID					0
 
@@ -134,7 +135,7 @@ bool easy_timer_start(void* timer_id, uint32_t timeout_value,
     void* p_context)
 {
 		uint32_t id = *((uint32_t*)(timer_id));
-		uint32_t timeout = ((timeout_value/10) + (timeout_value%10==0?0:1) );
+		uint32_t timeout = ((timeout_value/10) + (timeout_value%10==0 ? 0:1) );
 		uint32_t msg_id = APP_TIMER_HND_TO_MSG_ID(id);
 		
 		if (app_check_BLE_active())
@@ -275,6 +276,8 @@ enum process_event_response easy_timer_api_process_handler(ke_msg_id_t const msg
     }
 }
 
+
+#endif
 
 
 

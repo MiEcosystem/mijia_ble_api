@@ -76,6 +76,44 @@ enum
 		MIJIA_SEND_NOTIFCATION_REQ,
     /// Profile error report
     MIJIA_ERROR_IND,
+
+
+		//application msg & timer
+		APP_MSG_CUS0,
+		APP_MSG_CUS1=APP_MSG_CUS0+1,
+		APP_MSG_CUS2=APP_MSG_CUS0+2,
+		APP_MSG_CUS3=APP_MSG_CUS0+3,
+		APP_MSG_CUS4=APP_MSG_CUS0+4,
+		APP_MSG_CUS5=APP_MSG_CUS0+5,
+		APP_MSG_CUS6=APP_MSG_CUS0+6,
+		APP_MSG_CUS7=APP_MSG_CUS0+7,
+		APP_MSG_CUS8=APP_MSG_CUS0+8,
+		APP_MSG_CUS9=APP_MSG_CUS0+9,
+		APP_MSG_CUS10=APP_MSG_CUS0+10,
+		APP_MSG_SKY_LAST_MES=APP_MSG_CUS10,
+
+		APP_CREATE_CUS_TIMER,
+	  APP_CANCEL_CUS_TIMER,
+	  APP_MODIFY_CUS_TIMER,
+
+		APP_TIMER_CUS_MES0,
+    APP_TIMER_CUS_MES1=APP_TIMER_CUS_MES0+1,
+    APP_TIMER_CUS_MES2=APP_TIMER_CUS_MES0+2,
+    APP_TIMER_CUS_MES3=APP_TIMER_CUS_MES0+3,
+    APP_TIMER_CUS_MES4=APP_TIMER_CUS_MES0+4,
+    APP_TIMER_CUS_MES5=APP_TIMER_CUS_MES0+5,
+    APP_TIMER_CUS_MES6=APP_TIMER_CUS_MES0+6,
+    APP_TIMER_CUS_MES7=APP_TIMER_CUS_MES0+7,
+    APP_TIMER_CUS_MES8=APP_TIMER_CUS_MES0+8,
+    APP_TIMER_CUS_MES9=APP_TIMER_CUS_MES0+9,
+    APP_TIMER_CUS_MES10=APP_TIMER_CUS_MES0+10,
+    APP_TIMER_CUS_MES11=APP_TIMER_CUS_MES0+11,
+    APP_TIMER_CUS_MES12=APP_TIMER_CUS_MES0+12,
+    APP_TIMER_CUS_MES13=APP_TIMER_CUS_MES0+13,
+    APP_TIMER_CUS_MES14=APP_TIMER_CUS_MES0+14,
+    APP_TIMER_CUS_MES15=APP_TIMER_CUS_MES0+15,
+    APP_TIMER_CUS_MES16=APP_TIMER_CUS_MES0+16,
+    APP_TIMER_CUS_LAST_MES=APP_TIMER_CUS_MES16,
 };
 
 /*
@@ -223,10 +261,18 @@ void mijia_set_ccc_value(uint8_t conidx, uint8_t att_idx, uint16_t ccc);
 bool ble_mijia_gatts_value_get(uint16_t srv_handle, uint16_t value_handle,
     uint8_t* p_value, uint8_t *p_len);
 
+mible_status_t mijia_gatts_value_set_direct(uint16_t srv_handle,
+	uint16_t value_handle, uint8_t offset,uint8_t* p_value, uint8_t len);
+
+
 void ble_mijia_gatts_notify_or_indicate(uint16_t conn_handle, uint16_t srv_handle,
     uint16_t char_value_handle, uint8_t offset, uint8_t* p_value,
     uint8_t len, uint8_t type);
 
+mible_status_t mijia_send_notifcation_req_handler_direct(ke_msg_id_t const msgid,
+																		struct mijia_notifcation_req const *param,
+																		ke_task_id_t const dest_id,
+																		ke_task_id_t const src_id);
 
 /*
  * TASK DESCRIPTOR DECLARATIONS

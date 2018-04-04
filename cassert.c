@@ -1,5 +1,5 @@
 #include "cassert.h"
-#include "uart.h"
+#include "uart2_sync.h"
 #include "app.h"
 #include "da1458x_config_basic.h"
 #define PRINT_BUF  256

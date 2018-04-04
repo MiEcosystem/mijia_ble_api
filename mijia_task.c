@@ -33,6 +33,7 @@
 #include "mible_api.h"
 #include "mible_port.h"
 #include "mible_log.h"
+#include "mi_app_customs.h"
 
 #if (BLE_CUSTOM_SERVER)
 #include "user_custs_config.h"
@@ -324,16 +325,20 @@ static int gattc_read_req_ind_handler(ke_msg_id_t const msgid, struct gattc_read
         else
         {
 						arch_printf("read_val handle:%d\n",param->handle);
+						
 						mible_gatts_evt_t evt = MIBLE_GATTS_EVT_READ_PERMIT_REQ;
 						mible_gatts_evt_param_t mi_param;
 						mi_param.conn_handle = 0;
 						mi_param.read.value_handle = param->handle - mijia_env->shdl;
 
+
 						mible_gatts_event_callback(evt,&mi_param);
-						if(mi_param.read.permit == 0)
-							status = PRF_APP_ERROR;
-						else
-							status = GAP_ERR_NO_ERROR;
+						
+						//s_server_db
+						//if(mi_param.read.permit == 0)
+						//	status = PRF_APP_ERROR;
+						//else
+						//status = GAP_ERR_NO_ERROR;
 
 						uint8_t* read_val = callbacks->att_db[att_idx].value;
             length = callbacks->att_db[att_idx].length;
@@ -475,7 +480,8 @@ static int gattc_write_req_ind_handler(ke_msg_id_t const msgid, const struct gat
 
 								mible_gatts_event_callback(evt,&mi_param);
 								
-								if((mi_param.write.permit != 0) && ((!has_write)))
+								//if((mi_param.write.permit != 0) && ((!has_write)))
+								if(!has_write)
 								{
 										has_write = true;
 										status = attmdb_att_set_value(param->handle, param->length, param->offset, (uint8_t *)&param->value[0]);
@@ -497,6 +503,109 @@ static int gattc_write_req_ind_handler(ke_msg_id_t const msgid, const struct gat
     ke_msg_send(cfm);
 
     return (KE_MSG_CONSUMED);
+}
+
+
+//直接设置值
+mible_status_t mijia_gatts_value_set_direct(uint16_t srv_handle,
+uint16_t value_handle, uint8_t offset,uint8_t* p_value, uint8_t len)
+{
+		if(p_value == NULL)
+				return MI_ERR_INVALID_PARAM;
+		
+		struct mijia_env_tag *mijia_env = PRF_ENV_GET(MIJIA, mijia);
+		uint16_t length;
+    uint8_t *value;
+		//读取之前的数据
+		uint8_t state = attmdb_get_value(mijia_env->shdl+value_handle,&length,&value);
+		if(ATT_ERR_NO_ERROR == state){
+				uint8_t *pbuf = ke_malloc(length*sizeof(uint8_t), KE_MEM_NON_RETENTION); 
+				if(pbuf != NULL){
+						memcpy(pbuf,value,length);
+						//拼接数据
+						if(offset + len > length)
+								return MI_ERR_INVALID_PARAM;
+						else
+								memcpy(pbuf+offset,p_value,len);
+						
+						//将数据写回去
+						state = attmdb_att_set_value(value_handle+mijia_env->shdl,length,0,pbuf);
+						if(state != ATT_ERR_NO_ERROR)
+								return MIBLE_ERR_UNKNOWN;
+
+						return MI_SUCCESS;
+				}
+				else
+						return MI_ERR_NO_MEM;
+		}
+		else
+				return MI_ERR_INVALID_PARAM;
+		
+}
+
+
+
+
+/**
+ ****************************************************************************************
+ * @brief Send notifcation to peer device
+ * @param[in] msgid 		Id of the message received.
+ * @param[in] param 		Pointer to the parameters of the message.
+ * @param[in] dest_id 	ID of the receiving task instance
+ * @param[in] src_id		ID of the sending task instance.
+ * @return If the message was consumed or not.
+ ****************************************************************************************
+ */
+mible_status_t mijia_send_notifcation_req_handler_direct(ke_msg_id_t const msgid,
+																		struct mijia_notifcation_req const *param,
+																		ke_task_id_t const dest_id,
+																		ke_task_id_t const src_id)
+{
+		mible_status_t status = MI_SUCCESS;
+		struct mijia_env_tag *mijia_env = PRF_ENV_GET(MIJIA, mijia);
+		// Check provided values
+		if(param->conhdl == KE_IDX_GET(src_id))
+		{
+				//if((mijia_env->feature & PRF_CLI_START_IND))
+				{
+						attmdb_att_set_value(param->value_handle+mijia_env->shdl, 
+																				param->length,0,
+																				(uint8_t *)(param->value));
+						uint16_t cfg_hdl;
+						// Find the handle of the Characteristic Client Configuration
+						cfg_hdl = get_cfg_handle(param->value_handle+mijia_env->shdl);
+
+						// Send indication through GATT
+						uint16_t ccc_val = 0;
+						ccc_val = mijia_get_ccc_value(0, cfg_hdl-mijia_env->shdl);
+						if(ccc_val == PRF_CLI_START_NTF || ccc_val == PRF_CLI_START_IND)
+						{
+							 // Allocate the GATT notification message
+								struct gattc_send_evt_cmd *req = KE_MSG_ALLOC_DYN(GATTC_SEND_EVT_CMD,
+										KE_BUILD_ID(TASK_GATTC,mijia_env->cursor), dest_id,
+										gattc_send_evt_cmd,param->length);
+
+								// Fill in the parameter structure
+								if(ccc_val == PRF_CLI_START_NTF)
+										req->operation = GATTC_NOTIFY;
+								else
+										req->operation = PRF_CLI_START_IND;
+								req->handle = param->value_handle+mijia_env->shdl;
+								req->length = param->length;
+								memcpy(req->value,param->value,param->length);
+								// Send the event
+								ke_msg_send(req);
+						}
+				} 			 
+		}
+		else
+		{
+				COMPrintf("MI_ERR_INVALID_PARAM\n");
+				status = MI_ERR_INVALID_PARAM;
+		}
+
+
+		return status;
 }
 
 /**

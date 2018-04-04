@@ -18,6 +18,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#ifndef NULL
+#define NULL 0
+#endif
+
 #if defined(__CC_ARM)
 #pragma anon_unions
 #elif defined(__ICCARM__)
@@ -106,7 +110,12 @@
     }
 #endif
 
-#include "cassert.h"
-#define MI_LOG_PRINTF(...)           COMPrintf( __VA_ARGS__)  //SDK_PRINTF( __VA_ARGS__)
-#define MI_LOG_HEXDUMP(...)          COMPrintf_hexdump( __VA_ARGS__)// SDK_HEXDUMP( __VA_ARGS__)
+#include "ll.h"		
+#include "cassert.h"		
+#define CRITICAL_SECTION_ENTER()		GLOBAL_INT_DISABLE()
+#define CRITICAL_SECTION_EXIT()			GLOBAL_INT_RESTORE() 
+
+#define MI_LOG_PRINTF(...)					COMPrintf( __VA_ARGS__)
+#define MI_LOG_HEXDUMP(...)					COMPrintf_hexdump( __VA_ARGS__)
+
 #endif // MIBLE_PORT_H__

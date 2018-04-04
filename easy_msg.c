@@ -10,7 +10,8 @@ Date                Author                   Description
 #include "app.h"
 #include "app_entry_point.h"
 #include "easy_common.h"
-
+#include "mijia_task.h"
+#if (BLE_MIJIA_SERVER)
 #define APP_MSG_MAX_NUM                         (APP_MSG_SKY_LAST_MES - APP_MSG_CUS0 + 1)
 
 typedef struct tag_msg_mng
@@ -102,7 +103,7 @@ enum process_event_response app_msg_api_process_handler(ke_msg_id_t const msgid,
 
 
 
-
+#endif
 
 
 

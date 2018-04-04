@@ -30,6 +30,7 @@
 #include "prf_utils.h"
 #include "arch_console.h"
 #include "ke_mem.h"
+#include "mi_attm_db_128.h"
 
 /*
  * LOCAL FUNCTION DEFINITIONS
@@ -41,6 +42,7 @@ static uint16_t att_decl_secondry_svc   = ATT_DECL_SECONDARY_SERVICE;
 static uint16_t att_decl_char      			= ATT_DECL_CHARACTERISTIC;
 static uint16_t att_decl_cfg       			= ATT_DESC_CLIENT_CHAR_CFG;
 
+//米家服务 特征值数量
 static uint16_t s_max_mijia_idx_nb = 0;
 
 
@@ -385,10 +387,10 @@ static mible_status_t  translate_service_db(mible_gatts_srv_db_t *inserver,struc
 }
 
 
-static mible_gatts_db_t * s_server_db = NULL;
+static mible_gatts_db_t * s_pserver_db __attribute__((section("retention_mem_area0"),zero_init));
 mible_gatts_db_t *get_server_db(void)
 {
-		return s_server_db;
+		return s_pserver_db;
 }
 
 
@@ -403,8 +405,10 @@ bool get_wr_author(uint16_t value_handle)
 //将米家平台配置的GATT属性表转换 dialog 平台的
 mible_status_t translate_miarch_attdb(mible_gatts_db_t * p_server_db)
 {
-			s_server_db = p_server_db;
+			s_pserver_db = p_server_db;
+			
 			mible_status_t ret = MI_SUCCESS;
+		
 			if(p_server_db != NULL)
 			{
 					uint8_t srv_num = p_server_db->srv_num;
@@ -430,7 +434,7 @@ mible_status_t translate_miarch_attdb(mible_gatts_db_t * p_server_db)
 			else
 					ret = MI_ERR_INVALID_PARAM;
 
-			
+		
 			return ret;
 }
 

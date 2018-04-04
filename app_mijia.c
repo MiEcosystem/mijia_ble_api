@@ -32,7 +32,9 @@
 #include "user_custs_config.h"
 #include "prf_utils.h"
 #include "arch_console.h"
-
+#include "easy_nvds.h"
+#include "app_task.h"
+#include "easy_timer.h"
 
 /*
  * FUNCTION DEFINITIONS
@@ -51,8 +53,10 @@
  */
 void app_mijia_init(void)
 {
-    
-
+    easy_nvds_init();
+		init_easy_timer();
+		simulation_miserver_test();
+		
 }
 
 /**
@@ -89,23 +93,32 @@ void app_mijia_create_db(void)
     ke_msg_send(req);
 }
 
-void ble_mijia_send_data(uint16_t srv_handle,uint16_t value_handle,uint8_t* pData, uint32_t length)
-{
 
+mible_status_t ble_mijia_send_data(uint16_t srv_handle,uint16_t value_handle,uint8_t* pData, uint32_t length)
+{
+		mible_status_t ret = MI_SUCCESS;
 		struct mijia_env_tag *mijia_env = PRF_ENV_GET(MIJIA, mijia);
+		uint8_t state = ke_state_get(TASK_APP);
+
+    // Check if we are not already in a connected state
+    if (state == APP_CONNECTED)
+    {
+				ke_task_id_t temp_dst = prf_dst_task_get(&(mijia_env->prf_env), mijia_env->cursor);
+				ke_task_id_t temp_src = prf_src_task_get(&(mijia_env->prf_env), mijia_env->cursor);
+
+				struct mijia_notifcation_req req1;
+				req1.length = length;
+				req1.value_handle  = value_handle;
+				memcpy(&req1.value, pData, length);
+				req1.conhdl = 0;
+					
+				ret = mijia_send_notifcation_req_handler_direct(MIJIA_SEND_NOTIFCATION_REQ,&req1,temp_dst,temp_src);
+				COMPrintf("ret:%d\n",ret);
+		}
+		else
+				ret = MI_ERR_INVALID_STATE;
 		
-		ke_task_id_t temp_dst = prf_dst_task_get(&(mijia_env->prf_env), mijia_env->cursor);
-		ke_task_id_t temp_src = prf_src_task_get(&(mijia_env->prf_env), mijia_env->cursor);
-		
-		struct mijia_notifcation_req *req = KE_MSG_ALLOC(MIJIA_SEND_NOTIFCATION_REQ,
-																									temp_src, 
-																									temp_dst,
-																									mijia_notifcation_req);
-		
-		req->value_handle = value_handle;
-		memcpy(req->value, pData, length);
-		req->length = length;
-		ke_msg_send(req);
+		return ret;
 }
 
 

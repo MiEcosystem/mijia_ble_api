@@ -94,7 +94,7 @@ static int app_mijia_write_val_ind_handler(ke_msg_id_t const msgid,
 		mible_gatts_event_callback(evt,&mi_param);
 
 		//允许改变相应的值
-		if(mi_param.write.permit != 0)
+		//if(mi_param.write.permit != 0)
 		{
 				
 		}
