@@ -114,6 +114,10 @@
 #define CRITICAL_SECTION_EXIT()
 
 #define MI_LOG_PRINTF(...)
-#define MI_LOG_HEXDUMP(...)
+#define MI_LOG_HEXDUMP(base_addr, bytes)
+
+#define TRACE_INIT(pin)
+#define TRACE_ENTER(pin)
+#define TRACE_EXIT(pin)
 
 #endif // MIBLE_PORT_H__
