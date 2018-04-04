@@ -124,4 +124,20 @@
 
 #include "cmsis_compiler.h"
 
+#ifdef DEBUG 
+#include "nrf_gpio.h" 
+ 
+#define TRACE_INIT(x)                                                           \
+do {                                                                            \
+    nrf_gpio_cfg_output(x);                                                     \
+    nrf_gpio_pin_clear(x);                                                      \
+} while(0) 
+#define TRACE_ENTER(x) do {nrf_gpio_pin_set(x);} while(0) 
+#define TRACE_EXIT(x)  do {nrf_gpio_pin_clear(x);} while(0) 
+#else 
+#define TRACE_INIT(x) 
+#define TRACE_ENTER(x) 
+#define TRACE_EXIT(x) 
+#endif 
+
 #endif // MIBLE_PORT_H__

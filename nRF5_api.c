@@ -787,7 +787,7 @@ static timer_item_t m_timer_pool[TIMER_MAX_NUM] = {
     [3] = { .is_avail = 1}
 };
 
-static app_timer_t* acquire_time()
+static app_timer_t* acquire_timer()
 {
     uint8_t i;
     for (i = 0; i < TIMER_MAX_NUM; i++) {
@@ -833,7 +833,7 @@ mible_status_t mible_timer_create(void** p_timer_id,
 {
     uint32_t errno;
     
-    app_timer_id_t id  = acquire_time();
+    app_timer_id_t id  = acquire_timer();
     if (id == NULL)
         return MI_ERR_NO_MEM;
 
