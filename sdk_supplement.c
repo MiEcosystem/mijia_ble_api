@@ -10,6 +10,8 @@ Date                Author                   Description
 #include "app_easy_security.h"
 #include "gapm_task.h"
 #include "nvds.h"
+#include "aes.h"
+#include "aes_api.h"
 
 
 #define APP_EASY_GAP_MAX_CONNECTION     APP_EASY_MAX_ACTIVE_CONNECTION
@@ -17,6 +19,7 @@ Date                Author                   Description
 static struct gapm_start_connection_cmd *start_connection_cmd                      __attribute__((section("retention_mem_area0"),zero_init)); // @RETENTION MEMORY
 static struct gapm_start_advertise_cmd *adv_cmd                                    __attribute__((section("retention_mem_area0"),zero_init)); // @RETENTION MEMORY
 static struct gapc_param_update_cmd *param_update_cmd[APP_EASY_GAP_MAX_CONNECTION] __attribute__((section("retention_mem_area0"),zero_init)); // @RETENTION MEMORY
+static struct aes_env_tag aes_env __attribute__((section("exchange_mem_case1"))); //@RETENTION MEMORY 
 
 //备份广播内容
 static struct gapm_update_advertise_data_cmd s_update;
@@ -66,10 +69,6 @@ static struct gapm_start_advertise_cmd* app_manual_gap_advertise_start_create_ms
 						adv_cmd->info.host.scan_rsp_data_len = s_update.scan_rsp_data_len;
 						memcpy(&(cmd->info.host.scan_rsp_data[0]), s_update.scan_rsp_data, s_update.scan_rsp_data_len);
 				}
-        //adv_cmd->info.host.adv_data_len = param->adv_len;
-        //memcpy(&(cmd->info.host.adv_data[0]), param->adv_data, param->adv_len);
-        //adv_cmd->info.host.scan_rsp_data_len = param->scan_rsp_len;
-        ///memcpy(&(cmd->info.host.scan_rsp_data[0]), param->scan_rsp_data, param->scan_rsp_len);
     }
     return adv_cmd;
 }
@@ -87,11 +86,6 @@ mible_status_t app_manual_gap_advertise_start(mible_gap_adv_param_t * param)
 				(param->adv_interval_max < MAX_ADV_INTERVAL) || (param->adv_interval_max < MAX_ADV_INTERVAL))
 				return MI_ERR_INVALID_PARAM;
 
-
-
-		//uint8_t state = ke_state_get(TASK_APP);
-		//if((state == APP_CONNECTED))
-		//		return MI_ERR_INVALID_STATE;
 		if(param == NULL)
 				return MI_ERR_INVALID_PARAM;
 		
@@ -194,6 +188,26 @@ mible_status_t app_gap_adv_data_set(uint8_t const * p_data,
 		cmd->scan_rsp_data_len = s_update.scan_rsp_data_len;
 		ke_msg_send(cmd);
 
+		return MI_SUCCESS;
+}
+
+
+mible_status_t app_aes_encrypt(const uint8_t* key,const uint8_t *in,uint8_t plen,uint8_t *out)
+{
+		if(plen > KEY_LEN)
+			return MI_ERR_INVALID_LENGTH;
+		if(NULL == key || NULL == in || NULL == out)
+			return MI_ERR_INVALID_PARAM;
+		AES_KEY aes_key;
+		unsigned char IV[KEY_LEN]           =   {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
+		memcpy(aes_env.aes_key.iv, IV, KEY_LEN);
+
+		uint8_t plaintext_temp[32];
+		memset(plaintext_temp,0,sizeof(plaintext_temp));
+		memcpy(plaintext_temp,in,plen);
+		aes_set_key(key, 128, &aes_key, AES_ENCRYPT);
+		aes_enc_dec(plaintext_temp, out, &aes_key, AES_ENCRYPT, 0);
+		
 		return MI_SUCCESS;
 }
 

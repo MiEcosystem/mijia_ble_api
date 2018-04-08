@@ -50,9 +50,6 @@ void user_app_on_connection(uint8_t conidx, struct gapc_connection_req_ind const
 				mi_param.connect.role = MIBLE_GAP_PERIPHERAL;
 		
 				mible_gap_event_callback(evt,&mi_param);
-
-				
-
 #endif
 
     }
@@ -75,7 +72,6 @@ void app_on_update_params_rejected(const uint8_t handle)
 				//param.update_conn.conn_param
 		
 				mible_gap_event_callback(evt,&param);
-
 #endif
 
 }
@@ -107,36 +103,10 @@ void user_app_on_db_init_complete( void )
 		mi_param.srv_init_cmp.p_gatts_db = get_server_db();
 		mible_arch_event_callback(evt,&mi_param);
 	#endif
-	
-	
 }
 
 
 
-#include "aes_api.h"
-
-void test_aes_128(void)
-{
-		uint8_t key[16];
-		for(int i=0;i<sizeof(key);i++)
-			key[i] = i;
-		uint8_t plaintext[6] = "hello";
-		uint8_t ciphertext[16];
-		mible_aes128_encrypt(key,plaintext,sizeof(plaintext),ciphertext);	
-
-		COMPrintf("aes:");
-		COMPrintf_hexdump(ciphertext,sizeof(ciphertext));
-
-		AES_KEY key1;
-		uint8_t plaintext1[6] = "hello";
-		uint8_t ciphertext1[16];
-    aes_set_key(key, 128, &key1, AES_ENCRYPT);
-    aes_enc_dec(plaintext1, ciphertext1, &key1, AES_ENCRYPT, 0);
-
-		COMPrintf("aes1:");
-		COMPrintf_hexdump(ciphertext1,sizeof(ciphertext1));
-
-}
 
 
 
