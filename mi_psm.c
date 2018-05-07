@@ -130,7 +130,7 @@ void mi_psm_init(void)
 }
 
 /**@brief Flash Write function type. */
-int mi_psm_record_write(uint16_t rec_key, uint8_t *in, uint16_t in_len)
+int mi_psm_record_write(uint16_t rec_key, const uint8_t *in, uint16_t in_len)
 {
     uint32_t ret = 0;
     fds_record_t        record;

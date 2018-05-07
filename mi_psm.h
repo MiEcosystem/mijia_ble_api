@@ -22,7 +22,7 @@ void mi_psm_init(void);
 
 int mi_psm_record_read(uint16_t rec_key, uint8_t *out, uint16_t out_len);
 
-int mi_psm_record_write(uint16_t rec_key, uint8_t *in, uint16_t in_len);
+int mi_psm_record_write(uint16_t rec_key, const uint8_t *in, uint16_t in_len);
 
 int mi_psm_record_delete(uint16_t rec_key);
 
