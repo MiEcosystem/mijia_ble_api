@@ -233,7 +233,7 @@ static void gecko_process_evt(struct gecko_cmd_packet *evt)
                 gecko_cmd_gatt_server_send_user_read_response(
                         evt->data.evt_gatt_server_user_read_request.connection,
                         evt->data.evt_gatt_server_user_read_request.characteristic,
-                        bg_err_att_invalid_offset, 0, NULL);
+                        (uint8_t)bg_err_att_invalid_offset, 0, NULL);
             } else {
                 gecko_cmd_gatt_server_send_user_read_response(
                         evt->data.evt_gatt_server_user_read_request.connection,
@@ -1139,7 +1139,7 @@ mible_status_t mible_record_read(uint16_t record_id, uint8_t* p_data, uint8_t le
  * operation has terminated, i.e., an event is received.
  * 			When record writing complete , call mible_arch_event_callback function and pass MIBLE_ARCH_EVT_RECORD_WRITE_CMP event and result.
  * */
-mible_status_t mible_record_write(uint16_t record_id, uint8_t* p_data, uint8_t len)
+mible_status_t mible_record_write(uint16_t record_id, const uint8_t* p_data, uint8_t len)
 {
     // TODO: support length longer than 56.
     if (len > MAX_SINGLE_PS_LENGTH){

@@ -709,7 +709,7 @@ __WEAK mible_status_t mible_record_read(uint16_t record_id, uint8_t* p_data,
  * operation has terminated, i.e., an event is received.
  *          When record writing complete , call mible_arch_event_callback function and pass MIBLE_ARCH_EVT_RECORD_WRITE_CMP event and result. 
  * */
-__WEAK mible_status_t mible_record_write(uint16_t record_id, uint8_t* p_data,
+__WEAK mible_status_t mible_record_write(uint16_t record_id, const uint8_t* p_data,
         uint8_t len)
 {
     return MI_SUCCESS;

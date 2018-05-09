@@ -32,16 +32,17 @@
 
 #include "mible_log_internal.h"
 
-#define MI_LOG_ERROR(...)                     	MI_LOG_INTERNAL_ERROR(__VA_ARGS__)
-#define MI_LOG_WARNING(...)                   	MI_LOG_INTERNAL_WARNING( __VA_ARGS__)
-#define MI_LOG_INFO(...)                      	MI_LOG_INTERNAL_INFO( __VA_ARGS__)
-#define MI_LOG_DEBUG(...) 		                MI_LOG_INTERNAL_DEBUG( __VA_ARGS__)
-
+#define MI_LOG_ERROR(...)                       MI_LOG_INTERNAL_ERROR(__VA_ARGS__)
+#define MI_LOG_WARNING(...)                     MI_LOG_INTERNAL_WARNING( __VA_ARGS__)
+#define MI_LOG_INFO(...)                        MI_LOG_INTERNAL_INFO( __VA_ARGS__)
+#define MI_LOG_DEBUG(...)                       MI_LOG_INTERNAL_DEBUG( __VA_ARGS__)
+#define MI_LOG_HEXDUMP(...)                     MI_LOG_INTERNAL_HEXDUMP( __VA_ARGS__)
 #else // MI_LOG_ENABLED
 #define MI_LOG_ERROR(...)
 #define MI_LOG_WARNING(...)
 #define MI_LOG_INFO(...)
 #define MI_LOG_DEBUG(...)
+#define MI_LOG_HEXDUMP(...)
 #endif // MI_LOG_ENABLED
 
 
@@ -77,7 +78,7 @@
 #define MI_ERR_CHECK(ERR_CODE)
 #define MI_ERR_TEST(ERR_CODE)
 
-#endif // MI_ASSERT
+#endif // MI_ASSERT END
 
 
 
