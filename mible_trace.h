@@ -22,6 +22,12 @@
 
 #define GetCycleCounter() \
         (DWT->CYCCNT)
+#else
+#define InitCycleCounter()
+#define ResetCycleCounter()
+#define EnableCycleCounter()
+#define DisableCycleCounter()
+#define GetCycleCounter()
 #endif /* DWT END*/
 
 #endif /* __MIBLE_TRACE_H__ */

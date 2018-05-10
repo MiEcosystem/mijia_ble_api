@@ -1219,8 +1219,6 @@ mible_status_t mible_aes128_encrypt(const uint8_t* key, const uint8_t* plaintext
     uint8_t tmpCipher[16];
     mbedtls_aes_context aes_ctx;
 
-    mbedtls_aes_init(&aes_ctx);
-
     if (key == NULL || plaintext == NULL || ciphertext == NULL) {
         return MI_ERR_INVALID_ADDR;
     }
@@ -1229,6 +1227,7 @@ mible_status_t mible_aes128_encrypt(const uint8_t* key, const uint8_t* plaintext
         return MI_ERR_INVALID_LENGTH;
     }
 
+    mbedtls_aes_init(&aes_ctx);
     memset(tmpPlain, 0, 16);
     memset(tmpCipher, 0, 16);
 

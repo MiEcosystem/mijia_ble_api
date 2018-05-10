@@ -51,7 +51,7 @@
 #define MI_ERR_HANDLER(ERR_CODE)                                       \
     do                                                                 \
     {                                                                  \
-        MI_LOG_ERROR("Error code 0x%04X.  %s:%d\n", ERR_CODE, (uint32_t)__FILE__, __LINE__);  \
+        MI_LOG_ERROR("Error code 0x%04X <%d>.  %s:%d\n", ERR_CODE, ERR_CODE, (uint32_t)__FILE__, __LINE__); \
     } while (0)
 
 #define MI_ERR_CHECK(ERR_CODE)                              \
