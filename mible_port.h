@@ -113,8 +113,8 @@
 #define CRITICAL_SECTION_ENTER()
 #define CRITICAL_SECTION_EXIT()
 
-#define MI_LOG_PRINTF(...)
-#define MI_LOG_HEXDUMP(base_addr, bytes)
+#define MI_PRINTF(...)
+#define MI_HEXDUMP(base_addr, bytes)
 
 #define TRACE_INIT(pin)
 #define TRACE_ENTER(pin)
