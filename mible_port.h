@@ -115,11 +115,11 @@
 
 #ifdef MI_LOG_ENABLED
 #include "nrf_log.h"
-#define MI_LOG_PRINTF(...)             NRF_LOG_RAW_INFO(__VA_ARGS__)
-#define MI_LOG_HEXDUMP(...)            NRF_LOG_RAW_HEXDUMP_INFO(__VA_ARGS__)
+#define MI_PRINTF(...)             NRF_LOG_RAW_INFO(__VA_ARGS__)
+#define MI_HEXDUMP(...)            NRF_LOG_RAW_HEXDUMP_INFO(__VA_ARGS__)
 #else
-#define MI_LOG_PRINTF(...)
-#define MI_LOG_HEXDUMP(...)
+#define MI_PRINTF(...)
+#define MI_HEXDUMP(base_addr, bytes)
 #endif
 
 #include "cmsis_compiler.h"
