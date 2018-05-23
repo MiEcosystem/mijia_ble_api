@@ -6,13 +6,14 @@
 #include "mbedtls/aes.h"
 
 #include "efr32_api.h"
+#include "gatt_database.h"
 #include "em_cmu.h"
 #include "em_gpio.h"
-#include "gatt_database.h"
 #include "mible_log.h"
+#include "mible_api.h"
+#include "efr32_api.h"
 
 #define MAX_TASK_NUM 4
-
 
 // connection handle
 uint8_t connection_handle = DISCONNECTION;
