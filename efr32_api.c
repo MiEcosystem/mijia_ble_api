@@ -14,7 +14,7 @@
 #include "efr32_api.h"
 
 #define MAX_TASK_NUM 4
-
+#define ADV_HANDLE   0
 // connection handle
 uint8_t connection_handle = DISCONNECTION;
 
@@ -31,8 +31,6 @@ uint8_t connect_param_for_retry = 0xFF;
 target_connect_t target_connect;
 
 extern gatt_database_t gatt_database;
-
-static void gecko_process_evt(struct gecko_cmd_packet *evt);
 
 /* timer handler - 0xFF and one timer are always reserved for GAP */
 static struct {
@@ -72,22 +70,12 @@ static int8_t SearchDatabaseFromHandle(uint16_t handle)
     return -1;
 }
 
-void mible_stack_event_handler(struct gecko_cmd_packet* p_evt)
+void mible_stack_event_handler(struct gecko_cmd_packet *evt)
 {
-    gecko_process_evt(p_evt);
-}
-
-static void gecko_process_evt(struct gecko_cmd_packet *evt)
-{
-
-    mible_gap_evt_param_t gap_evt_param = {0};;
+    mible_gap_evt_param_t gap_evt_param = {0};
     mible_gatts_evt_param_t gatts_evt_param = {0};
 
     switch (BGLIB_MSG_ID(evt->header)) {
-    /* Unreachable for blocking waiting for boot event mode */
-    case gecko_evt_system_boot_id:
-    break;
-
     case gecko_evt_le_connection_opened_id:
         connection_handle = evt->data.evt_le_connection_opened.connection;
         gap_evt_param.conn_handle = evt->data.evt_le_connection_opened.connection;
@@ -305,6 +293,7 @@ static void gecko_process_evt(struct gecko_cmd_packet *evt)
 
     case gecko_evt_system_external_signal_id:
         if (evt->data.evt_system_external_signal.extsignals & SCAN_RETRY_BIT_MASK) {
+            MI_LOG_ERROR("scan retry...\n");
             struct gecko_msg_le_gap_discover_rsp_t *ret_start_scanning =
                     gecko_cmd_le_gap_discover(le_gap_discover_observation);
             if (ret_start_scanning->result == bg_err_bt_controller_busy) {
@@ -318,6 +307,7 @@ static void gecko_process_evt(struct gecko_cmd_packet *evt)
         }
 
         if (evt->data.evt_system_external_signal.extsignals & START_ADV_RETRY_BIT_MASK) {
+            MI_LOG_ERROR("adv retry...\n");
             struct gecko_msg_le_gap_set_mode_rsp_t *ret_set_mode;
             if (connect_param_for_retry != 0xFF) {
                 ret_set_mode = gecko_cmd_le_gap_set_mode(le_gap_user_data,
@@ -332,6 +322,7 @@ static void gecko_process_evt(struct gecko_cmd_packet *evt)
         }
 
         if (evt->data.evt_system_external_signal.extsignals & UPDATE_CON_RETRY_BIT_MASK) {
+            MI_LOG_ERROR("update conn parameter retry...\n");
             struct gecko_msg_le_connection_set_parameters_rsp_t *ret;
             if (conn_param_for_retry.min_conn_interval != 0
                     && conn_param_for_retry.max_conn_interval != 0) {
@@ -348,8 +339,7 @@ static void gecko_process_evt(struct gecko_cmd_packet *evt)
             }
         }
     break;
-    default:
-    break;
+
     }
     /* Block all stack events */
     return ;
@@ -465,7 +455,6 @@ mible_status_t mible_gap_scan_stop(void)
  * @note	Other default advertising parameters: local public address , no
  * filter policy
  * */
-
 mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_param)
 {
     struct gecko_msg_le_gap_set_adv_parameters_rsp_t *ret_param;
@@ -487,14 +476,21 @@ mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_param)
         return MI_ERR_INVALID_STATE;
     }
 
-    ret_param = gecko_cmd_le_gap_set_adv_parameters(p_param->adv_interval_min,
-            p_param->adv_interval_max, channel_map);
+    ret_param = gecko_cmd_le_gap_set_advertise_timing(ADV_HANDLE, p_param->adv_interval_min,
+            p_param->adv_interval_max, 0, 0);
+    MI_ERR_CHECK(ret_param->result);
+    if (ret_param->result == bg_err_invalid_param) {
+        return MI_ERR_INVALID_PARAM;
+    }
+
+    ret_param = gecko_cmd_le_gap_set_advertise_channel_map(ADV_HANDLE, channel_map);
+    MI_ERR_CHECK(ret_param->result);
     if (ret_param->result == bg_err_invalid_param) {
         return MI_ERR_INVALID_PARAM;
     }
 
     if (p_param->adv_type == MIBLE_ADV_TYPE_CONNECTABLE_UNDIRECTED) {
-        connect = le_gap_undirected_connectable;
+        connect = le_gap_connectable_scannable;
     } else if (p_param->adv_type == MIBLE_ADV_TYPE_SCANNABLE_UNDIRECTED) {
         connect = le_gap_scannable_non_connectable;
     } else if (p_param->adv_type == MIBLE_ADV_TYPE_NON_CONNECTABLE_UNDIRECTED) {
@@ -503,8 +499,8 @@ mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_param)
         return MI_ERR_INVALID_PARAM;
     }
 
-    ret_set_mode = gecko_cmd_le_gap_set_mode(le_gap_user_data, connect);
-
+    ret_set_mode = gecko_cmd_le_gap_start_advertising(ADV_HANDLE, le_gap_user_data, connect);
+    MI_ERR_CHECK(ret_set_mode->result);
     if (ret_set_mode->result == bg_err_success) {
         advertising = 1;
         return MI_SUCCESS;
@@ -528,11 +524,11 @@ mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_param)
 mible_status_t mible_gap_adv_data_set(uint8_t const * p_data, uint8_t dlen,
         uint8_t const *p_sr_data, uint8_t srdlen)
 {
-    struct gecko_msg_le_gap_set_adv_data_rsp_t *ret;
+    struct gecko_msg_le_gap_bt5_set_adv_data_rsp_t *ret;
 
     if (p_data != NULL) {
         /* 0 - advertisement, 1 - scan response, set advertisement data here */
-        ret = gecko_cmd_le_gap_set_adv_data(0, dlen, p_data);
+        ret = gecko_cmd_le_gap_bt5_set_adv_data(ADV_HANDLE, 0, dlen, p_data);
         if (ret->result == bg_err_invalid_param) {
             return MI_ERR_INVALID_PARAM;
         }
@@ -540,7 +536,7 @@ mible_status_t mible_gap_adv_data_set(uint8_t const * p_data, uint8_t dlen,
 
     if (p_sr_data != NULL) {
         /* 0 - advertisement, 1 - scan response, set scan response data here */
-        ret = gecko_cmd_le_gap_set_adv_data(1, srdlen, p_sr_data);
+        ret = gecko_cmd_le_gap_bt5_set_adv_data(ADV_HANDLE, 1, srdlen, p_sr_data);
         if (ret->result == bg_err_invalid_param) {
             return MI_ERR_INVALID_PARAM;
         }
@@ -557,14 +553,14 @@ mible_status_t mible_gap_adv_data_set(uint8_t const * p_data, uint8_t dlen,
  * */
 mible_status_t mible_gap_adv_stop(void)
 {
-    struct gecko_msg_le_gap_set_mode_rsp_t *ret_set_mode;
+    struct gecko_msg_le_gap_stop_advertising_rsp_t *ret;
     if (!advertising) {
         return MI_ERR_INVALID_STATE;
     }
 
-    ret_set_mode = gecko_cmd_le_gap_set_mode(le_gap_non_discoverable,
-            le_gap_non_connectable);
-    if (ret_set_mode->result == bg_err_success) {
+    ret = gecko_cmd_le_gap_stop_advertising(ADV_HANDLE);
+    MI_ERR_CHECK(ret->result);
+    if (ret->result == bg_err_success) {
         return MI_SUCCESS;
     } else {
         return MIBLE_ERR_UNKNOWN;
@@ -828,7 +824,7 @@ mible_status_t mible_gatts_value_get(uint16_t srv_handle, uint16_t value_handle,
  *          MI_ERR_INVALID_LENGTH   Invalid length supplied.
  *          MI_ERR_BUSY            Procedure already in progress.
  *          MIBLE_ERR_ATT_INVALID_HANDLE     Attribute not found.
- *          MIBLE_ERR_GATT_INVALID_ATT_TYPE   //Attributes are not modifiable by
+ *          MIBLE_ERR_GATT_INVALID_ATT_TYPE  Attributes are not modifiable by
  * the application.
  * @note    This function checks for the relevant Client Characteristic
  * Configuration descriptor
@@ -1018,8 +1014,9 @@ mible_status_t mible_timer_start(void* timer_id, uint32_t timeout_value, void* p
     timer_pool.timer[index].args = p_context;
     ret = gecko_cmd_hardware_set_soft_timer(TIMER_MS_2_TIMERTICK(timeout_value),
             timer_pool.timer[index].timer_id,
-            timer_pool.timer[index].mode == MIBLE_TIMER_SINGLE_SHOT ? 1 : 0);
+            timer_pool.timer[index].mode == MIBLE_TIMER_SINGLE_SHOT);
     if (ret->result != bg_err_success) {
+        MI_LOG_ERROR("start timer %d error 0x%X\n", index, ret->result);
         return MI_ERR_NO_MEM;
     }
     timer_pool.timer[index].is_running = true;
@@ -1263,6 +1260,7 @@ mible_status_t mible_task_post(mible_handler_t handler, void *arg)
     static uint8_t task_queue_is_init = 0;
     uint32_t errno;
     if (!task_queue_is_init){
+        task_queue_is_init = 1;
         errno = queue_init(&task_queue, task_buf,
                             sizeof(task_buf) / sizeof(task_buf[0]), sizeof(task_buf[0]));
         MI_ERR_CHECK(errno);

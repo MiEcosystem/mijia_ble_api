@@ -3,9 +3,6 @@
 
 #include "mible_type.h"
 
-/* Always define this for now, nonblocking hasn't been implemented so that it could cause problem if the user call the mible APIs earlier than system boot event recieved*/
-#define BLOCKING_WAITING_FOR_BOOT_EVT
-
 /*
  * RECORD_INFO_KEY - Information key index - DO NOT CHANGE IT
  * MAX_SINGLE_PS_LENGTH - Max size of each PS key - DO NOT CHANGE IT
@@ -26,11 +23,6 @@
 /* Max random data size for gecko API to generate random data - DO NOT CHANGE IT */
 #define MAX_SINGLE_RANDOM_DATA_LENGTH           16
 
-/* Max number of connections allowed by stack simultaneously */
-#ifndef MAX_CONNECTIONS
-#define MAX_CONNECTIONS                         1
-#endif
-
 /* Not used for now */
 #define RETRY_CONN_UPDATE_BIT_MASK              (1<<0)
 #define RETRY_SCANNING_TIMEOUT_BIT_MASK         (1<<1)
@@ -49,9 +41,9 @@
 
 #define SCAN_TIMEOUT_TIMER_ID                   0xFF
 
-#define SCAN_RETRY_BIT_MASK                     0x80000000
-#define START_ADV_RETRY_BIT_MASK                0x40000000
-#define UPDATE_CON_RETRY_BIT_MASK               0x20000000
+#define SCAN_RETRY_BIT_MASK                     (1<<31)
+#define START_ADV_RETRY_BIT_MASK                (1<<30)
+#define UPDATE_CON_RETRY_BIT_MASK               (1<<29)
 
 #define TIMERS_FOR_STACK                        1
 #define TIMERS_FOR_USER                         4
