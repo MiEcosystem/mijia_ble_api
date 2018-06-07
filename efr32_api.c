@@ -8,6 +8,7 @@
 #include "efr32_api.h"
 #include "gatt_database.h"
 #include "em_cmu.h"
+#include "em_msc.h"
 #include "em_gpio.h"
 #include "mible_log.h"
 #include "mible_api.h"
@@ -15,6 +16,10 @@
 
 #define MAX_TASK_NUM 4
 #define ADV_HANDLE   0
+
+#define MIBLE_DFU_NVM_START        0x4A000UL      /**< DFU Start Address */
+#define MIBLE_DFU_NVM_END          0x7E800UL      /**< DFU End Address */
+
 // connection handle
 uint8_t connection_handle = DISCONNECTION;
 
@@ -83,8 +88,7 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt)
                 evt->data.evt_le_connection_opened.address.addr, 6);
         gap_evt_param.connect.role =
                 (mible_gap_role_t) evt->data.evt_le_connection_opened.master;
-        if ((evt->data.evt_le_connection_opened.address_type
-                == le_gap_address_type_public)
+        if ((evt->data.evt_le_connection_opened.address_type == le_gap_address_type_public)
                 || (evt->data.evt_le_connection_opened.address_type
                         == le_gap_address_type_public_identity)) {
             gap_evt_param.connect.type = MIBLE_ADDRESS_TYPE_PUBLIC;
@@ -179,8 +183,10 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt)
     break;
 
     case gecko_evt_gatt_server_attribute_value_id: {
-        if (evt->data.evt_gatt_server_attribute_value.att_opcode != gatt_write_command)
-            break;
+//        if (evt->data.evt_gatt_server_attribute_value.att_opcode != gatt_write_command) {
+//            MI_LOG_DEBUG("non write cmd\n");
+//            break;
+//        }
 
         uint16_t char_handle = evt->data.evt_gatt_server_attribute_value.attribute;
         mible_gatts_evt_t event;
@@ -440,6 +446,14 @@ mible_status_t mible_gap_scan_stop(void)
     return MI_SUCCESS;
 }
 
+typedef struct {
+    uint8_t len;
+    uint8_t data[31];
+} mible_adv_data_t;
+
+static mible_adv_data_t last_adv_data;
+static mible_adv_data_t last_scan_rsp;
+
 /*
  * @brief	Start advertising
  * @param 	[in] p_adv_param : pointer to advertising parameters, see
@@ -467,7 +481,7 @@ mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_param)
     if (p_param->ch_mask.ch_38_off != 1) {
         channel_map |= 0x02;
     }
-    if (p_param->ch_mask.ch_38_off != 1) {
+    if (p_param->ch_mask.ch_39_off != 1) {
         channel_map |= 0x04;
     }
 
@@ -499,6 +513,11 @@ mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_param)
         return MI_ERR_INVALID_PARAM;
     }
 
+    if (last_adv_data.len != 0)
+        gecko_cmd_le_gap_bt5_set_adv_data(ADV_HANDLE, 0, last_adv_data.len, last_adv_data.data);
+    if (last_scan_rsp.len != 0)
+        gecko_cmd_le_gap_bt5_set_adv_data(ADV_HANDLE, 1, last_scan_rsp.len, last_scan_rsp.data);
+
     ret_set_mode = gecko_cmd_le_gap_start_advertising(ADV_HANDLE, le_gap_user_data, connect);
     MI_ERR_CHECK(ret_set_mode->result);
     if (ret_set_mode->result == bg_err_success) {
@@ -526,20 +545,24 @@ mible_status_t mible_gap_adv_data_set(uint8_t const * p_data, uint8_t dlen,
 {
     struct gecko_msg_le_gap_bt5_set_adv_data_rsp_t *ret;
 
-    if (p_data != NULL) {
+    if (p_data != NULL && dlen <= 31) {
         /* 0 - advertisement, 1 - scan response, set advertisement data here */
         ret = gecko_cmd_le_gap_bt5_set_adv_data(ADV_HANDLE, 0, dlen, p_data);
         if (ret->result == bg_err_invalid_param) {
             return MI_ERR_INVALID_PARAM;
         }
+        memcpy(last_adv_data.data, p_data, dlen);
+        last_adv_data.len = dlen;
     }
 
-    if (p_sr_data != NULL) {
+    if (p_sr_data != NULL && srdlen <= 31) {
         /* 0 - advertisement, 1 - scan response, set scan response data here */
         ret = gecko_cmd_le_gap_bt5_set_adv_data(ADV_HANDLE, 1, srdlen, p_sr_data);
         if (ret->result == bg_err_invalid_param) {
             return MI_ERR_INVALID_PARAM;
         }
+        memcpy(last_scan_rsp.data, p_sr_data, srdlen);
+        last_scan_rsp.len = srdlen;
     }
 
     return MI_SUCCESS;
@@ -854,6 +877,7 @@ mible_status_t mible_gatts_notify_or_indicate(uint16_t conn_handle, uint16_t srv
     } else if (ret->result == bg_err_success) {
         return MI_SUCCESS;
     } else {
+        MI_LOG_DEBUG("notify error 0x%X\n", ret->result);
         return MIBLE_ERR_UNKNOWN;
     }
 
@@ -1509,3 +1533,112 @@ int mible_iic_scl_pin_read(uint8_t port, uint8_t pin)
     return GPIO_PinInGet(port, pin);
 }
 
+mible_status_t mible_nvm_init(void)
+{
+    static bool enable = false;
+
+    if (!enable) {
+        MSC_Init();
+        enable = true;
+    }
+
+    return MI_SUCCESS;
+}
+
+/**
+ * @brief   Function for loadind data from Non-Volatile Memory.
+ * @param   [in] port:   SCL port
+ *          [in] pin :   SCL pin
+ * @return  1: High (Idle)
+ *          0: Low (Busy)
+ * */
+mible_status_t mible_nvm_load(void * buffer, uint32_t length, uint32_t offset)
+{
+    if (MSC->STATUS & MSC_STATUS_BUSY) {
+        return MI_ERR_BUSY;
+    }
+
+    if (NULL == buffer || 0 == length ||
+        (MIBLE_DFU_NVM_START + offset + length) > MIBLE_DFU_NVM_END) {
+
+        return MI_ERR_INVALID_PARAM;
+    }
+
+    memcpy(buffer, (void *)(MIBLE_DFU_NVM_START + offset), length);
+    return MI_SUCCESS;
+}
+
+static bool verify_erased(uint32_t address, uint32_t length)
+{
+    for (uint32_t i = 0; i < length; i += 4) {
+        if (*(uint32_t *)(address + i) != 0xFFFFFFFF) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+static bool part_erase(uint32_t address)
+{
+    if (0 == address % FLASH_PAGE_SIZE) {
+        return true;
+    }
+
+    if (MSC->STATUS & MSC_STATUS_BUSY ||
+        address >= MIBLE_DFU_NVM_END ||
+        address < MIBLE_DFU_NVM_START) {
+
+        return false;
+    }
+
+//    void * buffer = malloc(address % FLASH_PAGE_SIZE);
+//    if (NULL == buffer) {
+//        return false;
+//    }
+
+    uint32_t buffer[(address % FLASH_PAGE_SIZE) / 4 + 1];
+
+    memcpy(buffer, (const void *)(address - address % FLASH_PAGE_SIZE),
+                address % FLASH_PAGE_SIZE);
+    MSC_ErasePage(address - address % FLASH_PAGE_SIZE);
+    bool ret = MSC_WriteWord(address - address % FLASH_PAGE_SIZE,
+                                    buffer, address % FLASH_PAGE_SIZE);
+//    free(buffer);
+    MI_ERR_CHECK(ret);
+    return ret;
+}
+
+/**
+ * @brief   Function for storing data into Non-Volatile Memory.
+ * @param   [in] port:   SCL port
+ *          [in] pin :   SCL pin
+ * @return  1: High (Idle)
+ *          0: Low (Busy)
+ * */
+mible_status_t mible_nvm_store(void * buffer, uint32_t length, uint32_t offset)
+{
+    if (MSC->STATUS & MSC_STATUS_BUSY) {
+        return MI_ERR_BUSY;
+    }
+
+    if (NULL == buffer || 0 == length ||
+        (MIBLE_DFU_NVM_START + offset + length) > MIBLE_DFU_NVM_END) {
+
+        return MI_ERR_INVALID_PARAM;
+    }
+
+    if (0 == offset % FLASH_PAGE_SIZE) {
+        MSC_ErasePage(MIBLE_DFU_NVM_START + offset);
+    } else if (!verify_erased(MIBLE_DFU_NVM_START + offset, length)) {
+        if (!part_erase(MIBLE_DFU_NVM_START + offset)) {
+            return MI_ERR_INTERNAL;
+        }
+    }
+
+    if (MSC_WriteWord(MIBLE_DFU_NVM_START + offset, buffer, length) == mscReturnOk) {
+        return MI_SUCCESS;
+    } else {
+        return MI_ERR_INTERNAL;
+    }
+}

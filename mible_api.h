@@ -142,4 +142,10 @@ int mible_gatts_register(mible_gatts_callback_t cb);
 
 int mible_arch_register(mible_arch_callback_t cb);
 
+mible_status_t mible_nvm_init(void);
+
+mible_status_t mible_nvm_store(void * buffer, uint32_t length, uint32_t offset);
+
+mible_status_t mible_nvm_load(void * buffer, uint32_t length, uint32_t offset);
+
 #endif
