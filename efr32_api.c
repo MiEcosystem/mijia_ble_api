@@ -1592,11 +1592,6 @@ static bool part_erase(uint32_t address)
         return false;
     }
 
-//    void * buffer = malloc(address % FLASH_PAGE_SIZE);
-//    if (NULL == buffer) {
-//        return false;
-//    }
-
     uint32_t buffer[(address % FLASH_PAGE_SIZE) / 4 + 1];
 
     memcpy(buffer, (const void *)(address - address % FLASH_PAGE_SIZE),
@@ -1604,7 +1599,6 @@ static bool part_erase(uint32_t address)
     MSC_ErasePage(address - address % FLASH_PAGE_SIZE);
     bool ret = MSC_WriteWord(address - address % FLASH_PAGE_SIZE,
                                     buffer, address % FLASH_PAGE_SIZE);
-//    free(buffer);
     MI_ERR_CHECK(ret);
     return ret;
 }
@@ -1641,4 +1635,13 @@ mible_status_t mible_nvm_store(void * buffer, uint32_t length, uint32_t offset)
     } else {
         return MI_ERR_INTERNAL;
     }
+}
+
+
+#include "btl_interface.h"
+mible_status_t mible_upgrade_firmware(void)
+{
+    uint32 errno = bootloader_init();
+    MI_ERR_CHECK(errno);
+    bootloader_rebootAndInstall();
 }

@@ -148,4 +148,5 @@ mible_status_t mible_nvm_store(void * buffer, uint32_t length, uint32_t offset);
 
 mible_status_t mible_nvm_load(void * buffer, uint32_t length, uint32_t offset);
 
+mible_status_t mible_upgrade_firmware(void);
 #endif
