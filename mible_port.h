@@ -17,6 +17,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
 
 #ifndef NULL
 #define NULL 0
@@ -113,8 +114,10 @@
 #define CRITICAL_SECTION_ENTER()
 #define CRITICAL_SECTION_EXIT()
 
-#define MI_PRINTF(...)
-#define MI_HEXDUMP(base_addr, bytes)
+void st_hex_dump(uint8_t *base_addr,uint8_t bytes );
+
+#define MI_LOG_PRINTF(...)                printf( __VA_ARGS__)
+#define MI_LOG_HEXDUMP(base_addr, bytes)  st_hex_dump(base_addr, bytes )
 
 #define TRACE_INIT(pin)
 #define TRACE_ENTER(pin)
