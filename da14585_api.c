@@ -23,7 +23,6 @@
 #include "co_math.h"
 #include "app_mijia.h"
 #include "easy_nvds.h"
-#include "wechat_aes.h"
 #include "arch_console.h"
 #include "mijia_task.h"
 #include "mible_log.h"
@@ -624,8 +623,7 @@ mible_status_t mible_record_delete(uint16_t record_id)
 mible_status_t mible_record_read(uint16_t record_id, uint8_t* p_data,
         uint8_t len)
 {
-		easy_record_read(record_id, p_data,len);
-    return MI_SUCCESS;
+		return easy_record_read(record_id, p_data,len);
 }
 
 /**
@@ -690,13 +688,8 @@ mible_status_t mible_aes128_encrypt(const uint8_t* key,
 {
     if(key != NULL && plaintext != NULL && ciphertext != NULL)
 		{
-				AES_Init(key);
-				uint8_t plaintext_temp[32];
-				memset(plaintext_temp,0,sizeof(plaintext_temp));
-				memcpy(plaintext_temp,plaintext,plen);
-				AES_Encrypt_PKCS7(plaintext_temp,ciphertext,plen,NULL);
-				
-		    return MI_SUCCESS;
+			
+		    return app_aes_encrypt(key,plaintext,plen,ciphertext);;
 		}
 		else
 				return MI_ERR_INVALID_ADDR;

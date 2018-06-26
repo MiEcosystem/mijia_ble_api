@@ -268,6 +268,7 @@ static int gattc_cmp_evt_handler(ke_msg_id_t const msgid,
     if (param->operation == GATTC_INDICATE || param->operation == GATTC_NOTIFY)
     {
         mijia_ind_ntf_cfm_send(param->status);
+				
     }
 
     return (KE_MSG_CONSUMED);
@@ -289,7 +290,6 @@ static int gattc_cmp_evt_handler(ke_msg_id_t const msgid,
 static int gattc_read_req_ind_handler(ke_msg_id_t const msgid, struct gattc_read_req_ind const *param,
                                       ke_task_id_t const dest_id, ke_task_id_t const src_id)
 {
-		arch_printf("read_req\n");
     struct gattc_read_cfm * cfm;
     uint8_t att_idx = 0;
     uint8_t conidx = KE_IDX_GET(src_id);
@@ -324,7 +324,6 @@ static int gattc_read_req_ind_handler(ke_msg_id_t const msgid, struct gattc_read
         }
         else
         {
-						arch_printf("read_val handle:%d\n",param->handle);
 						
 						mible_gatts_evt_t evt = MIBLE_GATTS_EVT_READ_PERMIT_REQ;
 						mible_gatts_evt_param_t mi_param;
@@ -377,7 +376,6 @@ static int gattc_write_req_ind_handler(ke_msg_id_t const msgid, const struct gat
     struct mijia_env_tag *mijia_env = PRF_ENV_GET(MIJIA, mijia);
     struct gattc_write_cfm * cfm;
     uint8_t att_idx = 0;
-		arch_printf("gattc_write_req_ind_handler\n");
     uint8_t conidx = KE_IDX_GET(src_id);
     // retrieve handle information
     uint8_t status = mijia_get_att_idx(param->handle, &att_idx);
@@ -397,7 +395,6 @@ static int gattc_write_req_ind_handler(ke_msg_id_t const msgid, const struct gat
             // Find the handle of the Characteristic Value
             uint16_t value_hdl = get_value_handle(param->handle);
             ASSERT_ERR(value_hdl);
-						arch_printf("param->handle:%d\n",param->handle);
             // Get permissions to identify if it is NTF or IND.
             attmdb_att_get_permission(value_hdl, &perm, 0, &elem);
             status = check_client_char_cfg(PERM_IS_SET(perm, NTF, ENABLE), param);
@@ -408,13 +405,11 @@ static int gattc_write_req_ind_handler(ke_msg_id_t const msgid, const struct gat
         
             // Extract value before check
             ntf_cfg = co_read16p(&param->value[0]);
-            arch_printf("ntf_cfg:%d\n",ntf_cfg);
             // Only update configuration if value for stop or notification enable
             if ((ntf_cfg == PRF_CLI_STOP_NTFIND) || (ntf_cfg == PRF_CLI_START_IND) || (ntf_cfg == PRF_CLI_START_NTF))
             {
             	//Save value in DB
-            	status = attmdb_att_set_value(param->handle, param->length, param->offset, (uint8_t *)&param->value[0]);
-              arch_printf("status:%d\n",status);      
+            	status = attmdb_att_set_value(param->handle, param->length, param->offset, (uint8_t *)&param->value[0]);    
             	// Conserve information in environment
             	if (ntf_cfg == PRF_CLI_START_IND)
             	{
@@ -495,6 +490,11 @@ static int gattc_write_req_ind_handler(ke_msg_id_t const msgid, const struct gat
         }
 
     }
+		else{
+				MI_LOG_DEBUG("error:%x\n",status);
+				MI_LOG_DEBUG("param->handle:%x  att_idx:%x\n",param->handle,att_idx);
+		}
+			
 
     //Send write response
     cfm = KE_MSG_ALLOC(GATTC_WRITE_CFM, src_id, dest_id, gattc_write_cfm);
@@ -566,7 +566,7 @@ mible_status_t mijia_send_notifcation_req_handler_direct(ke_msg_id_t const msgid
 		// Check provided values
 		if(param->conhdl == KE_IDX_GET(src_id))
 		{
-				//if((mijia_env->feature & PRF_CLI_START_IND))
+				//if((mijia_env->feature & PRF_CLI_START_IND) || (mijia_env->feature & PRF_CLI_START_NTF))
 				{
 						attmdb_att_set_value(param->value_handle+mijia_env->shdl, 
 																				param->length,0,
@@ -600,7 +600,7 @@ mible_status_t mijia_send_notifcation_req_handler_direct(ke_msg_id_t const msgid
 		}
 		else
 		{
-				COMPrintf("MI_ERR_INVALID_PARAM\n");
+				MI_LOG_DEBUG("MI_ERR_INVALID_PARAM\n");
 				status = MI_ERR_INVALID_PARAM;
 		}
 

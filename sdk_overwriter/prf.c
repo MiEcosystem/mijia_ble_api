@@ -231,6 +231,11 @@
 #include "mijia.h"
 #endif //(BLE_MIJIA_SERVER)
 
+#if (BLE_SPS_SERVER)
+#include "sps.h"
+#endif //(BLE_SPS_SERVER)
+
+
 /*
  * TYPE DEFINITIONS
  ****************************************************************************************
@@ -570,6 +575,12 @@ static const struct prf_task_cbs * prf_itf_get(uint16_t task_id)
 						prf_cbs = mijia_prf_itf_get();
 						break;
 				#endif // (BLE_MIJIA_SERVER)
+
+				#if (BLE_SPS_SERVER)
+        case TASK_ID_SPS:
+            prf_cbs = sps_prf_itf_get();
+            break;
+        #endif // (BLE_WECHAT_SERVER)
 
         default: /* Nothing to do */ break;
     }

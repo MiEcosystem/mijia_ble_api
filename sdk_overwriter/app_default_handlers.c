@@ -184,10 +184,6 @@ void default_app_on_set_dev_config_complete(void)
 void default_app_on_db_init_complete( void )
 {
     CALLBACK_ARGS_0(user_default_app_operations.default_operation_adv)
-
-		//Lucien debug 
-				extern void test_aes_128(void);
-				app_easy_timer(500, test_aes_128);
 }
 
 void default_app_on_get_dev_appearance(uint16_t* appearance)

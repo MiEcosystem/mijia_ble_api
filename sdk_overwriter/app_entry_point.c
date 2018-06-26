@@ -96,6 +96,11 @@
 #include "app_mijia_task.h"
 #endif
 
+#if (BLE_SPS_SERVER)
+#include "app_sps_task.h"
+#endif
+
+
 /*
  * GLOBAL VARIABLES DEFINITION
  ****************************************************************************************
@@ -176,6 +181,11 @@ const process_event_func_t app_process_handlers[] = {
 
 #if ((BLE_MIJIA_SERVER) && (!EXCLUDE_DLG_MIJIA))
     (process_event_func_t) app_mijia_process_handler,
+#endif
+
+
+#if ((BLE_SPS_SERVER) && (!EXCLUDE_DLG_SPS))
+    (process_event_func_t) app_sps_process_handler,
 #endif
 
 };

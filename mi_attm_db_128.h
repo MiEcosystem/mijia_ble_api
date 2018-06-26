@@ -37,5 +37,12 @@
 uint8_t attm_svc_create_db_mijia(uint16_t *shdl, uint8_t *cfg_flag, uint8_t max_nb_att,
                                uint8_t *att_tbl, ke_task_id_t const dest_id,
                                const struct attm_desc_128 *att_db, uint8_t svc_perm);
+															 
+#if (BLE_SPS_SERVER)
+uint8_t attm_svc_create_db_sps(uint16_t *shdl, uint8_t *cfg_flag, uint8_t max_nb_att,
+														 uint8_t *att_tbl, ke_task_id_t const dest_id,
+														 const struct attm_desc_128 *att_db, uint8_t svc_perm);
+#endif
+
 
 #endif // __ATTM_DB_128_H

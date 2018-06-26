@@ -377,8 +377,15 @@
 #define BLE_MIJIA_SERVER      0
 #endif // defined(CFG_PRF_MIJIA)
 
+/// SPS server
+#if defined(CFG_PRF_SPS)
+#define BLE_SPS_SERVER      1
+#else
+#define BLE_SPS_SERVER      0
+#endif // defined(CFG_PRF_SPS)
 
-#define BLE_CUSTOM_SERVER (BLE_CUSTOM1_SERVER || BLE_CUSTOM2_SERVER || BLE_MIJIA_SERVER)
+#define BLE_CUSTOM_SERVER (BLE_CUSTOM1_SERVER || BLE_CUSTOM2_SERVER || BLE_MIJIA_SERVER || BLE_SPS_SERVER)
+
 
 /// BLE_CLIENT_PRF indicates if at least one client profile is present
 #if (BLE_PROX_MONITOR || BLE_FINDME_LOCATOR || BLE_HT_COLLECTOR || BLE_BP_COLLECTOR \

@@ -36,16 +36,16 @@
 #include "user_dws_config.h"
 #include "user_dws.h"
 #endif
-#if (BLE_SPS_SERVER)
-#include "user_sps_config.h"
-#include "user_spss.h"
-#endif
+
 #if (BLE_MIJIA_SERVER)
 #include "mijia.h"
 #include "app_mijia.h"
 #endif
 
-
+#if (BLE_SPS_SERVER)
+#include "sps.h"
+#include "app_sps.h"
+#endif
 /*
  * GLOBAL VARIABLE DEFINITIONS
  ****************************************************************************************
@@ -95,7 +95,7 @@ const struct cust_prf_func_callbacks cust_prf_funcs[] =
 #if (BLE_MIJIA_SERVER)
     {   TASK_ID_MIJIA,
         mijia_att_db,
-        MIJIA_IDX_ATT_DB_MAX,		//¡Ÿ ±÷µ  
+        MIJIA_IDX_ATT_DB_MAX,		
         #if (BLE_APP_PRESENT)
         app_mijia_create_db, /*app_mijia_enable*/ NULL,
         #else
@@ -105,19 +105,18 @@ const struct cust_prf_func_callbacks cust_prf_funcs[] =
     },
 #endif
 		
-//#if (BLE_SPS_SERVER)
-//    {
-//        TASK_ID_SPS_SERVER,
-//        sps_att_db,
-//        SPSS_IDX_NB,
-//        #if (BLE_APP_PRESENT)
-//        user_sps_create_db, user_sps_enable ,
-//        #else
-//        NULL, NULL,
-//        #endif
-//        NULL, NULL
-//    },
-//#endif   
+#if (BLE_SPS_SERVER)
+		{ 	TASK_ID_SPS,
+				sps_att_db,
+				SPS_IDX_NB,
+		    #if (BLE_APP_PRESENT)
+						app_sps_create_db, /*app_sps_enable*/ NULL,
+		    #else
+						NULL, NULL,
+		    #endif
+						NULL, NULL
+		},
+#endif 
 
 		
     {TASK_ID_INVALID, NULL, 0, NULL, NULL, NULL, NULL},   // DO NOT MOVE. Must always be last

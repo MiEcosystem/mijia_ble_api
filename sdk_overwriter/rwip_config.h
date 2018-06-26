@@ -569,6 +569,7 @@ enum KE_API_ID
 
     TASK_ID_ANCC         = 65,   // Apple Notification Center Service Client Task
 
+		TASK_ID_SPS       	 = 0xFA,   // Sps Task
 	  TASK_ID_MIJIA        = 0xFB,   // Mijia Task
 		
     TASK_ID_SUOTAR       = 0xFC, // Software Patching Over The Air Receiver

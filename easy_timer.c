@@ -155,7 +155,7 @@ bool easy_timer_start(void* timer_id, uint32_t timeout_value,
     		ke_timer_clear(msg_id,TASK_APP);
         arch_ble_force_wakeup(); //wake_up BLE
         //send a message to wait for BLE to be woken up before executing the
-        struct create_timer_t *req = KE_MSG_ALLOC(APP_CREATE_TIMER, TASK_APP, TASK_APP,
+        struct create_timer_t *req = KE_MSG_ALLOC(APP_CREATE_CUS_TIMER, TASK_APP, TASK_APP,
                                                        create_timer_t);
 
         req->delay = timeout;
@@ -216,8 +216,6 @@ static int call_callback_handler(ke_msg_id_t const msgid,
 				if(s_timer_mng.active[timer_id-1] == true &&\
 					 s_timer_mng.mode[timer_id-1] == MIBLE_TIMER_REPEATED)
 						ke_timer_set(msgid,TASK_APP,s_timer_mng.time_out[timer_id-1]);
-				else
-					  recycle_timer(timer_id);
 		}
 
     return KE_MSG_CONSUMED;

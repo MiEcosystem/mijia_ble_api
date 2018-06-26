@@ -2,26 +2,10 @@
 #include "uart2_sync.h"
 #include "app.h"
 #include "da1458x_config_basic.h"
+
+
 #define PRINT_BUF  256
 
-
-
-#ifdef CFG_SYNC_PRINTF
-
-//串口打印函数
-static uint8_t printf_buffer[PRINT_BUF] = {0};
-int COMPrintf(const char* fmt, ...)
-{
-	va_list ap;
-	va_start(ap, fmt );
-	memset(printf_buffer,'\0',sizeof(printf_buffer));
-	uint16_t len = vsprintf((char *)printf_buffer,fmt,ap);
-	va_end( ap );
-	
-
-	uart2_write_str(printf_buffer);
-	return len;   
-}
 int COMPrintf_hexdump(uint8_t *parr,uint8_t len)
 {
 		char my_buf[PRINT_BUF];
@@ -41,6 +25,20 @@ int COMPrintf_hexdump(uint8_t *parr,uint8_t len)
 		return len;
 }
 
+#ifdef CFG_SYNC_PRINTF
+//串口打印函数
+static uint8_t printf_buffer[PRINT_BUF] = {0};
+int COMPrintf(const char* fmt, ...)
+{
+	va_list ap;
+	va_start(ap, fmt );
+	memset(printf_buffer,'\0',sizeof(printf_buffer));
+	uint16_t len = vsprintf((char *)printf_buffer,fmt,ap);
+	va_end( ap );
+	
 
+	uart2_write_str(printf_buffer);
+	return len;   
+}
 
 #endif

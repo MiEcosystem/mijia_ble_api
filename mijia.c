@@ -260,7 +260,6 @@ static mible_status_t add_char_cfg(mible_gatts_char_db_t *inchar,struct attm_des
 		return MI_SUCCESS;
 }
 
-
 //truct anpc_env_tag* anpc_env = ke_malloc(sizeof(struct anpc_env_tag), KE_MEM_ATT_DB);
 static mible_status_t add_char_value(mible_gatts_char_db_t *inchar,struct attm_desc_128 *outatt)
 {
@@ -429,7 +428,7 @@ mible_status_t translate_miarch_attdb(mible_gatts_db_t * p_server_db)
 							}
 					}
 
-					s_max_mijia_idx_nb =  pos;
+					s_max_mijia_idx_nb =  pos+1;
 			}
 			else
 					ret = MI_ERR_INVALID_PARAM;
