@@ -27,7 +27,5 @@ mible_status_t app_gap_adv_data_set(uint8_t const * p_data,
 
 mible_status_t app_aes_encrypt(const uint8_t* key,const uint8_t *in,uint8_t plen,uint8_t *out);
 
-
-
 #endif
 
