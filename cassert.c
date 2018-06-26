@@ -1,7 +1,7 @@
 #include "cassert.h"
 #include "uart2_sync.h"
 #include "app.h"
-#include "da1458x_config_basic.h"
+
 
 
 #define PRINT_BUF  256
@@ -41,4 +41,25 @@ int COMPrintf(const char* fmt, ...)
 	return len;   
 }
 
+int arch_printf(const char *fmt, ...)
+{
+	va_list ap;
+	va_start(ap, fmt );
+	memset(printf_buffer,'\0',sizeof(printf_buffer));
+	uint16_t len = vsprintf((char *)printf_buffer,fmt,ap);
+	va_end( ap );
+	
+	uart2_write_str(printf_buffer);
+	return len; 
+}
+
+#endif
+
+
+#ifndef CFG_PRINTF_UART2
+#undef arch_printf
+int arch_printf(const char *fmt, ...)
+{
+		return 0;
+}
 #endif
