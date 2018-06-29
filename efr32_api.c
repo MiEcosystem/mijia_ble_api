@@ -471,8 +471,7 @@ static mible_adv_data_t last_scan_rsp;
  * */
 mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_param)
 {
-    struct gecko_msg_le_gap_set_adv_parameters_rsp_t *ret_param;
-    struct gecko_msg_le_gap_set_mode_rsp_t *ret_set_mode;
+    uint16_t result;
     uint8 channel_map = 0, connect = 0;
 
     if (p_param->ch_mask.ch_37_off != 1) {
@@ -490,16 +489,16 @@ mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_param)
         return MI_ERR_INVALID_STATE;
     }
 
-    ret_param = gecko_cmd_le_gap_set_advertise_timing(ADV_HANDLE, p_param->adv_interval_min,
-            p_param->adv_interval_max, 0, 0);
-    MI_ERR_CHECK(ret_param->result);
-    if (ret_param->result == bg_err_invalid_param) {
+    result = gecko_cmd_le_gap_set_advertise_timing(ADV_HANDLE, p_param->adv_interval_min,
+            p_param->adv_interval_max, 0, 0)->result;
+    MI_ERR_CHECK(result);
+    if (result == bg_err_invalid_param) {
         return MI_ERR_INVALID_PARAM;
     }
 
-    ret_param = gecko_cmd_le_gap_set_advertise_channel_map(ADV_HANDLE, channel_map);
-    MI_ERR_CHECK(ret_param->result);
-    if (ret_param->result == bg_err_invalid_param) {
+    result = gecko_cmd_le_gap_set_advertise_channel_map(ADV_HANDLE, channel_map)->result;
+    MI_ERR_CHECK(result);
+    if (result == bg_err_invalid_param) {
         return MI_ERR_INVALID_PARAM;
     }
 
@@ -513,14 +512,19 @@ mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_param)
         return MI_ERR_INVALID_PARAM;
     }
 
-    if (last_adv_data.len != 0)
-        gecko_cmd_le_gap_bt5_set_adv_data(ADV_HANDLE, 0, last_adv_data.len, last_adv_data.data);
-    if (last_scan_rsp.len != 0)
-        gecko_cmd_le_gap_bt5_set_adv_data(ADV_HANDLE, 1, last_scan_rsp.len, last_scan_rsp.data);
-
-    ret_set_mode = gecko_cmd_le_gap_start_advertising(ADV_HANDLE, le_gap_user_data, connect);
-    MI_ERR_CHECK(ret_set_mode->result);
-    if (ret_set_mode->result == bg_err_success) {
+    if (last_adv_data.len != 0) {
+        result = gecko_cmd_le_gap_bt5_set_adv_data(ADV_HANDLE, 0,
+                last_adv_data.len, last_adv_data.data)->result;
+        MI_ERR_CHECK(result);
+    }
+    if (last_scan_rsp.len != 0) {
+        result = gecko_cmd_le_gap_bt5_set_adv_data(ADV_HANDLE, 1,
+                last_scan_rsp.len, last_scan_rsp.data)->result;
+        MI_ERR_CHECK(result);
+    }
+    result = gecko_cmd_le_gap_start_advertising(ADV_HANDLE, le_gap_user_data, connect)->result;
+    MI_ERR_CHECK(result);
+    if (result == bg_err_success) {
         advertising = 1;
         return MI_SUCCESS;
     } else {
@@ -875,9 +879,15 @@ mible_status_t mible_gatts_notify_or_indicate(uint16_t conn_handle, uint16_t srv
         // CCC not enabled
         return MI_ERR_INVALID_STATE;
     } else if (ret->result == bg_err_success) {
+#if DEBUG_MIBLE
+        MI_LOG_DEBUG("notify: ");
+        MI_LOG_HEXDUMP(p_value, len);
+#endif
         return MI_SUCCESS;
     } else {
-        MI_LOG_DEBUG("notify error 0x%X\n", ret->result);
+#if DEBUG_MIBLE
+        MI_LOG_ERROR("notify error 0x%X\n", ret->result);
+#endif
         return MIBLE_ERR_UNKNOWN;
     }
 
@@ -1547,28 +1557,29 @@ mible_status_t mible_nvm_init(void)
 
 /**
  * @brief   Function for loadind data from Non-Volatile Memory.
- * @param   [in] port:   SCL port
- *          [in] pin :   SCL pin
- * @return  1: High (Idle)
- *          0: Low (Busy)
+ * @param   [out] p_data:  Pointer to data to be restored.
+ *          [in] length:   Data size in bytes.
+ *          [in] address:  Address in Non-Volatile Memory to read.
+ * @return  MI_ERR_INTERNAL:  invalid NVM address.
+ *          MI_SUCCESS
  * */
-mible_status_t mible_nvm_load(void * buffer, uint32_t length, uint32_t offset)
+mible_status_t mible_nvm_load(void * p_data, uint32_t length, uint32_t address)
 {
     if (MSC->STATUS & MSC_STATUS_BUSY) {
         return MI_ERR_BUSY;
     }
 
-    if (NULL == buffer || 0 == length ||
-        (MIBLE_DFU_NVM_START + offset + length) > MIBLE_DFU_NVM_END) {
+    if (NULL == p_data || 0 == length ||
+        (MIBLE_DFU_NVM_START + address + length) > MIBLE_DFU_NVM_END) {
 
         return MI_ERR_INVALID_PARAM;
     }
 
-    memcpy(buffer, (void *)(MIBLE_DFU_NVM_START + offset), length);
+    memcpy(p_data, (void *)(MIBLE_DFU_NVM_START + address), length);
     return MI_SUCCESS;
 }
 
-static bool verify_erased(uint32_t address, uint32_t length)
+static bool nvm_is_erased(uint32_t address, uint32_t length)
 {
     for (uint32_t i = 0; i < length; i += 4) {
         if (*(uint32_t *)(address + i) != 0xFFFFFFFF) {
@@ -1579,7 +1590,7 @@ static bool verify_erased(uint32_t address, uint32_t length)
     return true;
 }
 
-static bool part_erase(uint32_t address)
+static bool nvm_part_erase(uint32_t address)
 {
     if (0 == address % FLASH_PAGE_SIZE) {
         return true;
@@ -1605,32 +1616,33 @@ static bool part_erase(uint32_t address)
 
 /**
  * @brief   Function for storing data into Non-Volatile Memory.
- * @param   [in] port:   SCL port
- *          [in] pin :   SCL pin
- * @return  1: High (Idle)
- *          0: Low (Busy)
+ * @param   [in] p_data:   Pointer to data to be stored.
+ *          [in] length:   Data size in bytes.
+ *          [in] address:  Start address used to store data.
+ * @return  MI_ERR_INTERNAL:  invalid NVM address.
+ *          MI_SUCCESS
  * */
-mible_status_t mible_nvm_store(void * buffer, uint32_t length, uint32_t offset)
+mible_status_t mible_nvm_store(void * p_data, uint32_t length, uint32_t address)
 {
     if (MSC->STATUS & MSC_STATUS_BUSY) {
         return MI_ERR_BUSY;
     }
 
-    if (NULL == buffer || 0 == length ||
-        (MIBLE_DFU_NVM_START + offset + length) > MIBLE_DFU_NVM_END) {
+    if (NULL == p_data || 0 == length ||
+        (MIBLE_DFU_NVM_START + address + length) > MIBLE_DFU_NVM_END) {
 
         return MI_ERR_INVALID_PARAM;
     }
 
-    if (0 == offset % FLASH_PAGE_SIZE) {
-        MSC_ErasePage(MIBLE_DFU_NVM_START + offset);
-    } else if (!verify_erased(MIBLE_DFU_NVM_START + offset, length)) {
-        if (!part_erase(MIBLE_DFU_NVM_START + offset)) {
+    if (0 == address % FLASH_PAGE_SIZE) {
+        MSC_ErasePage(MIBLE_DFU_NVM_START + address);
+    } else if (!nvm_is_erased(MIBLE_DFU_NVM_START + address, length)) {
+        if (!nvm_part_erase(MIBLE_DFU_NVM_START + address)) {
             return MI_ERR_INTERNAL;
         }
     }
 
-    if (MSC_WriteWord(MIBLE_DFU_NVM_START + offset, buffer, length) == mscReturnOk) {
+    if (MSC_WriteWord(MIBLE_DFU_NVM_START + address, p_data, length) == mscReturnOk) {
         return MI_SUCCESS;
     } else {
         return MI_ERR_INTERNAL;
