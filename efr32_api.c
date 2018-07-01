@@ -17,8 +17,6 @@
 #define MAX_TASK_NUM 4
 #define ADV_HANDLE   0
 
-#define MIBLE_DFU_NVM_START        0x4A000UL      /**< DFU Start Address */
-#define MIBLE_DFU_NVM_END          0x7E800UL      /**< DFU End Address */
 
 // connection handle
 uint8_t connection_handle = DISCONNECTION;
@@ -1563,19 +1561,17 @@ mible_status_t mible_nvm_init(void)
  * @return  MI_ERR_INTERNAL:  invalid NVM address.
  *          MI_SUCCESS
  * */
-mible_status_t mible_nvm_load(void * p_data, uint32_t length, uint32_t address)
+mible_status_t mible_nvm_read(void * p_data, uint32_t length, uint32_t address)
 {
     if (MSC->STATUS & MSC_STATUS_BUSY) {
         return MI_ERR_BUSY;
     }
 
-    if (NULL == p_data || 0 == length ||
-        (MIBLE_DFU_NVM_START + address + length) > MIBLE_DFU_NVM_END) {
-
+    if (NULL == p_data || 0 == length) {
         return MI_ERR_INVALID_PARAM;
     }
 
-    memcpy(p_data, (void *)(MIBLE_DFU_NVM_START + address), length);
+    memcpy(p_data, (void *)(address), length);
     return MI_SUCCESS;
 }
 
@@ -1596,9 +1592,7 @@ static bool nvm_part_erase(uint32_t address)
         return true;
     }
 
-    if (MSC->STATUS & MSC_STATUS_BUSY ||
-        address >= MIBLE_DFU_NVM_END ||
-        address < MIBLE_DFU_NVM_START) {
+    if (MSC->STATUS & MSC_STATUS_BUSY) {
 
         return false;
     }
@@ -1622,27 +1616,25 @@ static bool nvm_part_erase(uint32_t address)
  * @return  MI_ERR_INTERNAL:  invalid NVM address.
  *          MI_SUCCESS
  * */
-mible_status_t mible_nvm_store(void * p_data, uint32_t length, uint32_t address)
+mible_status_t mible_nvm_write(void * p_data, uint32_t length, uint32_t address)
 {
     if (MSC->STATUS & MSC_STATUS_BUSY) {
         return MI_ERR_BUSY;
     }
 
-    if (NULL == p_data || 0 == length ||
-        (MIBLE_DFU_NVM_START + address + length) > MIBLE_DFU_NVM_END) {
-
+    if (NULL == p_data || 0 == length) {
         return MI_ERR_INVALID_PARAM;
     }
 
     if (0 == address % FLASH_PAGE_SIZE) {
-        MSC_ErasePage(MIBLE_DFU_NVM_START + address);
-    } else if (!nvm_is_erased(MIBLE_DFU_NVM_START + address, length)) {
-        if (!nvm_part_erase(MIBLE_DFU_NVM_START + address)) {
+        MSC_ErasePage(address);
+    } else if (!nvm_is_erased(address, length)) {
+        if (!nvm_part_erase(address)) {
             return MI_ERR_INTERNAL;
         }
     }
 
-    if (MSC_WriteWord(MIBLE_DFU_NVM_START + address, p_data, length) == mscReturnOk) {
+    if (MSC_WriteWord(address, p_data, length) == mscReturnOk) {
         return MI_SUCCESS;
     } else {
         return MI_ERR_INTERNAL;
