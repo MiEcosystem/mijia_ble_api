@@ -123,7 +123,7 @@
 		CORE_EXIT_ATOMIC();               \
 	}
 
-#include "SEGGER_RTT.h"
+#include "third_party/SEGGER_RTT/SEGGER_RTT.h"
 #define MI_PRINTF(...)     SEGGER_RTT_printf(0, __VA_ARGS__)
 #define MI_HEXDUMP(array_base, array_size)                                         \
 	do {                                                                           \
