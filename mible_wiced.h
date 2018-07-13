@@ -15,7 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #include "wiced_bt_trace.h"
-#include <mible_server.h>
+#include "mible_server.h"
 #include "mible_std_authen.h"
 #include "mible_beacon.h"
 
@@ -130,9 +130,12 @@ typedef struct Mijia_Gatt_
 
 static Mijia_Gatt  gMibleGatt_db[MIBLE_GATT_HANDLE_MAX_NUM] = {0};
 
+//STRONG_BONDING, 0x3a2/930
+//WEAK_BONDING,   0x9c/156
+
 device_info dev_info = {
         .bonding = STRONG_BONDING,
-        .pid = 0x9c,
+        .pid = 930,
         .version = "0000",
 };
 

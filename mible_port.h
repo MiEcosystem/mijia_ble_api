@@ -19,6 +19,7 @@
 #include <stdint.h>
 #include "wiced_memory.h"
 #include "wiced_bt_trace.h"
+
 #ifndef NULL
 #define NULL 0
 #endif
@@ -27,6 +28,7 @@
 #define malloc(size)                   wiced_bt_get_buffer(size)
 
 #define MI_LOG_ENABLED
+
 #if defined(__CC_ARM)
 #pragma anon_unions
 #elif defined(__ICCARM__)
@@ -118,14 +120,8 @@
 #define CRITICAL_SECTION_ENTER()
 #define CRITICAL_SECTION_EXIT()
 
-#ifdef MI_LOG_ENABLED
-#define MI_LOG_PRINTF(...)                      WICED_BT_TRACE(__VA_ARGS__)
-#define MI_LOG_HEXDUMP(base_addr, bytes)        wiced_trace_array(base_addr, bytes)
-
-#else
-#define MI_LOG_PRINTF(...)                      
-#define MI_LOG_HEXDUMP(base_addr, bytes)        
-#endif
+#define MI_PRINTF(...)                      WICED_BT_TRACE(__VA_ARGS__)
+#define MI_HEXDUMP(base_addr, bytes)        wiced_trace_array(base_addr, bytes)
 
 #define TRACE_INIT(pin)
 #define TRACE_ENTER(pin)

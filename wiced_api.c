@@ -238,15 +238,15 @@ void mible_arch_event_callback(mible_arch_event_t evt,
 mible_status_t mible_gap_address_get(mible_addr_t mac)
 {
     wiced_bt_device_address_t bd_addr = { 0 };
-    //uint8_t i;
     wiced_bt_dev_read_local_addr(bd_addr);
+	
 	memcpy(mac,bd_addr,6);
 	MI_LOG_INFO("mible_gap_address_get,mac=%B\r\n",mac);
 
     return MI_SUCCESS;
 }
 
-void hci_control_le_send_advertisement_report( wiced_bt_ble_scan_results_t *p_scan_result, uint8_t *p_adv_data )
+void hci_control_le_send_advertisement_report_mi( wiced_bt_ble_scan_results_t *p_scan_result, uint8_t *p_adv_data )
 {
     int       i;
     uint8_t   tx_buf[70];
@@ -269,12 +269,12 @@ void hci_control_le_send_advertisement_report( wiced_bt_ble_scan_results_t *p_sc
     wiced_transport_send_data ( HCI_CONTROL_LE_EVENT_ADVERTISEMENT_REPORT, tx_buf, ( int )( p - tx_buf ) );
 }
 
-void hci_control_le_scan_result_cback( wiced_bt_ble_scan_results_t *p_scan_result, uint8_t *p_adv_data )
+void hci_control_le_scan_result_cback_mi( wiced_bt_ble_scan_results_t *p_scan_result, uint8_t *p_adv_data )
 {
     if ( p_scan_result )
     {
         MI_LOG_INFO( "Device : %B \r\n", p_scan_result->remote_bd_addr );
-        hci_control_le_send_advertisement_report( p_scan_result, p_adv_data );
+        hci_control_le_send_advertisement_report_mi( p_scan_result, p_adv_data );
     }
     else
     {
@@ -282,7 +282,7 @@ void hci_control_le_scan_result_cback( wiced_bt_ble_scan_results_t *p_scan_resul
     }
 }
 
-wiced_result_t hci_control_le_handle_scan_cmd(wiced_bool_t enable,
+wiced_result_t hci_control_le_handle_scan_cmd_mi(wiced_bool_t enable,
         wiced_bool_t filter_duplicates)
 {
     wiced_result_t status;
@@ -291,12 +291,12 @@ wiced_result_t hci_control_le_handle_scan_cmd(wiced_bool_t enable,
     {
         //memset(hci_control_le_cb.scanned_devices, 0, sizeof(hci_control_le_cb.scanned_devices));
         status = wiced_bt_ble_scan(BTM_BLE_SCAN_TYPE_HIGH_DUTY, filter_duplicates,
-                hci_control_le_scan_result_cback);
+                hci_control_le_scan_result_cback_mi);
     }
     else
     {
         status = wiced_bt_ble_scan(BTM_BLE_SCAN_TYPE_NONE, filter_duplicates,
-                hci_control_le_scan_result_cback);
+                hci_control_le_scan_result_cback_mi);
     }
     MI_LOG_INFO("hci_control_le_handle_scan_cmd:%d status:%x\r\n", enable, status);
 
@@ -330,7 +330,7 @@ mible_status_t mible_gap_scan_start(mible_gap_scan_type_t scan_type,
 {
 	MI_LOG_INFO("mible_gap_scan_start()*****\r\n");
 
-	if(hci_control_le_handle_scan_cmd(WICED_TRUE, WICED_TRUE))
+	if(hci_control_le_handle_scan_cmd_mi(WICED_TRUE, WICED_TRUE))
 		  return MI_SUCCESS;
 	else
 		return MIBLE_ERR_UNKNOWN;
@@ -346,7 +346,7 @@ mible_status_t mible_gap_scan_stop(void)
 {
 	MI_LOG_INFO("mible_gap_scan_stop()*****\r\n");
 	//hci_control_le_send_scan_state_event( HCI_CONTROL_SCAN_EVENT_NO_SCAN );
-	if(hci_control_le_handle_scan_cmd(WICED_FALSE, WICED_TRUE))
+	if(hci_control_le_handle_scan_cmd_mi(WICED_FALSE, WICED_TRUE))
 		  return MI_SUCCESS;
 	else
 		return MIBLE_ERR_UNKNOWN;
@@ -411,10 +411,10 @@ mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_param)
 mible_status_t mible_gap_adv_data_set(uint8_t const * p_data,
         uint8_t dlen, uint8_t const *p_sr_data, uint8_t srdlen)
 {
-    uint16_t i=0;
-	uint8_t num_elem = 0;
+    //uint8_t i=0;
+	uint8_t i=0, num_elem = 0;
 	uint8_t *pvRet[MIBLE_ADV_DATA_LENGTH] = {NULL};
-	wiced_bt_ble_advert_elem_t adv_data[4];
+	wiced_bt_ble_advert_elem_t adv_data[MIBLE_ADV_DATA_LENGTH];
 
 	MI_LOG_INFO("adv: length=%d, data=", dlen);
 	MI_LOG_HEXDUMP(p_data,dlen);	
@@ -436,7 +436,7 @@ mible_status_t mible_gap_adv_data_set(uint8_t const * p_data,
 		i=i+adv_data[num_elem].len+1;
 		num_elem++;
     }
-	
+	/*
 	for(i=0; i<num_elem; i++)
 	{
 		MI_LOG_INFO("adv_data[%d].advert_type=%d\r\n",i, adv_data[i].advert_type);
@@ -445,7 +445,7 @@ mible_status_t mible_gap_adv_data_set(uint8_t const * p_data,
 		MI_LOG_HEXDUMP(adv_data[i].p_data,adv_data[i].len);
 		MI_LOG_INFO("\r\n");
 	}
-	
+	*/
 	wiced_bt_ble_set_raw_advertisement_data(num_elem, adv_data);
 	
 	for(i=0; i<num_elem; i++)
@@ -501,11 +501,10 @@ mible_status_t mible_gap_adv_stop(void)
 mible_status_t mible_gap_connect(mible_gap_scan_param_t scan_param,
         mible_gap_connect_t conn_param)
 {
-	int i=0;
 	wiced_bt_ble_address_type_t addr_type;
-	wiced_bool_t status;
 	wiced_bt_device_address_t bd_addr;
-	uint8_t status1=0;
+	
+	uint8_t status=0;
 
 	MI_LOG_INFO("mible_gap_connect+++\r\n");
 
@@ -518,18 +517,14 @@ mible_status_t mible_gap_connect(mible_gap_scan_param_t scan_param,
 	    break;
     }
 	memcpy(bd_addr, conn_param.peer_addr, 6);
-    status = wiced_bt_gatt_le_connect(bd_addr,addr_type,BLE_CONN_MODE_HIGH_DUTY, WICED_TRUE );
-
-    MI_LOG_INFO("mible_gap_connect status %d, BDA %B, Addr Type %x\r\n",status, bd_addr, addr_type );
-
-	if(status == WICED_TRUE )
-		status1=HCI_CONTROL_STATUS_SUCCESS;
+    if(wiced_bt_gatt_le_connect(bd_addr,addr_type,BLE_CONN_MODE_HIGH_DUTY, WICED_TRUE )==WICED_TRUE)
+		status=HCI_CONTROL_STATUS_SUCCESS;
 	else
-		status1=HCI_CONTROL_STATUS_FAILED;
+		status=HCI_CONTROL_STATUS_FAILED;
 
-	wiced_transport_send_data( HCI_CONTROL_GATT_EVENT_COMMAND_STATUS, &status1, 1 );
+	wiced_transport_send_data( HCI_CONTROL_GATT_EVENT_COMMAND_STATUS, &status, 1 );
 
-	if(status == WICED_TRUE)
+	if(status == HCI_CONTROL_STATUS_SUCCESS)
 		return MI_SUCCESS;
 	else
 		return MIBLE_ERR_UNKNOWN;
@@ -551,7 +546,7 @@ mible_status_t mible_gap_connect(mible_gap_scan_param_t scan_param,
 {
     if (WICED_BT_GATT_SUCCESS!=wiced_bt_gatt_disconnect (conn_handle))
     {
-        MI_LOG_INFO("mible_gap_disconnect_MIBLE_ERR_UNKNOWN\r\n");
+        MI_LOG_INFO("mible_gap_disconnect: MIBLE_ERR_UNKNOWN\r\n");
         return MIBLE_ERR_UNKNOWN ;
     }
     MI_LOG_INFO("mible_gap_disconnect_success\r\n");
@@ -636,7 +631,7 @@ mible_status_t mible_gatts_service_init(mible_gatts_db_t *p_server_db)
 
 	for(i=0;i<p_server_db->p_srv_db->char_num;i++)
 	{
-	   MI_LOG_INFO("mible_gatts_service_init, char uuid=%02x\r\n",p_server_db->p_srv_db->p_char_db[i].char_uuid.uuid16);
+	   MI_LOG_INFO("mible_gatts_service_init, char uuid=0x%02x\r\n",p_server_db->p_srv_db->p_char_db[i].char_uuid.uuid16);
 	   for(j=0;j<MIBLE_GATT_HANDLE_MAX_NUM;j++)
 	   {
 		   if((p_server_db->p_srv_db->p_char_db[i].char_uuid.uuid16==gMibleGatt_db[j].handle_uuid) )
@@ -698,29 +693,18 @@ mible_status_t mible_gatts_value_set(uint16_t srv_handle, uint16_t value_handle,
         }
     }
 
-    if(offset > gMibleGatt_db[i].handle_max_len)
-    {
-        MI_LOG_INFO("mible_gatts_value_set: MI_ERR_INVALID_PARAM\r\n");
-        return MI_ERR_INVALID_PARAM;
-    }
-    else if(len > gMibleGatt_db[i].handle_max_len)
-    {
-        MI_LOG_INFO("mible_gatts_value_set: MI_ERR_INVALID_LENGTH2\r\n");
-        return MI_ERR_INVALID_LENGTH;
-    }
-    else
-    {
-        gMibleGatt_db[i].offset=offset;
-        gMibleGatt_db[i].ucDataLen=len;
-		gMibleGatt_db[i].handle_max_len=len;
-        memcpy(gMibleGatt_db[i].pUcData+offset,p_value,len);
+
+    gMibleGatt_db[i].offset=offset;
+    gMibleGatt_db[i].ucDataLen=len;
+	gMibleGatt_db[i].handle_max_len=len;
+    memcpy(gMibleGatt_db[i].pUcData+offset,p_value,len);
      
-		MI_LOG_INFO("mible_gatts_value_set: index=%d, length=%d, data=",i,gMibleGatt_db[i].ucDataLen);
-	    MI_LOG_HEXDUMP((gMibleGatt_db[i].pUcData+offset),gMibleGatt_db[i].ucDataLen);
+	MI_LOG_INFO("mible_gatts_value_set: srv_handle=0x%4x, index=%d, length=%d, data=",gMibleGatt_db[i].service_handle, i,gMibleGatt_db[i].ucDataLen);
+    MI_LOG_HEXDUMP((gMibleGatt_db[i].pUcData+offset),gMibleGatt_db[i].ucDataLen);
 		
-        //MI_LOG_INFO("mible_gatts_value_set: MI_SUCCESS\r\n");
-        return MI_SUCCESS;
-    }
+    //MI_LOG_INFO("mible_gatts_value_set: MI_SUCCESS\r\n");
+    return MI_SUCCESS;
+
 
 }
 
@@ -791,7 +775,7 @@ mible_status_t mible_gatts_notify_or_indicate(uint16_t conn_handle,
         uint16_t srv_handle, uint16_t char_value_handle, uint8_t offset,
         uint8_t* p_value, uint8_t len, uint8_t type)
 {
-    wiced_result_t status;
+    //wiced_result_t status;
     wiced_bt_gatt_status_t bt_gatt_status;
     uint8_t  i=0;
 	
@@ -806,45 +790,34 @@ mible_status_t mible_gatts_notify_or_indicate(uint16_t conn_handle,
         }
     }
 
-    if(offset > gMibleGatt_db[i].handle_max_len)
+
+    if (type == 1)
     {
-        MI_LOG_INFO("mible_gatts_notify_or_indicate: MI_ERR_INVALID_PARAM\r\n");
-        return MI_ERR_INVALID_PARAM;
+        //sent notification
+        MI_LOG_INFO("mible_gatts_notify\r\n");
+       bt_gatt_status = wiced_bt_gatt_send_notification (conn_handle,gMibleGatt_db[i].handle_val , len, p_value );
+
     }
-    else if(len > gMibleGatt_db[i].handle_max_len)
+    else if(type == 2)
     {
-        MI_LOG_INFO("mible_gatts_notify_or_indicate: MI_ERR_INVALID_LENGTH\r\n");
-        return MI_ERR_INVALID_LENGTH;
+        // send indication
+        MI_LOG_INFO("mible_gatts_indication\r\n");
+        bt_gatt_status =wiced_bt_gatt_send_indication(conn_handle, gMibleGatt_db[i].handle_val, len, p_value);
     }
     else
     {
-        if (type == 1)
-        {
-            //sent notification
-            MI_LOG_INFO("mible_gatts_notify\r\n");
-           bt_gatt_status = wiced_bt_gatt_send_notification (conn_handle,gMibleGatt_db[i].handle_val , len, p_value );
-
-        }
-        else if(type == 2)
-        {
-            // send indication
-            MI_LOG_INFO("mible_gatts_indication\r\n");
-            bt_gatt_status =wiced_bt_gatt_send_indication(conn_handle, gMibleGatt_db[i].handle_val, len, p_value);
-        }
-        else
-        {
-            ;//do nothing;
-        }
-
-        if (bt_gatt_status != WICED_BT_GATT_SUCCESS)
-        {
-            MI_LOG_INFO("mible_gatts_notify_or_indicate: MI_ERR_INVALID_STATE\r\n");
-            return MI_ERR_INVALID_STATE;
-        }
-        MI_LOG_INFO("mible_gatts_notify_or_indicate: MI_SUCCESS\r\n");
-		
-        return MI_SUCCESS;
+        ;//do nothing;
     }
+
+    if (bt_gatt_status != WICED_BT_GATT_SUCCESS)
+    {
+        MI_LOG_INFO("mible_gatts_notify_or_indicate: MI_ERR_INVALID_STATE\r\n");
+        return MI_ERR_INVALID_STATE;
+    }
+    MI_LOG_INFO("mible_gatts_notify_or_indicate: MI_SUCCESS\r\n");
+		
+    return MI_SUCCESS;
+ 
 
 }
 
@@ -1030,37 +1003,26 @@ __WEAK mible_status_t mible_gattc_write_cmd(uint16_t conn_handle,
 {
 	uint32_t i= *(uint32_t *)p_timer_id;
 
-	//MI_LOG_INFO("mible_timer_create: *(uint32_t *)p_timer_id=%d\r\n",*(uint32_t *)p_timer_id);
-
 	if (NULL == p_timer_id)
 	{
 	    MI_LOG_INFO("mible_timer_create: MI_ERR_INVALID_PARAM");
 	    return MI_ERR_INVALID_PARAM;
-	}
-	
-	if( (i>0) && (i<= MIBLE_TIMER_MAX_NUM))
-	{
-		if(gMiJia_TimerPool[i-1].created)
-		{
-			MI_LOG_INFO("mible_timer_create: the time was created before\r\n");
-			return MI_ERR_INVALID_STATE;
-		}
 	}
 
 	for (i = 0; i <= MIBLE_TIMER_MAX_NUM; i++)
 	{
 		if(gMiJia_TimerPool[i].created!=1)
 		{
-		    *(uint32_t *)p_timer_id = i+1;
+		    *(uint32_t *)p_timer_id = 0xF0+i;
 			gMiJia_TimerPool[i].pFunc = (wiced_timer_callback_t *)timeout_handler;
 			gMiJia_TimerPool[i].mode=mode;
 			gMiJia_TimerPool[i].created=1;
-			break;
+			MI_LOG_INFO("mible_timer_created: successful, index=%d, timer_id=%d\r\n",i,*(uint32_t *)p_timer_id);
+			return MI_SUCCESS;
 		}
 	}
-	MI_LOG_INFO("mible_timer_created: successful, index=%d\r\n",i);
-	
-	return MI_SUCCESS;
+		
+	return MI_ERR_NO_MEM;
 							 
 }
 
@@ -1077,13 +1039,12 @@ mible_status_t mible_timer_delete(void* timer_id)
 	
 	MI_LOG_INFO("mible_timer_delete, timer_id=%d\r\n",(uint32_t)timer_id);
 
-    if ((timer_index > MIBLE_TIMER_MAX_NUM) || (timer_index == 0))
-    {
-        MI_LOG_INFO("mible_timer_delete: MI_ERR_INVALID_PARAM\r\n");
-        return MI_ERR_INVALID_PARAM;
-    }
-	
-	timer_index=timer_index-1;
+	if(timer_index < 0xF0)
+	{
+		MI_LOG_INFO("mible_timer_delete: MI_ERR_INVALID_PARAM\r\n");
+		return MI_ERR_INVALID_PARAM;
+	}
+	timer_index=timer_index-0xF0;
 
     if (gMiJia_TimerPool[timer_index].created)
     {
@@ -1116,35 +1077,28 @@ mible_status_t mible_timer_start(void* timer_id, uint32_t timeout_value,
         void* p_context)
 {
 	uint32_t timer_index = (uint32_t)timer_id;
-	uint32_t *index = (uint32_t *)timer_id;
 	wiced_timer_type_t xTimerType = WICED_MILLI_SECONDS_TIMER;
 
-	//MI_LOG_INFO("mible_timer_start, (uint32_t *)timer_id=%d\r\n",(uint32_t *)timer_id);
-	MI_LOG_INFO("mible_timer_start, index=%d\r\n",index);
+	MI_LOG_INFO("mible_timer_start, timer_id=%d\r\n",timer_id);
 
-
-	if ((timer_index>MIBLE_TIMER_MAX_NUM) || (timer_index== 0))
+	if(timer_index < 0xF0)
+	{
+		MI_LOG_INFO("mible_timer_start: MI_ERR_INVALID_PARAM\r\n");
+		return MI_ERR_INVALID_PARAM;
+	}
+	if (MI_SUCCESS == mible_timer_stop((void *)timer_index))
     {
-        MI_LOG_INFO("mible_timer_start: MI_ERR_INVALID_PARAM\r\n");
-        return MI_ERR_INVALID_PARAM;
+         wiced_deinit_timer(&gMiJia_TimerPool[timer_index-0xF0].timer);
+         gMiJia_TimerPool[timer_index].created = 0; 
     }
-	
-	timer_index = timer_index - 1;
+	timer_index = timer_index - 0xF0;
 	
 	if (MIBLE_TIMER_REPEATED == gMiJia_TimerPool[timer_index].mode)
     {
         xTimerType = WICED_MILLI_SECONDS_PERIODIC_TIMER;
     }
-
-	if (MI_SUCCESS == mible_timer_stop((void *)timer_index))
-    //if (MI_SUCCESS == mible_timer_stop(timer_id)) 
-    {
-        wiced_deinit_timer(&gMiJia_TimerPool[timer_index].timer);
-         gMiJia_TimerPool[timer_index].created = 0; 
-    }/**/
-
-    if (WICED_BT_SUCCESS != wiced_init_timer(&gMiJia_TimerPool[timer_index].timer,
-                             (wiced_timer_callback_t)gMiJia_TimerPool[timer_index].pFunc, (uint32_t)p_context, xTimerType))
+	if (WICED_BT_SUCCESS != wiced_init_timer(&gMiJia_TimerPool[timer_index].timer,
+                            (wiced_timer_callback_t)gMiJia_TimerPool[timer_index].pFunc, (uint32_t)p_context, xTimerType))
     {
         MI_LOG_INFO("mible_timer_start: MI_ERR_NO_MEM\r\n");
         return MI_ERR_NO_MEM;
@@ -1175,13 +1129,12 @@ mible_status_t mible_timer_stop(void* timer_id)
 
 	MI_LOG_INFO("mible_timer_stop: timer_id=%d\r\n",(uint32_t)timer_id);
 
-	if (timer_index > MIBLE_TIMER_MAX_NUM || timer_index == 0)
+	if(timer_index < 0xF0)
 	{
 		MI_LOG_INFO("mible_timer_stop: MI_ERR_INVALID_PARAM\r\n");
 		return MI_ERR_INVALID_PARAM;
 	}
-	
-	timer_index = timer_index - 1;
+	timer_index = timer_index - 0xF0;
 	
 	if (0 == gMiJia_TimerPool[timer_index].created)
 	{
@@ -1190,7 +1143,7 @@ mible_status_t mible_timer_stop(void* timer_id)
 	}
 	if (WICED_BT_SUCCESS != wiced_stop_timer(&gMiJia_TimerPool[timer_index].timer))
 	{
-		MI_LOG_INFO("mible_timer_stop: MI_ERR_INVALID_PARAM\r\n");
+		MI_LOG_INFO("mible_timer_stop:Failed to stop\r\n");
 		return MI_ERR_INVALID_PARAM;
 	}
 
@@ -1216,7 +1169,7 @@ mible_status_t mible_timer_stop(void* timer_id)
 mible_status_t mible_record_create(uint16_t record_id, uint8_t len)
 {
     //Cypress SDK don't need to create the record, and can write directly. 
-	MI_LOG_INFO("mible_record_create, return success, record_id=%d, len=%d\r\n", record_id, len);
+	MI_LOG_INFO("mible_record_create: return success directly, record_id=%d, len=%d\r\n", record_id, len);
 
 	return MI_SUCCESS;
 }
@@ -1580,15 +1533,17 @@ void mijia_gatt_db_init(void)
 		MI_LOG_INFO("BT wiced_init_timer SUCESS\r\n");
 	}	
     queue_init(&task_queue, task_buf, sizeof(task_buf)/sizeof(task_buf[0]), sizeof(task_buf[0]));
-	
-    // token
-    gMibleGatt_db[0].service_handle=SQUIRREL_IDX_SVC;
-    gMibleGatt_db[0].handle_uuid=UUID_CHARACTERISTIC_TOKEN;
-    gMibleGatt_db[0].conn_handle=MI_IDX_TOKEN_CHAR;
-    gMibleGatt_db[0].handle_val=MI_IDX_TOKEN_VAL;
-    gMibleGatt_db[0].handle_max_len=UUID_TOKEN_SIZE;//MIBLE_TOKEN_HANDLE_TRANSPORT_MAX_NUM;
-    gMibleGatt_db[0].pUcData=(uint8_t*)wiced_memory_permanent_allocate(gMibleGatt_db[0].handle_max_len);
-    memset(gMibleGatt_db[0].pUcData,'\0',gMibleGatt_db[0].handle_max_len);
+		
+	//version
+	gMibleGatt_db[0].service_handle=SQUIRREL_IDX_SVC;
+	gMibleGatt_db[0].handle_uuid= UUID_CHARACTERISTIC_VERSION;
+	gMibleGatt_db[0].conn_handle=MI_IDX_VERSION_ID_CHAR;
+	gMibleGatt_db[0].handle_val=MI_IDX_VERSION_ID_VAL;
+	gMibleGatt_db[0].handle_max_len=UUID_VERSION_SIZE;
+	gMibleGatt_db[0].pUcData=(uint8_t*)wiced_memory_permanent_allocate(gMibleGatt_db[0].handle_max_len);
+	memset(gMibleGatt_db[0].pUcData,'\0',gMibleGatt_db[0].handle_max_len);
+
+ 
     //PRODUCT ID
     gMibleGatt_db[1].service_handle=SQUIRREL_IDX_SVC;
     gMibleGatt_db[1].handle_uuid= UUID_CHARACTERISTIC_PRODUCT_ID;
@@ -1598,15 +1553,15 @@ void mijia_gatt_db_init(void)
     gMibleGatt_db[1].pUcData=(uint8_t*)wiced_memory_permanent_allocate(gMibleGatt_db[1].handle_max_len);
     memset(gMibleGatt_db[1].pUcData,'\0',gMibleGatt_db[1].handle_max_len);
 
-    //version
+ 
+   // token
     gMibleGatt_db[2].service_handle=SQUIRREL_IDX_SVC;
-    gMibleGatt_db[2].handle_uuid= UUID_CHARACTERISTIC_VERSION;
-    gMibleGatt_db[2].conn_handle=MI_IDX_VERSION_ID_CHAR;
-    gMibleGatt_db[2].handle_val=MI_IDX_VERSION_ID_VAL;
-    gMibleGatt_db[2].handle_max_len=UUID_VERSION_SIZE;//MIBLE_VERSION_HANDLE_TRANSPORT_MAX_NUM;
+    gMibleGatt_db[2].handle_uuid=UUID_CHARACTERISTIC_TOKEN;
+    gMibleGatt_db[2].conn_handle=MI_IDX_TOKEN_CHAR;
+    gMibleGatt_db[2].handle_val=MI_IDX_TOKEN_VAL;
+    gMibleGatt_db[2].handle_max_len=UUID_TOKEN_SIZE;//MIBLE_TOKEN_HANDLE_TRANSPORT_MAX_NUM;
     gMibleGatt_db[2].pUcData=(uint8_t*)wiced_memory_permanent_allocate(gMibleGatt_db[2].handle_max_len);
     memset(gMibleGatt_db[2].pUcData,'\0',gMibleGatt_db[2].handle_max_len);
-
 	//WiFi config
 	gMibleGatt_db[3].service_handle=SQUIRREL_IDX_SVC;
 	gMibleGatt_db[3].handle_uuid= UUID_CHARACTERISTIC_WIFICFG;
