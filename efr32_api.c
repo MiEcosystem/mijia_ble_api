@@ -1564,10 +1564,12 @@ mible_status_t mible_nvm_init(void)
 mible_status_t mible_nvm_read(void * p_data, uint32_t length, uint32_t address)
 {
     if (MSC->STATUS & MSC_STATUS_BUSY) {
+        MI_LOG_WARNING("%s -- flash is busy\n", __func__);
         return MI_ERR_BUSY;
     }
 
     if (NULL == p_data || 0 == length) {
+        MI_LOG_WARNING("%s -- invalid parameter\n", __func__);
         return MI_ERR_INVALID_PARAM;
     }
 
@@ -1588,12 +1590,14 @@ static bool nvm_is_erased(uint32_t address, uint32_t length)
 
 static bool nvm_part_erase(uint32_t address)
 {
+    MSC_Status_TypeDef ret;
+
     if (0 == address % FLASH_PAGE_SIZE) {
         return true;
     }
 
     if (MSC->STATUS & MSC_STATUS_BUSY) {
-
+        MI_LOG_WARNING("%s -- flash is busy\n", __func__);
         return false;
     }
 
@@ -1601,11 +1605,20 @@ static bool nvm_part_erase(uint32_t address)
 
     memcpy(buffer, (const void *)(address - address % FLASH_PAGE_SIZE),
                 address % FLASH_PAGE_SIZE);
-    MSC_ErasePage(address - address % FLASH_PAGE_SIZE);
-    bool ret = MSC_WriteWord(address - address % FLASH_PAGE_SIZE,
+    ret = MSC_ErasePage((uint32_t *)(address - address % FLASH_PAGE_SIZE));
+    if (mscReturnOk != ret) {
+        MI_LOG_WARNING("%s -- erase error code %d\n", __func__, ret);
+        return false;
+    }
+
+    ret = MSC_WriteWord((uint32_t *)(address - address % FLASH_PAGE_SIZE),
                                     buffer, address % FLASH_PAGE_SIZE);
-    MI_ERR_CHECK(ret);
-    return ret;
+    if (mscReturnOk != ret) {
+        MI_LOG_WARNING("%s -- write error code %d\n", __func__, ret);
+        return false;
+    }
+
+    return true;
 }
 
 /**
@@ -1618,6 +1631,8 @@ static bool nvm_part_erase(uint32_t address)
  * */
 mible_status_t mible_nvm_write(void * p_data, uint32_t length, uint32_t address)
 {
+    MSC_Status_TypeDef ret;
+
     if (MSC->STATUS & MSC_STATUS_BUSY) {
         return MI_ERR_BUSY;
     }
@@ -1627,16 +1642,22 @@ mible_status_t mible_nvm_write(void * p_data, uint32_t length, uint32_t address)
     }
 
     if (0 == address % FLASH_PAGE_SIZE) {
-        MSC_ErasePage(address);
+        ret = MSC_ErasePage((uint32_t *)address);
+        if (mscReturnOk != ret) {
+            MI_LOG_WARNING("%s -- erase error code %d\n", __func__, ret);
+            return MI_ERR_INTERNAL;
+        }
     } else if (!nvm_is_erased(address, length)) {
         if (!nvm_part_erase(address)) {
             return MI_ERR_INTERNAL;
         }
     }
 
-    if (MSC_WriteWord(address, p_data, length) == mscReturnOk) {
+    ret = MSC_WriteWord((uint32_t *)address, p_data, length);
+    if (ret == mscReturnOk) {
         return MI_SUCCESS;
     } else {
+        MI_LOG_WARNING("%s -- write error code %d\n", __func__, ret);
         return MI_ERR_INTERNAL;
     }
 }
@@ -1648,4 +1669,6 @@ mible_status_t mible_upgrade_firmware(void)
     uint32 errno = bootloader_init();
     MI_ERR_CHECK(errno);
     bootloader_rebootAndInstall();
+
+    return MI_SUCCESS;
 }
