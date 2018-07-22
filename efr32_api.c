@@ -513,12 +513,14 @@ mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_param)
     if (last_adv_data.len != 0) {
         result = gecko_cmd_le_gap_bt5_set_adv_data(ADV_HANDLE, 0,
                 last_adv_data.len, last_adv_data.data)->result;
-        MI_ERR_CHECK(result);
+        if (result != bg_err_success)
+            return MI_ERR_BUSY;
     }
     if (last_scan_rsp.len != 0) {
         result = gecko_cmd_le_gap_bt5_set_adv_data(ADV_HANDLE, 1,
                 last_scan_rsp.len, last_scan_rsp.data)->result;
-        MI_ERR_CHECK(result);
+        if (result != bg_err_success)
+            return MI_ERR_BUSY;
     }
     result = gecko_cmd_le_gap_start_advertising(ADV_HANDLE, le_gap_user_data, connect)->result;
     MI_ERR_CHECK(result);
@@ -1632,7 +1634,7 @@ static bool nvm_part_erase(uint32_t address)
 mible_status_t mible_nvm_write(void * p_data, uint32_t length, uint32_t address)
 {
     MSC_Status_TypeDef ret;
-
+    MSC_Init();
     if (MSC->STATUS & MSC_STATUS_BUSY) {
         return MI_ERR_BUSY;
     }
