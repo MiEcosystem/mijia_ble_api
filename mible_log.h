@@ -28,7 +28,7 @@
  */
 
 #define MI_LOG_LEVEL              4
-#define MI_LOG_COLORS_ENABLE      0
+#define MI_LOG_COLORS_ENABLE      1
 
 #include "mible_log_internal.h"
 
