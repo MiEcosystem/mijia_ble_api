@@ -3,6 +3,7 @@ Mijia BLE API ChangeLog (Sorted per branch, date)
 =  release-1.0 : tag mible-api-1.x released xxxx-xx-xx
 	* add mible nvm APIs
 	* Fixed a bug in log macro
+	* change mible_record_write function defination
 
 =  release-1.0 : tag mible-api-1.0 released 2018-05-10
 	* add mible gap APIs
