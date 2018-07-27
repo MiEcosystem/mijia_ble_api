@@ -123,7 +123,6 @@
 		CORE_EXIT_ATOMIC();               \
 	}
 
-#ifdef SEGGER
 
 #include "third_party/SEGGER_RTT/SEGGER_RTT.h"
 #define MI_PRINTF(...)     SEGGER_RTT_printf(0, __VA_ARGS__)
@@ -134,7 +133,6 @@
 		if (array_size%16) SEGGER_RTT_printf(0,"\n");                               \
 	} while(0)
 
-#endif
 
 #ifdef DEBUG
 #include "em_gpio.h"
