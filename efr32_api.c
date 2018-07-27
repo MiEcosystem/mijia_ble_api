@@ -870,20 +870,25 @@ mible_status_t mible_gatts_value_set(uint16_t srv_handle, uint16_t value_handle,
         return MI_ERR_INVALID_ADDR;
     }
 
-    int8_t index = SearchDatabaseFromHandle(value_handle);
-    if (index == -1) {
-        return MIBLE_ERR_ATT_INVALID_ATT_HANDLE;
+    bool handle_exist = false;
+    for(uint8_t i=0; i<CHAR_AUTHOR_TABLE_NUM; i++){
+    	if(char_author_table.item[i].handle == value_handle){
+    		handle_exist = true;
+    	}
+    }
+    if(handle_exist == false){
+    	return MIBLE_ERR_ATT_INVALID_ATT_HANDLE;
     }
 
-    if (offset >= bg_gattdb->attributes[index].dynamicdata->max_len) {
+    if (offset >= bg_gattdb->attributes[value_handle].dynamicdata->max_len) {
         return MI_ERR_INVALID_PARAM;
     }
 
-    if (len + offset > bg_gattdb->attributes[index].dynamicdata->max_len) {
+    if (len + offset > bg_gattdb->attributes[value_handle].dynamicdata->max_len) {
         return MI_ERR_INVALID_LENGTH;
     }
 
-    memcpy(bg_gattdb->attributes[index].dynamicdata->data + offset, p_value, len);
+    memcpy(bg_gattdb->attributes[value_handle].dynamicdata->data + offset, p_value, len);
     return MI_SUCCESS;
 }
 
@@ -910,21 +915,25 @@ mible_status_t mible_gatts_value_get(uint16_t srv_handle, uint16_t value_handle,
         return MI_ERR_INVALID_ADDR;
     }
 
-    int8_t index = SearchDatabaseFromHandle(value_handle);
-    if (index == -1) {
-        return MIBLE_ERR_ATT_INVALID_ATT_HANDLE;
+    bool handle_exist = false;
+    for(uint8_t i=0; i<CHAR_AUTHOR_TABLE_NUM; i++){
+    	if(char_author_table.item[i].handle == value_handle){
+    		handle_exist = true;
+    	}
     }
-
+    if(handle_exist == false){
+    	return MIBLE_ERR_ATT_INVALID_ATT_HANDLE;
+    }
 
 //    if (*p_len > gatt_database.p_characteristics[index].char_value_len) {
 //        return MI_ERR_INVALID_LENGTH;
 //    }
 //
 //    memcpy(p_value, gatt_database.p_characteristics[index].p_value, *p_len);
-    if(*p_len > bg_gattdb->attributes[index].dynamicdata->max_len){
+    if(*p_len > bg_gattdb->attributes[value_handle].dynamicdata->max_len){
     	return MI_ERR_INVALID_LENGTH;
     }
-    memcpy(p_value, bg_gattdb->attributes[index].dynamicdata->data, &p_len);
+    memcpy(p_value, bg_gattdb->attributes[value_handle].dynamicdata->data, &p_len);
 
     return MI_SUCCESS;
 }
