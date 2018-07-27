@@ -41,9 +41,7 @@
 
 #define SCAN_TIMEOUT_TIMER_ID                   0xFF
 
-#define SCAN_RETRY_BIT_MASK                     (1<<31)
 #define START_ADV_RETRY_BIT_MASK                (1<<30)
-#define UPDATE_CON_RETRY_BIT_MASK               (1<<29)
 
 #define TIMERS_FOR_STACK                        1
 #define TIMERS_FOR_USER                         4

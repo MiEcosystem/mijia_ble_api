@@ -17,7 +17,6 @@
 #define MAX_TASK_NUM 4
 #define ADV_HANDLE   0
 
-
 // connection handle
 uint8_t connection_handle = DISCONNECTION;
 
@@ -26,12 +25,8 @@ uint8_t scanning = 0;
 uint8_t advertising = 0;
 
 // All retry caches
-mible_gap_conn_param_t conn_param_for_retry;
 uint8_t scan_timeout_for_retry;
 uint8_t connect_param_for_retry = 0xFF;
-
-// Set the target to connect
-target_connect_t target_connect;
 
 extern gatt_database_t gatt_database;
 
@@ -75,6 +70,7 @@ static int8_t SearchDatabaseFromHandle(uint16_t handle)
 
 void mible_stack_event_handler(struct gecko_cmd_packet *evt)
 {
+    uint16_t result;
     mible_gap_evt_param_t gap_evt_param = {0};
     mible_gatts_evt_param_t gatts_evt_param = {0};
 
@@ -95,17 +91,6 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt)
         }
 
         mible_gap_event_callback(MIBLE_GAP_EVT_CONNECTED, &gap_evt_param);
-
-        if (target_connect.cur_state == connecting_s) {
-            target_connect.cur_state = connected_s;
-//				struct gecko_msg_le_connection_set_parameters_rsp_t *ret_set_parameters = gecko_cmd_le_connection_set_parameters(connection_handle, target_connect.target_to_connect.conn_param.min_conn_interval, target_connect.target_to_connect.conn_param.max_conn_interval, target_connect.target_to_connect.conn_param.slave_latency, target_connect.target_to_connect.conn_param.conn_sup_timeout);
-//				if (ret_set_parameters->result == bg_err_success) {
-//					target_connect.cur_state = conn_update_sent_s;
-//				}
-            // clear the target so that the next time it can be used.
-            memset(&target_connect, 0, sizeof(target_connect_t));
-        }
-
     break;
 
     case gecko_evt_le_connection_closed_id:
@@ -141,28 +126,6 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt)
         gap_evt_param.report.data_len = evt->data.evt_le_gap_scan_response.data.len;
 
         mible_gap_event_callback(MIBLE_GAP_EVT_ADV_REPORT, &gap_evt_param);
-
-        // Target has been set, need to finish the connection establish procedure
-        if (target_connect.cur_state == scanning_s) {
-            if (!memcmp(target_connect.target_to_connect.peer_addr,
-                    evt->data.evt_le_gap_scan_response.address.addr, 6)) {
-                if (target_connect.target_to_connect.type
-                        == evt->data.evt_le_gap_scan_response.address_type) {
-                    // Address and type matched, estabilish connection
-                    bd_addr addr;
-                    memcpy(addr.addr, target_connect.target_to_connect.peer_addr, 6);
-                    mible_gap_scan_stop();
-                    struct gecko_msg_le_gap_open_rsp_t *ret_gap_open =
-                            gecko_cmd_le_gap_open(addr,
-                                    evt->data.evt_le_gap_scan_response.address_type);
-                    if (ret_gap_open->result == bg_err_success) {
-                        // success, modify the current state to connecting, otherwise, stay in scanning state so that the next time it can call gap open to establish connection again.
-                        target_connect.cur_state = connecting_s;
-                    }
-                }
-            }
-        }
-
     break;
 
     case gecko_evt_le_connection_parameters_id:
@@ -181,11 +144,6 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt)
     break;
 
     case gecko_evt_gatt_server_attribute_value_id: {
-//        if (evt->data.evt_gatt_server_attribute_value.att_opcode != gatt_write_command) {
-//            MI_LOG_DEBUG("non write cmd\n");
-//            break;
-//        }
-
         uint16_t char_handle = evt->data.evt_gatt_server_attribute_value.attribute;
         mible_gatts_evt_t event;
 
@@ -296,27 +254,12 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt)
     break;
 
     case gecko_evt_system_external_signal_id:
-        if (evt->data.evt_system_external_signal.extsignals & SCAN_RETRY_BIT_MASK) {
-            MI_LOG_ERROR("scan retry...\n");
-            struct gecko_msg_le_gap_discover_rsp_t *ret_start_scanning =
-                    gecko_cmd_le_gap_discover(le_gap_discover_observation);
-            if (ret_start_scanning->result == bg_err_bt_controller_busy) {
-                // set re-try event
-                gecko_external_signal(SCAN_RETRY_BIT_MASK);
-            } else if (scan_timeout_for_retry != 0) {
-                gecko_cmd_hardware_set_soft_timer(32768 * scan_timeout_for_retry,
-                        SCAN_TIMEOUT_TIMER_ID, 1);
-                scan_timeout_for_retry = 0;
-            }
-        }
-
         if (evt->data.evt_system_external_signal.extsignals & START_ADV_RETRY_BIT_MASK) {
             MI_LOG_ERROR("adv retry...\n");
-            struct gecko_msg_le_gap_set_mode_rsp_t *ret_set_mode;
             if (connect_param_for_retry != 0xFF) {
-                ret_set_mode = gecko_cmd_le_gap_set_mode(le_gap_user_data,
-                        connect_param_for_retry);
-                if (ret_set_mode->result != bg_err_success) {
+                result =
+                gecko_cmd_le_gap_start_advertising(ADV_HANDLE,le_gap_user_data,connect_param_for_retry)->result;
+                if (result != bg_err_success) {
                     gecko_external_signal(START_ADV_RETRY_BIT_MASK);
                 } else {
                     advertising = 1;
@@ -325,23 +268,6 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt)
             }
         }
 
-        if (evt->data.evt_system_external_signal.extsignals & UPDATE_CON_RETRY_BIT_MASK) {
-            MI_LOG_ERROR("update conn parameter retry...\n");
-            struct gecko_msg_le_connection_set_parameters_rsp_t *ret;
-            if (conn_param_for_retry.min_conn_interval != 0
-                    && conn_param_for_retry.max_conn_interval != 0) {
-                ret = gecko_cmd_le_connection_set_parameters(connection_handle,
-                        conn_param_for_retry.min_conn_interval,
-                        conn_param_for_retry.max_conn_interval,
-                        conn_param_for_retry.slave_latency,
-                        conn_param_for_retry.conn_sup_timeout);
-                if (ret->result != bg_err_success) {
-                    gecko_external_signal(START_ADV_RETRY_BIT_MASK);
-                } else {
-                    memset(&conn_param_for_retry, 0, sizeof(mible_gap_conn_param_t));
-                }
-            }
-        }
     break;
 
     }
@@ -386,7 +312,7 @@ mible_status_t mible_gap_scan_start(mible_gap_scan_type_t scan_type,
 {
     uint16 scan_interval, scan_window;
     uint8_t active;
-    struct gecko_msg_le_gap_set_scan_parameters_rsp_t *ret;
+    uint16_t result;
     struct gecko_msg_le_gap_discover_rsp_t *ret_start_scanning;
 
     if (scanning) {
@@ -404,21 +330,14 @@ mible_status_t mible_gap_scan_start(mible_gap_scan_type_t scan_type,
     scan_interval = scan_param.scan_interval;
     scan_window = scan_param.scan_window;
 
-    ret = gecko_cmd_le_gap_set_scan_parameters(scan_interval, scan_window, active);
-    if (ret->result == bg_err_invalid_param) {
+    result = gecko_cmd_le_gap_set_scan_parameters(scan_interval, scan_window, active)->result;
+    if (result == bg_err_invalid_param) {
         return MI_ERR_INVALID_PARAM;
     }
 
-    ret_start_scanning = gecko_cmd_le_gap_discover(le_gap_discover_observation);
+    result = gecko_cmd_le_gap_discover(le_gap_discover_observation)->result;
 
-    if (ret_start_scanning->result == bg_err_bt_controller_busy) {
-        // Save timeout value and set re-try event, no need to save scan parameters since the previous set parameters API succeeded.
-        scan_timeout_for_retry = scan_param.timeout;
-        gecko_external_signal(SCAN_RETRY_BIT_MASK);
-        return MI_ERR_BUSY;
-    }
-
-    if (scan_param.timeout != 0) {
+    if (result == bg_err_success && scan_param.timeout != 0) {
         gecko_cmd_hardware_set_soft_timer(32768 * scan_param.timeout,
                 SCAN_TIMEOUT_TIMER_ID, 1);
     }
@@ -439,6 +358,7 @@ mible_status_t mible_gap_scan_stop(void)
     if (!scanning) {
         return MI_ERR_INVALID_STATE;
     }
+    MI_LOG_ERROR("stop scanning\n");
     gecko_cmd_le_gap_end_procedure();
     scanning = 0;
     return MI_SUCCESS;
@@ -616,41 +536,7 @@ mible_status_t mible_gap_connect(mible_gap_scan_param_t scan_param,
         mible_gap_connect_t conn_param)
 {
 // TODO
-    if (connection_handle != DISCONNECTION) {
-        return MI_ERR_INVALID_STATE;
-    }
 
-    if ((scan_param.scan_interval < 4 || scan_param.scan_interval > 0x4000)
-            || (scan_param.scan_window < 4 || scan_param.scan_window > 0x4000)
-            || (conn_param.conn_param.min_conn_interval < 6
-                    || conn_param.conn_param.min_conn_interval > 0x0C80)
-            || (conn_param.conn_param.max_conn_interval < 6
-                    || conn_param.conn_param.max_conn_interval > 0x0C80)
-            || (conn_param.conn_param.min_conn_interval
-                    > conn_param.conn_param.max_conn_interval)
-            || (conn_param.conn_param.conn_sup_timeout < 0xA
-                    || conn_param.conn_param.conn_sup_timeout > 0x0C80)
-            || (conn_param.conn_param.slave_latency > 0x01F3)
-            || (conn_param.peer_addr == NULL)
-            || (conn_param.type > MIBLE_ADDRESS_TYPE_RANDOM)
-            || (conn_param.role > MIBLE_GAP_CENTRAL)) {
-        return MI_ERR_INVALID_PARAM;
-    }
-
-    if (!scanning) {
-        // scanning will be set inside the call
-        mible_status_t ret = mible_gap_scan_start(MIBLE_SCAN_TYPE_PASSIVE, scan_param);
-        if (ret != MI_SUCCESS)
-            return ret;
-    }
-
-    gecko_cmd_le_gap_set_conn_parameters(conn_param.conn_param.min_conn_interval,
-            conn_param.conn_param.max_conn_interval, conn_param.conn_param.slave_latency,
-            conn_param.conn_param.conn_sup_timeout);
-    target_connect.cur_state = scanning_s;
-    memcpy(&target_connect.target_to_connect, &conn_param, sizeof(mible_gap_connect_t));
-
-    return MI_SUCCESS;
 }
 
 /*
@@ -715,11 +601,6 @@ mible_status_t mible_gap_update_conn_params(uint16_t conn_handle,
         return MI_ERR_INVALID_PARAM;
     } else if (ret->result == bg_err_wrong_state) {
         return MI_ERR_INVALID_STATE;
-    } else if (ret->result == bg_err_bt_controller_busy) {
-        // Retry
-        memcpy(&conn_param_for_retry, &conn_params, sizeof(mible_gap_conn_param_t));
-        gecko_external_signal(UPDATE_CON_RETRY_BIT_MASK);
-        return MI_ERR_BUSY;
     }
     return MI_SUCCESS;
 }
