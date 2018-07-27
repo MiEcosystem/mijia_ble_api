@@ -745,6 +745,8 @@ mible_status_t mible_gatts_service_init(mible_gatts_db_t *p_server_db)
 	uint8_t char_uuid_index = 0;
 	bool service_exist = false;
 	bool char_exist = false;
+	mible_status_t ret;
+	mible_arch_evt_param_t param;
 
 	for(uuid_table_index = 0; uuid_table_index<bg_gattdb->uuidtable_16_size; uuid_table_index++){
 		if(bg_gattdb->uuidtable_16 == 0x2800){
@@ -752,6 +754,7 @@ mible_status_t mible_gatts_service_init(mible_gatts_db_t *p_server_db)
 			break;
 		}
 	}
+	MI_LOG_DEBUG("primary_service_index = %d\r\n", primary_service_index);
 
 	for(srv_index = 0; srv_index < p_server_db->srv_num; srv_index++){
 		if(p_server_db->p_srv_db[srv_index].srv_uuid.type == 0){ // UUID 16
@@ -763,8 +766,9 @@ mible_status_t mible_gatts_service_init(mible_gatts_db_t *p_server_db)
 					if(bg_gattdb->attributes[handle_index].uuid == primary_service_index){  // if primary service declare handle
 
 						if(memcmp(bg_gattdb->attributes[handle_index].constdata->data,
-								(uint8_t*)p_server_db->p_srv_db[srv_index].srv_uuid.uuid16,2)){  // if match the service uuid
+								(uint8_t*)(&p_server_db->p_srv_db[srv_index].srv_uuid.uuid16),2)==0){  // if match the service uuid
 
+							MI_LOG_DEBUG("service uuid index = %d\r\n",handle_index);
 							service_exist = true;
 							// find service range
 							int start_handle_index = handle_index+1;
@@ -777,26 +781,31 @@ mible_status_t mible_gatts_service_init(mible_gatts_db_t *p_server_db)
 								}
 								end_handle_index = handle_index+1;
 							}
+							MI_LOG_DEBUG("service end index = %d\r\n",end_handle_index);
 							//
 							for(chr_index = 0; chr_index < p_server_db->p_srv_db[srv_index].char_num; chr_index++){ //search char
 
 								mible_gatts_char_db_t  *p_mible_char = p_server_db->p_srv_db[srv_index].p_char_db+chr_index;
 								if(p_mible_char->char_uuid.type == 0){ // UUID 16
 
+									MI_LOG_DEBUG("char uuid = %d\r\n",p_mible_char->char_uuid.uuid16);
 									// find char_uuid_index
+
 									for(uuid_table_index = 0; uuid_table_index< bg_gattdb->uuidtable_16_size; uuid_table_index++){
-										if(bg_gattdb->uuidtable_16 == p_mible_char->char_uuid.uuid16){
+										if(bg_gattdb->uuidtable_16[uuid_table_index] == p_mible_char->char_uuid.uuid16){
 											char_uuid_index = uuid_table_index;
 											break;
 										}
 									}
+									MI_LOG_DEBUG("char_uuid_index = %d\r\n", char_uuid_index);
 									//
 									for(handle_index = start_handle_index; handle_index< end_handle_index; handle_index++){
 										if(bg_gattdb->attributes[handle_index].uuid == char_uuid_index){
 											char_exist = true;
-											p_mible_char->char_value_handle = handle_index;
+											p_mible_char->char_value_handle = handle_index+1;
 
-											char_author_table.item[char_author_table.num].handle = handle_index;
+											MI_LOG_DEBUG("char uuid = %d, handle = %d \r\n",p_mible_char->char_uuid.uuid16, p_mible_char->char_value_handle);
+											char_author_table.item[char_author_table.num].handle = handle_index+1;
 											char_author_table.item[char_author_table.num].rd_author = p_mible_char->rd_author;
 											char_author_table.item[char_author_table.num].wr_author = p_mible_char->wr_author;
 											char_author_table.num++;
@@ -804,12 +813,15 @@ mible_status_t mible_gatts_service_init(mible_gatts_db_t *p_server_db)
 										}
 									}
 									if(char_exist == false){
-										return MIBLE_ERR_UNKNOWN;
+										ret = MIBLE_ERR_UNKNOWN;
+										goto result;
 									}
+
 									char_exist = false;
 
 								}else{
-									return MIBLE_ERR_UNKNOWN;	// UUID 128
+									ret = MIBLE_ERR_UNKNOWN;
+									goto result;
 								}
 							}
 							break;
@@ -818,32 +830,28 @@ mible_status_t mible_gatts_service_init(mible_gatts_db_t *p_server_db)
 				}
 
 			}else{
-				return MIBLE_ERR_UNKNOWN;
+				ret = MIBLE_ERR_UNKNOWN;
+				goto result;
 			}
 		}else{ // UUID 128
-			return MIBLE_ERR_UNKNOWN;
+			ret = MIBLE_ERR_UNKNOWN;
+			goto result;
 		}
 
 		if(service_exist == false){
-			return MIBLE_ERR_UNKNOWN;
+			ret = MIBLE_ERR_UNKNOWN;
+			goto result;
 		}
 		service_exist = false;
 	}
-	return MI_SUCCESS;
+	ret = MI_SUCCESS;
 
-//    uint8_t index = 0;
-//    for (uint8_t src_ind = 0; src_ind < p_server_db->srv_num; src_ind++) {
-//        for (uint8_t char_ind = 0; char_ind < p_server_db->p_srv_db[src_ind].char_num;
-//                char_ind++) {
-//            p_server_db->p_srv_db[src_ind].p_char_db[char_ind].char_value_handle =
-//                    gatt_database.p_characteristics[index++].char_value_handle;
-//        }
-//    }
-//    mible_arch_gatts_srv_init_cmp_t cmp = { .status = MI_SUCCESS, .p_gatts_db =
-//            p_server_db };
-//    mible_arch_evt_param_t param = { .srv_init_cmp = cmp };
-//    mible_arch_event_callback(MIBLE_ARCH_EVT_GATTS_SRV_INIT_CMP, &param);
-//    return MI_SUCCESS;
+result:
+	param.srv_init_cmp.p_gatts_db = p_server_db;
+	param.srv_init_cmp.status = ret;
+	mible_arch_event_callback(MIBLE_ARCH_EVT_GATTS_SRV_INIT_CMP, &param);
+	return ret;
+
 }
 
 /*
