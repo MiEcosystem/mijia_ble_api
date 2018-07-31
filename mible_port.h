@@ -22,6 +22,14 @@
 #define NULL 0
 #endif
 
+#include "fw_func_addr.h"
+#include "ke_mem.h"
+    
+#undef MI_MALLOC
+#undef MI_FREE
+#define MI_MALLOC   ke_malloc
+#define MI_FREE     ke_free
+
 #if defined(__CC_ARM)
 #pragma anon_unions
 #elif defined(__ICCARM__)
@@ -110,14 +118,22 @@
     }
 #endif
 
+
 #define CRITICAL_SECTION_ENTER()
 #define CRITICAL_SECTION_EXIT()
-
-#define MI_PRINTF(...)
-#define MI_HEXDUMP(base_addr, bytes)
+#ifdef MI_LOG_ENABLED
+#include "app_printf.h"       
+extern void qtrace(uint8_t *data, uint16_t len, bool dir, uint8_t fmt);
+#define MI_LOG_PRINTF(...)              QPRINTF(__VA_ARGS__)
+#define MI_LOG_HEXDUMP(hex, len)        QTRACE(hex, len, 0, 2)
+#else
+#define MI_LOG_PRINTF(...)
+#define MI_LOG_HEXDUMP(...)
+#endif
 
 #define TRACE_INIT(pin)
 #define TRACE_ENTER(pin)
 #define TRACE_EXIT(pin)
+
 
 #endif // MIBLE_PORT_H__
