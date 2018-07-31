@@ -132,6 +132,7 @@
 		if (array_size%16) SEGGER_RTT_printf(0,"\n");                               \
 	} while(0)
 
+
 #ifdef DEBUG
 #include "em_gpio.h"
 #define TRACE_INIT(x)   GPIO_PinModeSet(gpioPortA, 1, gpioModeWiredAndPullUp, 0)
