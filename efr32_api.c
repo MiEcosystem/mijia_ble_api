@@ -16,10 +16,10 @@
 
 #include "bg_gattdb_def.h"
 
-#define MAX_TASK_NUM 4
-#define ADV_HANDLE   0
-#define CHAR_AUTHOR_TABLE_NUM	10
-#define CHAR_DATA_LENGTH	20
+#define MAX_TASK_NUM                    4
+#define ADV_HANDLE                      0
+#define CHAR_TABLE_NUM                  10
+#define CHAR_DATA_LEN_MAX               20
 
 // connection handle
 uint8_t connection_handle = DISCONNECTION;
@@ -32,24 +32,20 @@ uint8_t advertising = 0;
 uint8_t scan_timeout_for_retry;
 uint8_t connect_param_for_retry = 0xFF;
 
-// Set the target to connect
-target_connect_t target_connect;
-
-
 typedef struct {
 	uint16_t handle;
 	bool rd_author;		// read authorization. Enabel or Disable MIBLE_GATTS_READ_PERMIT_REQ event
 	bool wr_author;     // write authorization. Enabel or Disable MIBLE_GATTS_WRITE_PERMIT_REQ event
 	uint8_t char_property;
 	uint8_t len;
-	uint8_t data[CHAR_DATA_LENGTH];
-} char_handle_author;
+	uint8_t data[CHAR_DATA_LEN_MAX];
+} user_char_t;
 
 
 struct{
 	uint8_t num;
-	char_handle_author item[CHAR_AUTHOR_TABLE_NUM];
-}char_author_table;
+	user_char_t item[CHAR_TABLE_NUM];
+} m_char_table;
 
 
 /* timer handler - 0xFF and one timer are always reserved for GAP */
@@ -168,9 +164,9 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt)
         gatts_evt_param.write.offset = evt->data.evt_gatt_server_attribute_value.offset;
         gatts_evt_param.write.value_handle = char_handle;
 
-        for(uint8_t i=0; i<CHAR_AUTHOR_TABLE_NUM; i++){
-        	if(char_author_table.item[i].handle == char_handle){
-        		if(char_author_table.item[i].wr_author == true){
+        for(uint8_t i=0; i<CHAR_TABLE_NUM; i++){
+        	if(m_char_table.item[i].handle == char_handle){
+        		if(m_char_table.item[i].wr_author == true){
         			event = MIBLE_GATTS_EVT_WRITE_PERMIT_REQ;
         		}else {
                     event = MIBLE_GATTS_EVT_WRITE;
@@ -187,11 +183,11 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt)
         uint16_t char_handle = 0;
         char_handle = evt->data.evt_gatt_server_user_read_request.characteristic;
 
-        for(uint8_t i=0; i<CHAR_AUTHOR_TABLE_NUM; i++){
+        for(uint8_t i=0; i<CHAR_TABLE_NUM; i++){
 
-        	if(char_author_table.item[i].handle == char_handle){
+        	if(m_char_table.item[i].handle == char_handle){
 
-        		if(char_author_table.item[i].rd_author == true){
+        		if(m_char_table.item[i].rd_author == true){
 
                     gatts_evt_param.conn_handle =
                             evt->data.evt_gatt_server_user_read_request.connection;
@@ -202,7 +198,7 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt)
                     mible_gatts_event_callback(MIBLE_GATTS_EVT_READ_PERMIT_REQ, &gatts_evt_param);
         		}else{
                     /* Send read response here since no application reaction needed*/
-                    if (evt->data.evt_gatt_server_user_read_request.offset>char_author_table.item[i].len) {
+                    if (evt->data.evt_gatt_server_user_read_request.offset>m_char_table.item[i].len) {
                         gecko_cmd_gatt_server_send_user_read_response(
                                 evt->data.evt_gatt_server_user_read_request.connection,
                                 evt->data.evt_gatt_server_user_read_request.characteristic,
@@ -213,9 +209,9 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt)
                                 evt->data.evt_gatt_server_user_read_request.connection,
                                 evt->data.evt_gatt_server_user_read_request.characteristic,
                                 bg_err_success,
-								char_author_table.item[i].len
+								m_char_table.item[i].len
 										- evt->data.evt_gatt_server_user_read_request.offset,
-								char_author_table.item[i].data
+								m_char_table.item[i].data
                                         + evt->data.evt_gatt_server_user_read_request.offset);
                     }
             	}
@@ -239,15 +235,15 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt)
         gatts_evt_param.write.offset = evt->data.evt_gatt_server_attribute_value.offset;
         gatts_evt_param.write.value_handle = char_handle;
 
-        for(uint8_t i=0; i<CHAR_AUTHOR_TABLE_NUM; i++){
-        	if(char_author_table.item[i].handle == char_handle){
-        		if(char_author_table.item[i].wr_author == true){
+        for(uint8_t i=0; i<CHAR_TABLE_NUM; i++){
+        	if(m_char_table.item[i].handle == char_handle){
+        		if(m_char_table.item[i].wr_author == true){
         			event = MIBLE_GATTS_EVT_WRITE_PERMIT_REQ;
         		}else {
                     event = MIBLE_GATTS_EVT_WRITE;
-                    if((char_author_table.item[i].char_property & MIBLE_WRITE) != 0){
+                    if((m_char_table.item[i].char_property & MIBLE_WRITE) != 0){
 
-                    	memcpy(char_author_table.item[i].data + gatts_evt_param.write.offset,
+                    	memcpy(m_char_table.item[i].data + gatts_evt_param.write.offset,
                     			gatts_evt_param.write.data, gatts_evt_param.write.len);
 
                     	gecko_cmd_gatt_server_send_user_write_response(
@@ -352,7 +348,6 @@ mible_status_t mible_gap_scan_start(mible_gap_scan_type_t scan_type,
     uint16 scan_interval, scan_window;
     uint8_t active;
     uint16_t result;
-    struct gecko_msg_le_gap_discover_rsp_t *ret_start_scanning;
 
     if (scanning) {
         return MI_ERR_INVALID_STATE;
@@ -575,7 +570,7 @@ mible_status_t mible_gap_connect(mible_gap_scan_param_t scan_param,
         mible_gap_connect_t conn_param)
 {
 // TODO
-
+    return MI_ERR_INVALID_STATE;
 }
 
 /*
@@ -645,6 +640,52 @@ mible_status_t mible_gap_update_conn_params(uint16_t conn_handle,
 }
 
 /* GATTS related function  */
+static uint16_t get_uuid16_index(const struct bg_gattdb_def *bg_gattdb, uint16_t uuid16)
+{
+    uint16_t index;
+    for (index = 0; index < bg_gattdb->uuidtable_16_size ; index++)
+        if (bg_gattdb->uuidtable_16[index] == uuid16)
+            return index;
+
+    return -1;
+}
+
+static uint16_t iterate_get_att_handle(uint16_t uuid_idx, uint16_t begin, uint16_t end)
+{
+    uint16_t handle;
+    for (handle = begin; handle <= end; handle++)
+        if (bg_gattdb->attributes[handle].uuid == uuid_idx)
+            return handle;
+
+    return -1;
+}
+
+static int extract_service_region(uint16_t service_uuid16, uint16_t *begin_handle, uint16_t *end_handle)
+{
+    uint16_t pri_srv_uuid_idx = get_uuid16_index(bg_gattdb, 0x2800);
+
+    uint16_t handle = 0;
+    do {
+        handle = iterate_get_att_handle(pri_srv_uuid_idx, handle, bg_gattdb->attributes_max);
+        MI_LOG_INFO("pri srv handle %d\n", handle);
+        if (memcmp(bg_gattdb->attributes[handle].constdata->data, &service_uuid16, 2) == 0) {
+            *begin_handle = handle;
+            *end_handle = iterate_get_att_handle(pri_srv_uuid_idx, handle+1, bg_gattdb->attributes_max);
+            return 0;
+        } else {
+            handle++;
+        }
+    } while (handle != -1);
+
+    return -1;
+}
+
+static uint16_t search_char_handle(uint16_t char_uuid16, uint16_t begin_handle, uint16_t end_handle)
+{
+    uint16_t char_uuid16_idx = get_uuid16_index(bg_gattdb, char_uuid16);
+    return iterate_get_att_handle(char_uuid16_idx, begin_handle, end_handle);
+
+}
 
 /*
  * @brief	Add a Service to a GATT server
@@ -658,142 +699,48 @@ mible_status_t mible_gap_update_conn_params(uint16_t conn_handle,
  * */
 mible_status_t mible_gatts_service_init(mible_gatts_db_t *p_server_db)
 {
-    uint8_t srv_index = 0;
-    uint8_t chr_index = 0;
-    uint8_t handle_index = 0;
-    uint8_t uuid_table_index = 0;
-
-    uint8_t primary_service_index = 0;
-    uint8_t char_uuid_index = 0;
-    bool service_exist = false;
-    bool char_exist = false;
-    mible_status_t ret;
+    mible_status_t ret = MI_SUCCESS;
     mible_arch_evt_param_t param;
+    uint16_t begin, end;
 
-    for (uuid_table_index = 0; uuid_table_index < bg_gattdb->uuidtable_16_size; uuid_table_index++) {
-        if (bg_gattdb->uuidtable_16[uuid_table_index] == 0x2800) {
-            primary_service_index = uuid_table_index;
-            break;
+    extract_service_region(p_server_db->p_srv_db->srv_uuid.uuid16, &begin, &end);
+
+    mible_gatts_char_db_t * p_char_db = p_server_db->p_srv_db->p_char_db;
+
+    for(int i = 0;
+            i < p_server_db->p_srv_db->char_num && i < CHAR_TABLE_NUM;
+            i++, p_char_db++) {
+        uint16_t handle = search_char_handle(p_char_db->char_uuid.uuid16, begin, end);
+        if (handle != -1) {
+            p_char_db->char_value_handle = handle + 1;
+
+            m_char_table.item[i].handle = p_char_db->char_value_handle;
+            m_char_table.item[i].rd_author = p_char_db->rd_author;
+            m_char_table.item[i].wr_author = p_char_db->wr_author;
+            m_char_table.item[i].char_property = p_char_db->char_property;
+            m_char_table.item[i].len = p_char_db->char_value_len;
+            memcpy(m_char_table.item[i].data, p_char_db->p_value, p_char_db->char_value_len);
+            m_char_table.num = 1 + i;
+        } else {
+            MI_LOG_ERROR("no char %d found.\n", p_char_db->char_uuid.uuid16);
+            ret = MI_ERR_INTERNAL;
+            goto exception;
         }
     }
-    MI_LOG_DEBUG("primary_service_index = %d\r\n", primary_service_index);
 
-    for (srv_index = 0; srv_index < p_server_db->srv_num; srv_index++) {
-        if (p_server_db->p_srv_db[srv_index].srv_uuid.type == 0) { // UUID 16
-            if (p_server_db->p_srv_db[srv_index].srv_type == MIBLE_PRIMARY_SERVICE) { // IF primary service
-                for (handle_index = 0; handle_index < bg_gattdb->attributes_max; handle_index++) {
-                    if (bg_gattdb->attributes[handle_index].uuid == primary_service_index) { // if primary service declare handle
-
-                        if (memcmp(bg_gattdb->attributes[handle_index].constdata->data,
-                                (uint8_t*) (&p_server_db->p_srv_db[srv_index].srv_uuid.uuid16),
-                                2) == 0) {  // if match the service uuid
-
-                            MI_LOG_DEBUG("service uuid index = %d\r\n", handle_index);
-                            service_exist = true;
-                            // find service range
-                            int start_handle_index = handle_index + 1;
-                            int end_handle_index = 0;
-                            for (handle_index = start_handle_index;
-                                    handle_index < bg_gattdb->attributes_max;
-                                    handle_index++) {
-
-                                if (bg_gattdb->attributes[handle_index].uuid
-                                        == primary_service_index) {
-                                    end_handle_index = handle_index;
-                                    break;
-                                }
-                                end_handle_index = handle_index + 1;
-                            }
-                            MI_LOG_DEBUG("service end index = %d\r\n",
-                                    end_handle_index);
-                            //
-                            for (chr_index = 0; chr_index < p_server_db->p_srv_db[srv_index].char_num; chr_index++) { //search char
-
-                                mible_gatts_char_db_t *p_mible_char = p_server_db->p_srv_db[srv_index].p_char_db + chr_index;
-                                if (p_mible_char->char_uuid.type == 0) { // UUID 16
-                                    // find char_uuid_index
-                                    for (uuid_table_index = 0; uuid_table_index < bg_gattdb->uuidtable_16_size; uuid_table_index++) {
-                                        if (bg_gattdb->uuidtable_16[uuid_table_index]
-                                                == p_mible_char->char_uuid.uuid16) {
-                                            char_uuid_index = uuid_table_index;
-                                            break;
-                                        }
-                                    }
-                                    for (handle_index = start_handle_index;
-                                            handle_index < end_handle_index;
-                                            handle_index++) {
-                                        if (bg_gattdb->attributes[handle_index].uuid
-                                                == char_uuid_index) {
-                                            char_exist = true;
-                                            p_mible_char->char_value_handle =
-                                                    handle_index + 1;
-
-                                            MI_LOG_DEBUG(
-                                                    ".uuid = %02x, handle = %d \r\n",
-                                                    p_mible_char->char_uuid.uuid16,
-                                                    p_mible_char->char_value_handle);
-                                            char_author_table.item[char_author_table.num].handle =
-                                                    handle_index + 1;
-                                            char_author_table.item[char_author_table.num].rd_author =
-                                                    p_mible_char->rd_author;
-                                            char_author_table.item[char_author_table.num].wr_author =
-                                                    p_mible_char->wr_author;
-                                            char_author_table.item[char_author_table.num].char_property =
-                                            		p_mible_char->char_property;
-                                            char_author_table.item[char_author_table.num].len =
-                                            		p_mible_char->char_value_len;
-                                            memcpy(char_author_table.item[char_author_table.num].data, p_mible_char->p_value, p_mible_char->char_value_len);
-                                            char_author_table.num++;
-                                            break;
-                                        }
-                                    }
-                                    if (char_exist == false) {
-                                        ret = MIBLE_ERR_UNKNOWN;
-                                        goto result;
-                                    }
-
-                                    char_exist = false;
-
-                                } else {
-                                    ret = MIBLE_ERR_UNKNOWN;
-                                    goto result;
-                                }
-                            }
-                            break;
-                        }
-                    }
-                }
-
-            } else {
-                ret = MIBLE_ERR_UNKNOWN;
-                goto result;
-            }
-        } else { // UUID 128
-            ret = MIBLE_ERR_UNKNOWN;
-            goto result;
-        }
-
-        if (service_exist == false) {
-            ret = MIBLE_ERR_UNKNOWN;
-            goto result;
-        }
-        service_exist = false;
-    }
-    ret = MI_SUCCESS;
-
-result:
     param.srv_init_cmp.p_gatts_db = p_server_db;
     param.srv_init_cmp.status = ret;
     mible_arch_event_callback(MIBLE_ARCH_EVT_GATTS_SRV_INIT_CMP, &param);
-    return ret;
 
+exception:
+    return ret;
 }
 
 static bool is_vaild_handle(uint16_t handle)
 {
     bool handle_exist = false;
-    for (uint8_t i = 0; i < CHAR_AUTHOR_TABLE_NUM; i++) {
-        if (char_author_table.item[i].handle == handle) {
+    for (uint8_t i = 0; i < CHAR_TABLE_NUM; i++) {
+        if (m_char_table.item[i].handle == handle) {
             handle_exist = true;
         }
     }
@@ -829,10 +776,10 @@ mible_status_t mible_gatts_value_set(uint16_t srv_handle, uint16_t value_handle,
     }
 
 
-    for(uint8_t i=0; i<CHAR_AUTHOR_TABLE_NUM; i++){
-    	if(char_author_table.item[i].handle == value_handle){
-    		if(char_author_table.item[i].len >= offset + len){
-    			memcpy(char_author_table.item[i].data + offset, p_value, len);
+    for(uint8_t i=0; i<CHAR_TABLE_NUM; i++){
+    	if(m_char_table.item[i].handle == value_handle){
+    		if(m_char_table.item[i].len >= offset + len){
+    			memcpy(m_char_table.item[i].data + offset, p_value, len);
     			return MI_SUCCESS;
     		}else{
     			return MI_ERR_INVALID_LENGTH;
@@ -870,10 +817,10 @@ mible_status_t mible_gatts_value_get(uint16_t srv_handle, uint16_t value_handle,
     	return MIBLE_ERR_ATT_INVALID_ATT_HANDLE;
     }
 
-    for(uint8_t i=0; i<CHAR_AUTHOR_TABLE_NUM; i++){
-    	if(char_author_table.item[i].handle == value_handle){
-    		*p_len = char_author_table.item[i].len;
-    		memcpy(p_value, char_author_table.item[i].data, *p_len);
+    for(uint8_t i=0; i<CHAR_TABLE_NUM; i++){
+    	if(m_char_table.item[i].handle == value_handle){
+    		*p_len = m_char_table.item[i].len;
+    		memcpy(p_value, m_char_table.item[i].data, *p_len);
     		return MI_SUCCESS;
     	}
     }
@@ -1375,7 +1322,7 @@ void mible_tasks_exec(void)
  */
 #include "em_i2c.h"
 static bool iic_is_busy;
-static iic_config_t * m_p_iic_config;
+static const iic_config_t * m_p_iic_config;
 static mible_handler_t m_iic_handler;
 static I2C_TransferSeq_TypeDef seq;
 /*****************************************************************************
