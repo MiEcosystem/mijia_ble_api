@@ -125,11 +125,15 @@
 #include "app_printf.h"       
 extern void qtrace(uint8_t *data, uint16_t len, bool dir, uint8_t fmt);
 #define MI_LOG_PRINTF(...)              QPRINTF(__VA_ARGS__)
-#define MI_LOG_HEXDUMP(hex, len)        QTRACE(hex, len, 0, 2)
+//#define MI_LOG_HEXDUMP(hex, len)        QTRACE(hex, len, 0, 2)
+#define MI_PRINTF(...)                  QPRINTF(__VA_ARGS__)
+#define MI_HEXDUMP(hex, len)            QTRACE(hex, len, 0, 2)
 #else
 #define MI_LOG_PRINTF(...)
 #define MI_LOG_HEXDUMP(...)
 #endif
+
+
 
 #define TRACE_INIT(pin)
 #define TRACE_ENTER(pin)
