@@ -856,3 +856,39 @@ __WEAK int mible_iic_scl_pin_read(uint8_t port, uint8_t pin)
 {
     return 0;
 }
+
+__WEAK mible_status_t mible_nvm_init(void)
+{
+    return MI_SUCCESS;
+}
+
+/**
+ * @brief   Function for reading data from Non-Volatile Memory.
+ * @param   [out] p_data:  Pointer to data to be restored.
+ *          [in] length:   Data size in bytes.
+ *          [in] address:  Address in Non-Volatile Memory to read.
+ * @return  MI_ERR_INTERNAL:  invalid NVM address.
+ *          MI_SUCCESS
+ * */
+__WEAK mible_status_t mible_nvm_read(void * p_data, uint32_t length, uint32_t address)
+{
+    return MI_ERR_BUSY;
+}
+
+/**
+ * @brief   Writes data to Non-Volatile Memory.
+ * @param   [in] p_data:   Pointer to data to be stored.
+ *          [in] length:   Data size in bytes.
+ *          [in] address:  Start address used to store data.
+ * @return  MI_ERR_INTERNAL:  invalid NVM address.
+ *          MI_SUCCESS
+ * */
+__WEAK mible_status_t mible_nvm_write(void * p_data, uint32_t length, uint32_t address)
+{
+    return MI_ERR_BUSY;
+}
+
+__WEAK mible_status_t mible_upgrade_firmware(void)
+{
+    return MI_ERR_BUSY;
+}

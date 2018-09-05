@@ -45,7 +45,7 @@ static void gap_evt_dispatch(ble_evt_t *p_ble_evt)
 		evt = MIBLE_GAP_EVT_DISCONNET;
 		conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
 		gap_params.conn_handle = conn_handle;
-		gap_params.disconnect.reason      = p_ble_evt->evt.gap_evt.params.disconnected.reason;
+		gap_params.disconnect.reason = (mible_gap_disconnect_reason_t)p_ble_evt->evt.gap_evt.params.disconnected.reason;
 		gap_evt_availble = 1;
 		break;
 
@@ -66,10 +66,17 @@ static void gap_evt_dispatch(ble_evt_t *p_ble_evt)
 		gap_params.conn_handle = conn_handle;
 		gap_params.report.addr_type = adv.peer_addr.addr_type == BLE_GAP_ADDR_TYPE_PUBLIC ? MIBLE_ADDRESS_TYPE_PUBLIC : MIBLE_ADDRESS_TYPE_RANDOM;
 		memcpy(gap_params.report.peer_addr, adv.peer_addr.addr, 6);
+#if (NRF_SD_BLE_API_VERSION <= 3)
 		gap_params.report.adv_type = adv.scan_rsp ? SCAN_RSP_DATA : ADV_DATA;
-		gap_params.report.rssi = adv.rssi;
 		memcpy(gap_params.report.data, adv.data, adv.dlen);;
 		gap_params.report.data_len = adv.dlen;
+#else
+        gap_params.report.adv_type = adv.type.scan_response ? SCAN_RSP_DATA : ADV_DATA;
+		memcpy(gap_params.report.data, adv.data.p_data, adv.data.len);;
+		gap_params.report.data_len = adv.data.len;
+#endif
+		gap_params.report.rssi = adv.rssi;
+
 		gap_evt_availble = 1;
 		break;
 	}
