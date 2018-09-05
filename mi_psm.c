@@ -1,17 +1,19 @@
 #include "mible_type.h"
 
 #include "fds.h"
-#include "fstorage.h"
-
-#undef  NRF_LOG_MODULE_NAME
-#define NRF_LOG_MODULE_NAME "PSM"
-#include "nrf_log.h"
-#include "nrf_log_ctrl.h"
-
-#include "mi_psm.h"
 
 #define MI_RECORD_FILE_ID              0x4D49		// file used to storage
 #define MI_RECORD_KEY                  0xBEEF
+
+#if (NRF_SD_BLE_API_VERSION==3)
+#include "fstorage.h"
+#undef  NRF_LOG_MODULE_NAME
+#define NRF_LOG_MODULE_NAME "PSM"
+
+#include "nrf_log.h"
+#include "nrf_log_ctrl.h"
+#include "mi_psm.h"
+
 volatile uint8_t m_psm_done;
 extern void mible_arch_event_callback(mible_arch_event_t evt, 
 		mible_arch_evt_param_t* param);
@@ -248,3 +250,50 @@ int mi_psm_reset(void)
 {
 	return fds_file_delete(MI_RECORD_FILE_ID);
 }
+#else
+volatile uint8_t m_psm_done;
+extern void mible_arch_event_callback(mible_arch_event_t evt, 
+		mible_arch_evt_param_t* param);
+
+static void mi_psm_fds_evt_handler(fds_evt_t const * const p_fds_evt)
+{
+
+}
+
+
+/** @brief Function to determine if a flash write operation in in progress.
+ *
+ * @return true if a flash operation is in progress, false if not.
+ */
+bool flash_access_in_progress()
+{
+
+}
+
+void mi_psm_init(void)
+{
+
+}
+
+/**@brief Flash Write function type. */
+int mi_psm_record_write(uint16_t rec_key, const uint8_t *in, uint16_t in_len)
+{
+
+}
+
+/**@brief Flash Read function type. */
+int mi_psm_record_read(uint16_t rec_key, uint8_t *out, uint16_t out_len)
+{
+
+}
+
+int mi_psm_record_delete(uint16_t rec_key)
+{
+
+}
+
+int mi_psm_reset(void)
+{
+	return fds_file_delete(MI_RECORD_FILE_ID);
+}
+#endif
