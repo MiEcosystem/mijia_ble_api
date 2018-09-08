@@ -267,7 +267,7 @@ static void mi_psm_fds_evt_handler(fds_evt_t const * const p_fds_evt)
  */
 bool flash_access_in_progress()
 {
-
+    return 0;
 }
 
 void mi_psm_init(void)
@@ -278,22 +278,22 @@ void mi_psm_init(void)
 /**@brief Flash Write function type. */
 int mi_psm_record_write(uint16_t rec_key, const uint8_t *in, uint16_t in_len)
 {
-
+    return 0;
 }
 
 /**@brief Flash Read function type. */
 int mi_psm_record_read(uint16_t rec_key, uint8_t *out, uint16_t out_len)
 {
-
+    return 0;
 }
 
 int mi_psm_record_delete(uint16_t rec_key)
 {
-
+    return 0;
 }
 
 int mi_psm_reset(void)
 {
-	return fds_file_delete(MI_RECORD_FILE_ID);
+	return 0;
 }
 #endif

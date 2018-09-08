@@ -29,21 +29,19 @@
 #include "app_timer.h"
 #include "app_util_platform.h"
 #if (NRF_SD_BLE_API_VERSION == 6)
-#include "nrf_drv_twi_patched.h"
-
+#include "SDK15.1.0_patch/nrf_drv_twi_patched.h"
 static uint8_t adv_handle;
 static uint8_t adv_data[31];
 static uint8_t scan_rsp_data[31];
 static ble_gap_adv_data_t gap_data;
 #else
-
+#include "SDK12.3.0_patch/nrf_drv_twi_patched.h"
 #endif
 
 #include "mi_psm.h"
 
 #define TIMER_MAX_NUM                   4
 #define APP_TIMER_PRESCALER             0                                           /**< Value of the RTC1 PRESCALER register. */
-
 
 static mible_status_t err_code_convert(uint32_t errno)
 {

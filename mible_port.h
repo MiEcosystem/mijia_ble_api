@@ -110,8 +110,9 @@
     }
 #endif
 
-#define CRITICAL_SECTION_ENTER()
-#define CRITICAL_SECTION_EXIT()
+#include "app_util_platform.h"
+#define CRITICAL_SECTION_ENTER() CRITICAL_REGION_ENTER()
+#define CRITICAL_SECTION_EXIT() CRITICAL_REGION_EXIT()
 
 #ifdef MI_LOG_ENABLED
 #include "nrf_log.h"
