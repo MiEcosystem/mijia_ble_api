@@ -178,7 +178,6 @@ static void gattc_evt_dispatch(ble_evt_t *p_ble_evt)
 
 void mible_on_ble_evt(ble_evt_t *p_ble_evt)
 {
-    MI_LOG_DEBUG("BLE EVT %X\n", p_ble_evt->header.evt_id);
 	gap_evt_dispatch(p_ble_evt);
 	gatts_evt_dispatch(p_ble_evt);
 	gattc_evt_dispatch(p_ble_evt);
