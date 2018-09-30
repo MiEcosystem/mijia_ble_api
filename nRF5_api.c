@@ -717,7 +717,6 @@ mible_status_t mible_gatts_notify_or_indicate(uint16_t conn_handle, uint16_t srv
  * @param   [in] conn_handle: connect handle
  *          [in] handle_range: search range for primary sevice
  *discovery procedure
- *          [in] uuid_type: 16-bit or 128-bit
  *          [in] p_srv_uuid: pointer to service uuid
  * @return  MI_SUCCESS             Successfully started or resumed the Primary
  *Service Discovery procedure.
@@ -743,7 +742,6 @@ mible_status_t mible_gattc_primary_service_discover_by_uuid(uint16_t conn_handle
  * @param   [in] conn_handle: connect handle
  *          [in] handle_range: search range for characteristic discovery
  * procedure
- *          [in] uuid_type: 16-bit or 128-bit
  *          [in] p_char_uuid: pointer to characteristic uuid
  * @return  MI_SUCCESS             Successfully started or resumed the
  * Characteristic Discovery procedure.
@@ -758,7 +756,33 @@ mible_status_t mible_gattc_char_discover_by_uuid(uint16_t conn_handle,
     mible_handle_range_t handle_range,
     mible_uuid_t* p_char_uuid)
 {
-    
+
+    return MI_SUCCESS;
+}
+
+/*
+ * @brief   Discover characteristic.
+ * @param   [in] conn_handle: connect handle
+ *          [in] handle_range: search range for characteristic discovery
+ * procedure
+ * @return  MI_SUCCESS             Successfully started or resumed the
+ * Characteristic Discovery procedure.
+ *          MI_ERR_INVALID_ADDR    Invalid pointer supplied.
+ *          MI_ERR_INVALID_STATE   Invalid Connection State.
+ *          MI_ERR_BUSY            Procedure already in progress.
+ *          MIBLE_ERR_INVALID_CONN_HANDLE   Invaild connection handle.
+ * @note    The response is given through
+ * MIBLE_GATTC_CHR_DISCOVER_RESP event
+ * */
+mible_status_t mible_gattc_char_discover(uint16_t conn_handle,
+    mible_handle_range_t handle_range)
+{
+    ble_gattc_handle_range_t range = {
+        .start_handle = handle_range.begin_handle,
+        .end_handle   = handle_range.end_handle,
+    };
+
+    sd_ble_gattc_characteristics_discover(conn_handle, &range);
     return MI_SUCCESS;
 }
 
@@ -770,7 +794,7 @@ mible_status_t mible_gattc_char_discover_by_uuid(uint16_t conn_handle,
  * Discovery procedure.
  *          MI_ERR_INVALID_ADDR    Invalid pointer supplied.
  *          MI_ERR_INVALID_STATE   Invalid Connection State.
- *          MI_ERR_BUSY            Procedure already in progress.
+ *          MI_ERR_BUSY             Procedure already in progress.
  *          MIBLE_ERR_INVALID_CONN_HANDLE   Invaild connection handle.
  * @note    Maybe run the charicteristic descriptor discover procedure firstly,
  * then pick up the client configuration descriptor which att type is 0x2092
@@ -782,6 +806,12 @@ mible_status_t mible_gattc_char_discover_by_uuid(uint16_t conn_handle,
 mible_status_t mible_gattc_clt_cfg_descriptor_discover(uint16_t conn_handle,
     mible_handle_range_t handle_range)
 {
+    ble_gattc_handle_range_t range = {
+        .start_handle = handle_range.begin_handle,
+        .end_handle   = handle_range.end_handle,
+    };
+
+    sd_ble_gattc_descriptors_discover(conn_handle, &range);
     return MI_SUCCESS;
 }
 
