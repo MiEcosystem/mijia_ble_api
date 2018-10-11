@@ -264,30 +264,47 @@ mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_adv_param)
  * */
 mible_status_t mible_gap_adv_data_set(uint8_t const * p_data, uint8_t dlen, uint8_t const *p_sr_data, uint8_t srdlen)
 {
-    uint32_t errno;
+    uint32_t errno = MI_SUCCESS;
 #if (NRF_SD_BLE_API_VERSION <= 3) 
     errno = sd_ble_gap_adv_data_set(p_data, dlen, p_sr_data, srdlen);
     MI_ERR_CHECK(errno);
 #else
-    memcpy(adv_data, p_data, dlen);
-    memcpy(scan_rsp_data, p_sr_data, srdlen);
-    adv_data_len                = dlen;
-    scan_rsp_data_len           = srdlen;
+    if (p_data != NULL) {
+        if (dlen == 0) {
+            memset(adv_data, 0, sizeof(adv_data));
+            adv_data_len = 0;
+        } else {
+            memcpy(adv_data, p_data, dlen);
+            adv_data_len = dlen;
+        }
+    }
+
+    if (p_sr_data != NULL) {
+        if (srdlen == 0) {
+            memset(scan_rsp_data, 0, sizeof(scan_rsp_data));
+            scan_rsp_data_len = 0;
+        } else {
+            memcpy(scan_rsp_data, p_sr_data, srdlen);
+            scan_rsp_data_len = srdlen;
+        }
+    }
+
     ble_gap_adv_data_t gap_data = {0};
     gap_data.adv_data.p_data      = adv_data;
-    gap_data.adv_data.len         = dlen;
+    gap_data.adv_data.len         = adv_data_len;
     gap_data.scan_rsp_data.p_data = scan_rsp_data;
-    gap_data.scan_rsp_data.len    = srdlen;
+    gap_data.scan_rsp_data.len    = scan_rsp_data_len;
 
+    MI_LOG_ERROR("adv len %d, scan len %d\n", adv_data_len, scan_rsp_data_len);
     if (is_advertising) {
-        errno = sd_ble_gap_adv_set_configure(&adv_handle, &gap_data, NULL);
+        sd_ble_gap_adv_set_configure(&adv_handle, &gap_data, NULL);
     } else {
         ble_gap_adv_params_t adv_param = {0};
         adv_param.interval = 0xA0;
         adv_param.properties.type = BLE_GAP_ADV_TYPE_CONNECTABLE_SCANNABLE_UNDIRECTED;
         errno = sd_ble_gap_adv_set_configure(&adv_handle, &gap_data, &adv_param);
+        MI_ERR_CHECK(errno);
     }
-    MI_ERR_CHECK(errno);
 #endif
     
     return err_code_convert(errno);
