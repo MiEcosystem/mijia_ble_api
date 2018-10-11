@@ -30,16 +30,19 @@
 #include "app_util_platform.h"
 #if (NRF_SD_BLE_API_VERSION == 6)
 #include "SDK15.1.0_patch/nrf_drv_twi_patched.h"
-static uint8_t adv_handle;
+static uint8_t adv_handle = 0xFF;
+static uint8_t is_advertising;
 static uint8_t adv_data[31];
+static uint8_t adv_data_len;
 static uint8_t scan_rsp_data[31];
-static ble_gap_adv_data_t gap_data;
+static uint8_t scan_rsp_data_len;
 #else
 #include "SDK12.3.0_patch/nrf_drv_twi_patched.h"
 #endif
 
 #include "mi_psm.h"
 
+#define BLE_CONN_CFG_TAG                1
 #define TIMER_MAX_NUM                   4
 #define APP_TIMER_PRESCALER             0                                           /**< Value of the RTC1 PRESCALER register. */
 
@@ -132,7 +135,7 @@ mible_status_t mible_gap_scan_start(mible_gap_scan_type_t scan_type,
     sdk_param.interval = scan_param.scan_interval;
     sdk_param.window   = scan_param.scan_window;
     sdk_param.timeout  = scan_param.timeout;
-#if (NRF_SD_BLE_API_VERSION == 3)
+#if (NRF_SD_BLE_API_VERSION <= 3)
     errno = sd_ble_gap_scan_start(&sdk_param);
 #else
     static uint8_t data[31];
@@ -179,7 +182,7 @@ mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_adv_param)
     uint32_t errno;
     if (p_adv_param == NULL )
         return MI_ERR_INVALID_PARAM;
-#if (NRF_SD_BLE_API_VERSION == 3)
+#if (NRF_SD_BLE_API_VERSION <= 3)
     sd_ble_gap_adv_stop();
     
     ble_gap_adv_params_t adv_params = {0};
@@ -208,6 +211,10 @@ mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_adv_param)
     ble_gap_adv_params_t adv_params = {0};
     adv_params.interval = p_adv_param->adv_interval_min;
 
+    adv_params.channel_mask[4] |= p_adv_param->ch_mask.ch_37_off ? 0x20 : 0;
+    adv_params.channel_mask[4] |= p_adv_param->ch_mask.ch_38_off ? 0x40 : 0;
+    adv_params.channel_mask[4] |= p_adv_param->ch_mask.ch_39_off ? 0x80 : 0;
+
     switch(p_adv_param->adv_type) {
         case MIBLE_ADV_TYPE_CONNECTABLE_UNDIRECTED:
             adv_params.properties.type = BLE_GAP_ADV_TYPE_CONNECTABLE_SCANNABLE_UNDIRECTED;
@@ -222,10 +229,24 @@ mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_adv_param)
             break;
     }
 
-    errno = sd_ble_gap_adv_set_configure(&adv_handle, &gap_data, &adv_params);
+    if (is_advertising) {
+        errno = sd_ble_gap_adv_set_configure(&adv_handle, NULL, &adv_params);
+        MI_ERR_CHECK(errno);
+    } else {
+        ble_gap_adv_data_t gap_data = {0};
+        gap_data.adv_data.p_data = adv_data;
+        gap_data.adv_data.len    = adv_data_len;
+        gap_data.scan_rsp_data.p_data = scan_rsp_data;
+        gap_data.scan_rsp_data.len    = scan_rsp_data_len;
+
+        errno = sd_ble_gap_adv_set_configure(&adv_handle, &gap_data, &adv_params);
+        MI_ERR_CHECK(errno);
+    }
+    errno = sd_ble_gap_adv_start(adv_handle, BLE_CONN_CFG_TAG);
     MI_ERR_CHECK(errno);
-    
-    errno = sd_ble_gap_adv_start(adv_handle, BLE_CONN_CFG_TAG_DEFAULT);
+
+    if (errno == NRF_SUCCESS)
+        is_advertising = 1;
 #endif
     
     return err_code_convert(errno);
@@ -240,25 +261,52 @@ mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_adv_param)
  * @return  MI_SUCCESS             Successfully set advertising data.
  *          MI_ERR_INVALID_ADDR    Invalid pointer supplied.
  *          MI_ERR_INVALID_PARAM   Invalid parameter(s) supplied.
- * */   
+ * */
 mible_status_t mible_gap_adv_data_set(uint8_t const * p_data, uint8_t dlen, uint8_t const *p_sr_data, uint8_t srdlen)
 {
-    uint32_t errno;
-#if (NRF_SD_BLE_API_VERSION == 3) 
+    uint32_t errno = MI_SUCCESS;
+#if (NRF_SD_BLE_API_VERSION <= 3) 
     errno = sd_ble_gap_adv_data_set(p_data, dlen, p_sr_data, srdlen);
-    
-#else
-    memcpy(adv_data, p_data, dlen);
-    memcpy(scan_rsp_data, p_sr_data, srdlen);
-    
-    gap_data.adv_data.p_data      = adv_data;
-    gap_data.adv_data.len         = dlen;
-    gap_data.scan_rsp_data.p_data = scan_rsp_data;
-    gap_data.scan_rsp_data.len    = srdlen;
-
-    errno = sd_ble_gap_adv_set_configure(&adv_handle, &gap_data, NULL);
-#endif
     MI_ERR_CHECK(errno);
+#else
+    if (p_data != NULL) {
+        if (dlen == 0) {
+            memset(adv_data, 0, sizeof(adv_data));
+            adv_data_len = 0;
+        } else {
+            memcpy(adv_data, p_data, dlen);
+            adv_data_len = dlen;
+        }
+    }
+
+    if (p_sr_data != NULL) {
+        if (srdlen == 0) {
+            memset(scan_rsp_data, 0, sizeof(scan_rsp_data));
+            scan_rsp_data_len = 0;
+        } else {
+            memcpy(scan_rsp_data, p_sr_data, srdlen);
+            scan_rsp_data_len = srdlen;
+        }
+    }
+
+    ble_gap_adv_data_t gap_data = {0};
+    gap_data.adv_data.p_data      = adv_data;
+    gap_data.adv_data.len         = adv_data_len;
+    gap_data.scan_rsp_data.p_data = scan_rsp_data;
+    gap_data.scan_rsp_data.len    = scan_rsp_data_len;
+
+    MI_LOG_ERROR("adv len %d, scan len %d\n", adv_data_len, scan_rsp_data_len);
+    if (is_advertising) {
+        sd_ble_gap_adv_set_configure(&adv_handle, &gap_data, NULL);
+    } else {
+        ble_gap_adv_params_t adv_param = {0};
+        adv_param.interval = 0xA0;
+        adv_param.properties.type = BLE_GAP_ADV_TYPE_CONNECTABLE_SCANNABLE_UNDIRECTED;
+        errno = sd_ble_gap_adv_set_configure(&adv_handle, &gap_data, &adv_param);
+        MI_ERR_CHECK(errno);
+    }
+#endif
+    
     return err_code_convert(errno);
 }
 
@@ -272,9 +320,17 @@ mible_status_t mible_gap_adv_data_set(uint8_t const * p_data, uint8_t dlen, uint
 mible_status_t mible_gap_adv_stop(void)
 {
     uint32_t errno;
-    errno = sd_ble_gap_adv_stop(adv_handle);
+#if (NRF_SD_BLE_API_VERSION<=3)
+    errno = sd_ble_gap_adv_stop();
     errno = errno == NRF_SUCCESS ? MI_SUCCESS : MI_ERR_INVALID_STATE;
     return err_code_convert(errno);
+#else
+    uint32_t errno;
+    errno = sd_ble_gap_adv_stop(adv_handle);
+    errno = errno == NRF_SUCCESS ? MI_SUCCESS : MI_ERR_INVALID_STATE;
+    is_advertising = 0;
+    return err_code_convert(errno);
+#endif
 }
 
 /*
@@ -322,7 +378,7 @@ mible_status_t mible_gap_connect(mible_gap_scan_param_t scan_param,
     sdk_conn_param.slave_latency     = conn_param.conn_param.slave_latency;
     sdk_conn_param.conn_sup_timeout  = conn_param.conn_param.conn_sup_timeout;
 
-#if (NRF_SD_BLE_API_VERSION==3)
+#if (NRF_SD_BLE_API_VERSION <= 3)
     errno = sd_ble_gap_connect(&mac, &sdk_scan_param, &sdk_conn_param);
 #else
     errno = sd_ble_gap_connect(&mac, &sdk_scan_param, &sdk_conn_param, BLE_CONN_CFG_TAG_DEFAULT);
@@ -685,7 +741,6 @@ mible_status_t mible_gatts_notify_or_indicate(uint16_t conn_handle, uint16_t srv
  * @param   [in] conn_handle: connect handle
  *          [in] handle_range: search range for primary sevice
  *discovery procedure
- *          [in] uuid_type: 16-bit or 128-bit
  *          [in] p_srv_uuid: pointer to service uuid
  * @return  MI_SUCCESS             Successfully started or resumed the Primary
  *Service Discovery procedure.
@@ -711,7 +766,6 @@ mible_status_t mible_gattc_primary_service_discover_by_uuid(uint16_t conn_handle
  * @param   [in] conn_handle: connect handle
  *          [in] handle_range: search range for characteristic discovery
  * procedure
- *          [in] uuid_type: 16-bit or 128-bit
  *          [in] p_char_uuid: pointer to characteristic uuid
  * @return  MI_SUCCESS             Successfully started or resumed the
  * Characteristic Discovery procedure.
@@ -726,7 +780,33 @@ mible_status_t mible_gattc_char_discover_by_uuid(uint16_t conn_handle,
     mible_handle_range_t handle_range,
     mible_uuid_t* p_char_uuid)
 {
-    
+
+    return MI_SUCCESS;
+}
+
+/*
+ * @brief   Discover characteristic.
+ * @param   [in] conn_handle: connect handle
+ *          [in] handle_range: search range for characteristic discovery
+ * procedure
+ * @return  MI_SUCCESS             Successfully started or resumed the
+ * Characteristic Discovery procedure.
+ *          MI_ERR_INVALID_ADDR    Invalid pointer supplied.
+ *          MI_ERR_INVALID_STATE   Invalid Connection State.
+ *          MI_ERR_BUSY            Procedure already in progress.
+ *          MIBLE_ERR_INVALID_CONN_HANDLE   Invaild connection handle.
+ * @note    The response is given through
+ * MIBLE_GATTC_CHR_DISCOVER_RESP event
+ * */
+mible_status_t mible_gattc_char_discover(uint16_t conn_handle,
+    mible_handle_range_t handle_range)
+{
+    ble_gattc_handle_range_t range = {
+        .start_handle = handle_range.begin_handle,
+        .end_handle   = handle_range.end_handle,
+    };
+
+    sd_ble_gattc_characteristics_discover(conn_handle, &range);
     return MI_SUCCESS;
 }
 
@@ -738,7 +818,7 @@ mible_status_t mible_gattc_char_discover_by_uuid(uint16_t conn_handle,
  * Discovery procedure.
  *          MI_ERR_INVALID_ADDR    Invalid pointer supplied.
  *          MI_ERR_INVALID_STATE   Invalid Connection State.
- *          MI_ERR_BUSY            Procedure already in progress.
+ *          MI_ERR_BUSY             Procedure already in progress.
  *          MIBLE_ERR_INVALID_CONN_HANDLE   Invaild connection handle.
  * @note    Maybe run the charicteristic descriptor discover procedure firstly,
  * then pick up the client configuration descriptor which att type is 0x2092
@@ -750,6 +830,12 @@ mible_status_t mible_gattc_char_discover_by_uuid(uint16_t conn_handle,
 mible_status_t mible_gattc_clt_cfg_descriptor_discover(uint16_t conn_handle,
     mible_handle_range_t handle_range)
 {
+    ble_gattc_handle_range_t range = {
+        .start_handle = handle_range.begin_handle,
+        .end_handle   = handle_range.end_handle,
+    };
+
+    sd_ble_gattc_descriptors_discover(conn_handle, &range);
     return MI_SUCCESS;
 }
 
@@ -944,7 +1030,7 @@ mible_status_t mible_timer_start(void* timer_id, uint32_t timeout_value,
     void* p_context)
 {
     uint32_t errno;
-#if (NRF_SD_BLE_API_VERSION == 3)
+#if (NRF_SD_BLE_API_VERSION <= 3)
     errno = app_timer_start((app_timer_id_t)timer_id, APP_TIMER_TICKS(timeout_value, APP_TIMER_PRESCALER), p_context);
 #else
     errno = app_timer_start((app_timer_id_t)timer_id, APP_TIMER_TICKS(timeout_value), p_context);

@@ -139,16 +139,16 @@ static void gattc_evt_dispatch(ble_evt_t *p_ble_evt)
 	mible_gattc_evt_t evt;
 	mible_gattc_evt_param_t gattc_params = {0};
 	gattc_params.conn_handle = p_ble_evt->evt.gattc_evt.conn_handle;
-    ble_gattc_evt_prim_srvc_disc_rsp_t prim_srv;
-    ble_gattc_evt_hvx_t hvx;
-    
+    uint8_t uuid_len, uuid128[16];
+
 	switch(p_ble_evt->header.evt_id) {
 	case BLE_GATTC_EVT_PRIM_SRVC_DISC_RSP:
 		evt = MIBLE_GATTC_EVT_PRIMARY_SERVICE_DISCOVER_RESP;
+        ble_gattc_evt_prim_srvc_disc_rsp_t prim_srv;
 		prim_srv = p_ble_evt->evt.gattc_evt.params.prim_srvc_disc_rsp;
 		gattc_params.srv_disc_rsp.primary_srv_range.begin_handle = prim_srv.services[0].handle_range.start_handle;
 		gattc_params.srv_disc_rsp.primary_srv_range.end_handle = prim_srv.services[0].handle_range.end_handle;
-		uint8_t uuid_len, uuid128[16];
+
 		sd_ble_uuid_encode(&prim_srv.services[0].uuid, &uuid_len, uuid128);
 		gattc_params.srv_disc_rsp.srv_uuid.type = uuid_len == 16 ? 1 : 0;
 		memcpy(gattc_params.srv_disc_rsp.srv_uuid.uuid128, uuid128, uuid_len);
@@ -156,7 +156,8 @@ static void gattc_evt_dispatch(ble_evt_t *p_ble_evt)
 		break;
 
 	case BLE_GATTC_EVT_HVX:
-		hvx = p_ble_evt->evt.gattc_evt.params.hvx;
+        evt = MIBLE_GATTC_EVT_INDICATION;
+        ble_gattc_evt_hvx_t hvx = p_ble_evt->evt.gattc_evt.params.hvx;
 		if (hvx.type == BLE_GATT_HVX_INDICATION)
 			evt = MIBLE_GATTC_EVT_INDICATION;
 		else if (hvx.type == BLE_GATT_HVX_NOTIFICATION)
@@ -166,6 +167,24 @@ static void gattc_evt_dispatch(ble_evt_t *p_ble_evt)
 		gattc_params.notification.len    = hvx.len;
 		gattc_evt_availble = 1;
 		break;
+
+    case BLE_GATTC_EVT_CHAR_DISC_RSP:
+        evt = MIBLE_GATTC_EVT_CHR_DISCOVER_RESP;
+        MI_LOG_INFO("char disc cnt %d\n", p_ble_evt->evt.gattc_evt.params.char_disc_rsp.count);
+        ble_gattc_char_t chars = p_ble_evt->evt.gattc_evt.params.char_disc_rsp.chars[0];
+        gattc_params.char_disc_rsp.value_handle = chars.handle_value;
+		
+        sd_ble_uuid_encode(&chars.uuid, &uuid_len, uuid128);
+		gattc_params.char_disc_rsp.char_uuid.type = uuid_len == 16 ? 1 : 0;
+		memcpy(gattc_params.char_disc_rsp.char_uuid.uuid128, uuid128, uuid_len);
+
+        if (chars.char_props.notify == 1 || 
+            chars.char_props.indicate == 1) {
+            gattc_params.char_disc_rsp.succ = 1;
+        }
+
+        gattc_evt_availble = 1;
+        break;
 
 	default:
 		break;
@@ -178,7 +197,6 @@ static void gattc_evt_dispatch(ble_evt_t *p_ble_evt)
 
 void mible_on_ble_evt(ble_evt_t *p_ble_evt)
 {
-    MI_LOG_DEBUG("BLE EVT %X\n", p_ble_evt->header.evt_id);
 	gap_evt_dispatch(p_ble_evt);
 	gatts_evt_dispatch(p_ble_evt);
 	gattc_evt_dispatch(p_ble_evt);

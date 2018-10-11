@@ -5,11 +5,6 @@
 #define MI_RECORD_FILE_ID              0x4D49		// file used to storage
 #define MI_RECORD_KEY                  0xBEEF
 
-#if (NRF_SD_BLE_API_VERSION==3)
-#include "fstorage.h"
-#undef  NRF_LOG_MODULE_NAME
-#define NRF_LOG_MODULE_NAME "PSM"
-
 #include "nrf_log.h"
 #include "nrf_log_ctrl.h"
 #include "mi_psm.h"
@@ -107,20 +102,6 @@ static void mi_psm_fds_evt_handler(fds_evt_t const * const p_fds_evt)
 #endif
 }
 
-
-/** @brief Function to determine if a flash write operation in in progress.
- *
- * @return true if a flash operation is in progress, false if not.
- */
-bool flash_access_in_progress()
-{
-    uint32_t count;
-
-    (void)fs_queued_op_count_get(&count);
-
-    return (count != 0);
-}
-
 void mi_psm_init(void)
 {
 	uint32_t errno;
@@ -136,19 +117,26 @@ int mi_psm_record_write(uint16_t rec_key, const uint8_t *in, uint16_t in_len)
 {
     uint32_t ret = 0;
     fds_record_t        record;
-    fds_record_chunk_t  record_chunk;
 	fds_record_desc_t   record_desc;
     fds_find_token_t    ftok = {0};
 	
+
+
+#if (NRF_SD_BLE_API_VERSION<=3)
 	// Set up data.
+    fds_record_chunk_t  record_chunk;
     record_chunk.p_data         = in;
     record_chunk.length_words   = CEIL_DIV(in_len, sizeof(uint32_t));
-	
 	// Set up record.
-    record.file_id           = MI_RECORD_FILE_ID;
-    record.key               = rec_key;
+
     record.data.p_chunks     = &record_chunk;
     record.data.num_chunks   = 1;
+#else
+    record.data.p_data       = in;
+    record.data.length_words = in_len/4 + 1;
+#endif
+    record.file_id           = MI_RECORD_FILE_ID;
+    record.key               = rec_key;
 
 	ret = fds_record_find(MI_RECORD_FILE_ID, rec_key, &record_desc, &ftok);
     if (ret == FDS_SUCCESS)
@@ -191,8 +179,11 @@ int mi_psm_record_read(uint16_t rec_key, uint8_t *out, uint16_t out_len)
             NRF_LOG_ERROR("mi psm cann't find KEY %X! \n", rec_key);
             ret = MI_ERR_INVALID_PARAM;
         }
-
+#if (NRF_SD_BLE_API_VERSION<=3)
 		uint16_t record_len = flash_record.p_header->tl.length_words * sizeof(uint32_t);
+#else
+        uint16_t record_len = flash_record.p_header->length_words * sizeof(uint32_t);
+#endif
 		if (out_len <= record_len)
 			memcpy(out, (uint8_t*)flash_record.p_data, out_len);
 		else
@@ -240,7 +231,7 @@ int mi_psm_record_delete(uint16_t rec_key)
         }
     }
 	else {
-		NRF_LOG_ERROR("mi psm cann't delete the record %X. \n", rec_key);
+		NRF_LOG_ERROR("mi psm cann't delete the record 0x%X. \n", rec_key);
 	    ret = MI_ERR_INVALID_PARAM;
 	}
 	return ret;
@@ -250,50 +241,4 @@ int mi_psm_reset(void)
 {
 	return fds_file_delete(MI_RECORD_FILE_ID);
 }
-#else
-volatile uint8_t m_psm_done;
-extern void mible_arch_event_callback(mible_arch_event_t evt, 
-		mible_arch_evt_param_t* param);
 
-static void mi_psm_fds_evt_handler(fds_evt_t const * const p_fds_evt)
-{
-
-}
-
-
-/** @brief Function to determine if a flash write operation in in progress.
- *
- * @return true if a flash operation is in progress, false if not.
- */
-bool flash_access_in_progress()
-{
-    return 0;
-}
-
-void mi_psm_init(void)
-{
-
-}
-
-/**@brief Flash Write function type. */
-int mi_psm_record_write(uint16_t rec_key, const uint8_t *in, uint16_t in_len)
-{
-    return 0;
-}
-
-/**@brief Flash Read function type. */
-int mi_psm_record_read(uint16_t rec_key, uint8_t *out, uint16_t out_len)
-{
-    return 0;
-}
-
-int mi_psm_record_delete(uint16_t rec_key)
-{
-    return 0;
-}
-
-int mi_psm_reset(void)
-{
-	return 0;
-}
-#endif

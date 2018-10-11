@@ -94,6 +94,7 @@ typedef struct {
 } mible_gap_conn_param_t;
 
 typedef enum {
+    MIBLE_GAP_INVALID,
     MIBLE_GAP_PERIPHERAL,
     MIBLE_GAP_CENTRAL,
 } mible_gap_role_t;
@@ -274,6 +275,8 @@ typedef enum {
 	MIBLE_GATTC_EVT_NOTIFICATION,
 	// this event is generated when peer gatts device send a indication. 
 	MIBLE_GATTC_EVT_INDICATION,
+    // this event generated in responses to a discover_charicteristic procedure.
+    MIBLE_GATTC_EVT_CHR_DISCOVER_RESP,
 } mible_gattc_evt_t;
 
 /*
@@ -289,9 +292,8 @@ typedef struct {
  * MIBLE_GATTC_EVT_CHR_DISCOVER_BY_UUID_RESP event callback parameters
  * */
 typedef struct {
-    mible_handle_range_t char_range;
-    mible_uuid_t uuid_type;
-    mible_uuid_t* char_uuid;
+    uint16_t     value_handle;
+    mible_uuid_t char_uuid;
     bool succ; // true: exist the specified characteristic and return correctly
 } mible_gattc_char_disc_rsp_t;
 

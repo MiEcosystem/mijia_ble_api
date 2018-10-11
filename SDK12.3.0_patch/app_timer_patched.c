@@ -877,21 +877,22 @@ static uint32_t timer_stop_op_schedule(timer_node_t * p_node,
 void RTC1_IRQHandler(void)
 {
     // Clear all events (also unexpected ones)
-	NRF_RTC1->EVENTS_COMPARE[1] = 0;
+
+    NRF_RTC1->EVENTS_COMPARE[1] = 0;
     NRF_RTC1->EVENTS_COMPARE[2] = 0;
     NRF_RTC1->EVENTS_COMPARE[3] = 0;
     NRF_RTC1->EVENTS_TICK       = 0;
 
-	if ( nrf_rtc_event_pending(NRF_RTC1, NRF_RTC_EVENT_OVERFLOW)) {
-		nrf_rtc_event_clear(NRF_RTC1, NRF_RTC_EVENT_OVERFLOW);
-		rtc1_overflow_cnt++;
-	}
-	
-	if ( nrf_rtc_event_pending(NRF_RTC1, NRF_RTC_EVENT_COMPARE_0)) {
-		nrf_rtc_event_clear(NRF_RTC1, NRF_RTC_EVENT_COMPARE_0);
-		// Check for expired timers
-		timer_timeouts_check();
-	}
+    if ( nrf_rtc_event_pending(NRF_RTC1, NRF_RTC_EVENT_OVERFLOW)) {
+        NRF_RTC1->EVENTS_OVRFLW     = 0;
+        rtc1_overflow_cnt++;
+    }
+    
+    if ( nrf_rtc_event_pending(NRF_RTC1, NRF_RTC_EVENT_COMPARE_0)) {
+        NRF_RTC1->EVENTS_COMPARE[0] = 0;
+        // Check for expired timers
+        timer_timeouts_check();
+    }
 }
 
 
