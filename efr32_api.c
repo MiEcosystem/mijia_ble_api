@@ -667,7 +667,6 @@ static int extract_service_region(uint16_t service_uuid16, uint16_t *begin_handl
     uint16_t handle = 0;
     do {
         handle = iterate_get_att_handle(pri_srv_uuid_idx, handle, bg_gattdb->attributes_max);
-        MI_LOG_INFO("pri srv handle %d\n", handle);
         if (memcmp(bg_gattdb->attributes[handle].constdata->data, &service_uuid16, 2) == 0) {
             *begin_handle = handle;
             *end_handle = iterate_get_att_handle(pri_srv_uuid_idx, handle+1, bg_gattdb->attributes_max);
@@ -1270,7 +1269,7 @@ mible_status_t mible_aes128_encrypt(const uint8_t* key, const uint8_t* plaintext
 }
 
 /* TASK schedulor related function  */
-#include "queue.h"
+#include "common/queue.h"
 typedef struct {
     mible_handler_t handler;
     void *arg;
