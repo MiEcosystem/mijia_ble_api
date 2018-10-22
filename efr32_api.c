@@ -155,7 +155,6 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt)
         uint16_t char_handle = evt->data.evt_gatt_server_attribute_value.attribute;
         mible_gatts_evt_t event;
 
-        //uint8_t index = SearchDatabaseFromHandle(char_handle);
         gatts_evt_param.conn_handle =
                 evt->data.evt_gatt_server_attribute_value.connection;
         gatts_evt_param.write.data =
@@ -226,7 +225,6 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt)
         uint16_t char_handle = evt->data.evt_gatt_server_attribute_value.attribute;
         mible_gatts_evt_t event;
 
-        //uint8_t index = SearchDatabaseFromHandle(char_handle);
         gatts_evt_param.conn_handle =
                 evt->data.evt_gatt_server_attribute_value.connection;
         gatts_evt_param.write.data =
@@ -706,9 +704,7 @@ mible_status_t mible_gatts_service_init(mible_gatts_db_t *p_server_db)
 
     mible_gatts_char_db_t * p_char_db = p_server_db->p_srv_db->p_char_db;
 
-    for(int i = 0;
-            i < p_server_db->p_srv_db->char_num && i < CHAR_TABLE_NUM;
-            i++, p_char_db++) {
+    for(int i = 0; i < p_server_db->p_srv_db->char_num && i < CHAR_TABLE_NUM; i++, p_char_db++) {
         uint16_t handle = search_char_handle(p_char_db->char_uuid.uuid16, begin, end);
         if (handle != -1) {
             p_char_db->char_value_handle = handle + 1;
@@ -911,37 +907,33 @@ mible_status_t mible_gatts_notify_or_indicate(uint16_t conn_handle, uint16_t srv
  * event issued to the application.
  * */
 mible_status_t mible_gatts_rw_auth_reply(uint16_t conn_handle,
-        uint8_t status, uint16_t char_value_handle, uint8_t offset,
+        uint8_t permit, uint16_t char_value_handle, uint8_t offset,
         uint8_t* p_value, uint8_t len, uint8_t type)
 {
-    if ( p_value == NULL) {
+    uint16_t result;
+    if (permit == 1 && p_value == NULL) {
         return MI_ERR_INVALID_ADDR;
     }
 
-    if (status == 1) {
-        struct gecko_msg_gatt_server_write_attribute_value_rsp_t *p_rsp =
-        gecko_cmd_gatt_server_write_attribute_value(char_value_handle, offset, len, p_value);
-        if (p_rsp->result != bg_err_success)
-            return p_rsp->result;
+    switch(type) {
+    case 1:
+    result =
+    gecko_cmd_gatt_server_send_user_read_response(conn_handle,
+                                                  char_value_handle,
+                                                  permit ? 0 : bg_err_att_read_not_permitted,
+                                                  len,
+                                                  p_value)->result;
+        break;
+
+    case 2:
+    result =
+    gecko_cmd_gatt_server_send_user_write_response(conn_handle,
+                                                   char_value_handle,
+                                                   permit ? 0 : bg_err_att_write_not_permitted)->result;
+        break;
     }
 
-    if (type == 1) {
-        struct gecko_msg_gatt_server_send_user_read_response_rsp_t *p_rsp =
-        gecko_cmd_gatt_server_send_user_read_response(conn_handle,
-                char_value_handle, status ? 0 : bg_err_att_read_not_permitted, len, p_value);
-
-        if (p_rsp->result != bg_err_success)
-                    return p_rsp->result;
-    } else if (type == 2) {
-        struct gecko_msg_gatt_server_send_user_write_response_rsp_t *p_rsp =
-        gecko_cmd_gatt_server_send_user_write_response(conn_handle,
-                char_value_handle, status ? 0 : bg_err_att_write_not_permitted);
-
-        if (p_rsp->result != bg_err_success)
-                    return p_rsp->result;
-    }
-
-    return MI_SUCCESS;
+    return result == bg_err_success ? MI_SUCCESS : result;
 }
 
 /*TIMER related function*/

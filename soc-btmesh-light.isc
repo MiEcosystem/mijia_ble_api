@@ -1,0 +1,213 @@
+#ISD afv6
+# Simplicity Studio version: 4.29.5.201810191319-1343
+
+# Application configuration
+stackId: com.silabs.sdk.stack.btmesh
+stackRoot: C:\SiliconLabs\SimplicityStudio\v4\developer\sdks\blemesh\v1.3
+appId: btmesh
+frameworkRoot: app\bluetooth\appbuilder\fwk-mesh
+architecture: efr32~family[B]~series[1]~device_configuration[3]~performance[P]~radio[632]~flash[512K]~temp[G]~package[M]~pins[48]~!module+BRD4104A+gcc
+exactArchitectureToolchain: com.silabs.ss.tool.ide.arm.toolchain.gnu.cdt:7.2.1.20170904
+deviceName: soc-btmesh-light
+sourceSampleAppId: soc-btmesh-light
+generationDirectory: PATH(ISC_RELATIVE):.
+
+# Devices
+
+# UI customization
+hiddenLayoutElements: plugins,callbacks,other
+
+# Plugin configuration
+appPlugin: mpsi=false
+appPlugin: mpsi-ipc=false
+appPlugin: mpsi-storage=false
+appPlugin: slot-manager=false
+
+# Setup configurations
+{setupId:additionalFiles
+}
+{setupId:bleGattConfigurator
+<?xml version="1.0" encoding="UTF-8"?><gatt generic_attribute_service="true" header="gatt_db.h" name="Custom BLE GATT" out="gatt_db.c" prefix="gattdb_">
+  <capabilities_declare>
+    <capability enable="false">mesh_provisioning_service</capability>
+    <capability enable="false">mesh_proxy_service</capability>
+    <capability enable="true">mi_service_cap</capability>
+  </capabilities_declare>
+  <service advertise="false" name="Generic Access" requirement="mandatory" sourceId="org.bluetooth.service.generic_access" type="primary" uuid="1800">
+    <informativeText>Abstract:  The generic_access service contains generic information about the device. All available Characteristics are readonly.  </informativeText>
+    <characteristic id="device_name" name="Device Name" sourceId="org.bluetooth.characteristic.gap.device_name" uuid="2A00">
+      <informativeText/>
+      <value length="20" type="utf-8" variable_length="true">Mijia mesh demo</value>
+      <properties const="false" const_requirement="optional" read="true" read_requirement="mandatory"/>
+    </characteristic>
+  </service>
+  <service advertise="false" id="manufacturer" name="Device Information" requirement="mandatory" sourceId="org.bluetooth.service.device_information" type="primary" uuid="180A">
+    <informativeText>Abstract:  The Device Information Service exposes manufacturer and/or vendor information about a device.  Summary:  This service exposes manufacturer information about a device. The Device Information Service is instantiated as a Primary Service. Only one instance of the Device Information Service is exposed on a device.  </informativeText>
+    <characteristic name="Manufacturer Name String" sourceId="org.bluetooth.characteristic.manufacturer_name_string" uuid="2A29">
+      <informativeText>Abstract:  The value of this characteristic is a UTF-8 string representing the name of the manufacturer of the device.  </informativeText>
+      <value length="12" type="utf-8" variable_length="false">Silicon Labs</value>
+      <properties const="true" const_requirement="optional" read="true" read_requirement="mandatory"/>
+    </characteristic>
+  </service>
+  <service advertise="false" name="Mi Service" requirement="mandatory" sourceId="custom.type" type="primary" uuid="FE95">
+    <informativeText>Custom service</informativeText>
+    <characteristic id="version" name="Version" sourceId="custom.type" uuid="0004">
+      <informativeText>Custom characteristic</informativeText>
+      <value length="20" type="user" variable_length="true"/>
+      <properties read="true" read_requirement="mandatory"/>
+    </characteristic>
+    <characteristic id="auth" name="Auth Control Point" sourceId="custom.type" uuid="0010">
+      <informativeText>Custom characteristic</informativeText>
+      <value length="4" type="user" variable_length="false"/>
+      <properties notify="true" notify_requirement="mandatory" write_no_response="true" write_no_response_requirement="mandatory"/>
+    </characteristic>
+    <characteristic id="secure_auth" name="Secure Auth" sourceId="custom.type" uuid="0016">
+      <informativeText>Custom characteristic</informativeText>
+      <value length="20" type="user" variable_length="true"/>
+      <properties notify="true" notify_requirement="mandatory" write_no_response="true" write_no_response_requirement="mandatory"/>
+    </characteristic>
+    <characteristic id="ota_control" name="OTA Control Point" sourceId="custom.type" uuid="0017">
+      <informativeText>Custom characteristic</informativeText>
+      <value length="20" type="user" variable_length="true"/>
+      <properties notify="true" notify_requirement="mandatory" write="true" write_requirement="mandatory"/>
+    </characteristic>
+    <characteristic id="ota_data" name="OTA Data" sourceId="custom.type" uuid="0018">
+      <informativeText>Custom characteristic</informativeText>
+      <value length="20" type="user" variable_length="true"/>
+      <properties notify="true" notify_requirement="mandatory" write_no_response="true" write_no_response_requirement="mandatory"/>
+    </characteristic>
+  </service>
+  <service advertise="true" name="Mesh Provisioning Service" requirement="mandatory" sourceId="com.silabs.service.mesh_provisioning" type="primary" uuid="1827">
+    <informativeText>Abstract:  The Mesh Provisioning Service allows a Provisioning Client to provision a Provisioning Server to allow it to participate in the mesh network.  </informativeText>
+    <capabilities>
+      <capability>mesh_provisioning_service</capability>
+    </capabilities>
+    <characteristic name="Mesh Provisioning Data In" sourceId="com.silabs.characteristic.mesh_provisioning_data_in" uuid="2adb">
+      <informativeText>Abstract:  The Mesh Provisioning Data In characteristic can be written to send a Proxy PDU message containing Provisioning PDU to the Provisioning Server.  </informativeText>
+      <value length="0" type="user" variable_length="false"/>
+      <properties write_no_response="true" write_no_response_requirement="mandatory"/>
+    </characteristic>
+    <characteristic name="Mesh Provisioning Data Out" sourceId="com.silabs.characteristic.mesh_provisioning_data_out" uuid="2adc">
+      <informativeText>Abstract:  The Mesh Provisioning Data Out characteristic can be notified to send a Proxy PDU message containing Provisioning PDU from a Provisioning Server to a Provisioning Client.  </informativeText>
+      <value length="0" type="user" variable_length="false"/>
+      <properties notify="true" notify_requirement="mandatory"/>
+    </characteristic>
+  </service>
+  <service advertise="true" name="Mesh Proxy Service" requirement="mandatory" sourceId="com.silabs.service.mesh_proxy" type="primary" uuid="1828">
+    <informativeText>Abstract:  The Mesh Proxy Service is used to enable a server to send and receive Proxy PDUs with a client.  </informativeText>
+    <capabilities>
+      <capability>mesh_proxy_service</capability>
+    </capabilities>
+    <characteristic name="Mesh Proxy Data In" sourceId="com.silabs.characteristic.mesh_proxy_data_in" uuid="2add">
+      <informativeText>Abstract:  The Mesh Proxy Data In characteristic is used by the client to send Proxy PDUs to the server  </informativeText>
+      <value length="0" type="user" variable_length="false"/>
+      <properties write_no_response="true" write_no_response_requirement="mandatory"/>
+    </characteristic>
+    <characteristic name="Mesh Proxy Data Out" sourceId="com.silabs.characteristic.mesh_proxy_data_out" uuid="2ade">
+      <informativeText>Abstract:  The Mesh Proxy Data Out characteristic is used by the server to send Proxy PDUs to the client.  </informativeText>
+      <value length="0" type="user" variable_length="false"/>
+      <properties notify="true" notify_requirement="mandatory"/>
+    </characteristic>
+  </service>
+</gatt>
+}
+{setupId:btMeshConfigurator
+\{
+  "COMMENT": "",
+  "Composition Data": \{
+    "CID": "0x038F",
+    "PID": "0x0379",
+    "VID": "0x0001",
+    "CRPL": "0x0020",
+    "Features": "0x0007",
+    "Elements": [
+      \{
+        "Name": "Primary Element",
+        "Loc": "0x0000",
+        "NumS": "11",
+        "NumV": "0",
+        "SIG Models": [
+          "1006",
+          "Generic Power OnOff Server",
+          "1007",
+          "Generic Power OnOff Setup Server",
+          "1002",
+          "Generic Level Server",
+          "1304",
+          "Light CTL Setup Server",
+          "1303",
+          "Light CTL Server",
+          "2",
+          "Health Server",
+          "1301",
+          "Light Lightness Setup Server",
+          "1000",
+          "Generic OnOff Server",
+          "0",
+          "Configuration Server",
+          "1300",
+          "Light Lightness Server",
+          "1004",
+          "Generic Default Transition Time Server"]
+        ,
+        "Vendor Models": [
+          ]
+      \},
+      \{
+        "Name": "Secondary Element",
+        "Loc": "0x0000",
+        "NumS": "2",
+        "NumV": "0",
+        "SIG Models": [
+          "1002",
+          "Generic Level Server",
+          "1306",
+          "Light CTL Temperature Server"]
+        ,
+        "Vendor Models": [
+          ]
+      \}]
+  \},
+  "Memory configuration": \{
+    "MAX_ELEMENTS": "2",
+    "MAX_MODELS": "13",
+    "MAX_APP_BINDS": "4",
+    "MAX_SUBSCRIPTIONS": "4",
+    "MAX_NETKEYS": "4",
+    "MAX_APPKEYS": "4",
+    "MAX_DEVKEYS": "1",
+    "NET_CACHE_SIZE": "16",
+    "RPL_SIZE": "32",
+    "MAX_SEND_SEGS": "4",
+    "MAX_RECV_SEGS": "4",
+    "MAX_VAS": "4",
+    "MAX_PROV_SESSIONS": "2",
+    "MAX_PROV_BEARERS": "2",
+    "MAX_GATT_CONNECTIONS": "3",
+    "GATT_TXQ_SIZE": "4",
+    "MAX_PROVISIONED_DEVICES": "0",
+    "MAX_PROVISIONED_DEVICE_NETKEYS": "0",
+    "MAX_FOUNDATION_CLIENT_CMDS": "0",
+    "MAX_FRIENDSHIPS": "1",
+    "FRIEND_MAX_SUBS_LIST": "5",
+    "FRIEND_MAX_TOTAL_CACHE": "5",
+    "FRIEND_MAX_SINGLE_CACHE": "5"
+  \}
+\}
+}
+{setupId:callbackConfiguration
+}
+{setupId:hwConfig
+featureLevel=1
+active=true
+}
+{setupId:macros
+}
+{setupId:mpsi
+- mappings
+- custom messages
+}
+{setupId:quizz
+}
+
+# Plugin options
