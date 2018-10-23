@@ -157,7 +157,8 @@ static void gattc_evt_dispatch(ble_evt_t *p_ble_evt)
 
 	case BLE_GATTC_EVT_HVX:
         evt = MIBLE_GATTC_EVT_INDICATION;
-        ble_gattc_evt_hvx_t hvx = p_ble_evt->evt.gattc_evt.params.hvx;
+        ble_gattc_evt_hvx_t hvx;
+        hvx = p_ble_evt->evt.gattc_evt.params.hvx;
 		if (hvx.type == BLE_GATT_HVX_INDICATION)
 			evt = MIBLE_GATTC_EVT_INDICATION;
 		else if (hvx.type == BLE_GATT_HVX_NOTIFICATION)
@@ -171,7 +172,8 @@ static void gattc_evt_dispatch(ble_evt_t *p_ble_evt)
     case BLE_GATTC_EVT_CHAR_DISC_RSP:
         evt = MIBLE_GATTC_EVT_CHR_DISCOVER_RESP;
         MI_LOG_INFO("char disc cnt %d\n", p_ble_evt->evt.gattc_evt.params.char_disc_rsp.count);
-        ble_gattc_char_t chars = p_ble_evt->evt.gattc_evt.params.char_disc_rsp.chars[0];
+        ble_gattc_char_t chars;
+        chars = p_ble_evt->evt.gattc_evt.params.char_disc_rsp.chars[0];
         gattc_params.char_disc_rsp.value_handle = chars.handle_value;
 		
         sd_ble_uuid_encode(&chars.uuid, &uuid_len, uuid128);

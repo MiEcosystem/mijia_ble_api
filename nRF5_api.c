@@ -29,7 +29,7 @@
 #include "app_timer.h"
 #include "app_util_platform.h"
 #if (NRF_SD_BLE_API_VERSION == 6)
-#include "SDK15.1.0_patch/nrf_drv_twi_patched.h"
+#include "SDK15.2.0_patch/nrf_drv_twi_patched.h"
 static uint8_t adv_handle = 0xFF;
 static uint8_t is_advertising;
 static uint8_t adv_data[31];
