@@ -38,7 +38,7 @@
  *
  */
 
-#include "SDK15.1.0_patch/nrf_drv_twi_patched.h"
+#include "SDK15.2.0_patch/nrf_drv_twi_patched.h"
 #include <nrf_delay.h>
 #include <hal/nrf_gpio.h>
 

@@ -12,7 +12,7 @@
 #define MI_LOG_MODULE_NAME "nRF"
 #include "mible_log.h"
 
-static void gap_evt_dispatch(ble_evt_t *p_ble_evt)
+static void gap_evt_dispatch(ble_evt_t const *p_ble_evt)
 {
 	static uint16_t conn_handle = BLE_CONN_HANDLE_INVALID;
 	uint8_t gap_evt_availble = 0;
@@ -86,7 +86,7 @@ static void gap_evt_dispatch(ble_evt_t *p_ble_evt)
 	
 }
 
-static void gatts_evt_dispatch(ble_evt_t *p_ble_evt)
+static void gatts_evt_dispatch(ble_evt_t const *p_ble_evt)
 {
     bool gatts_evt_availble = false;
 	mible_gatts_evt_t evt;
@@ -95,7 +95,7 @@ static void gatts_evt_dispatch(ble_evt_t *p_ble_evt)
 	switch(p_ble_evt->header.evt_id) {
 	case BLE_GATTS_EVT_WRITE:
 		gatts_params.write.value_handle = p_ble_evt->evt.gatts_evt.params.write.handle;
-		gatts_params.write.data = p_ble_evt->evt.gatts_evt.params.write.data;
+		gatts_params.write.data = (uint8_t*)p_ble_evt->evt.gatts_evt.params.write.data;
 		gatts_params.write.len = p_ble_evt->evt.gatts_evt.params.write.len;
 		gatts_params.write.offset = p_ble_evt->evt.gatts_evt.params.write.offset;
 		if (p_ble_evt->evt.gatts_evt.params.write.auth_required)
@@ -112,7 +112,7 @@ static void gatts_evt_dispatch(ble_evt_t *p_ble_evt)
 			evt = MIBLE_GATTS_EVT_READ_PERMIT_REQ;
 		} else if (p_ble_evt->evt.gatts_evt.params.authorize_request.type == BLE_GATTS_AUTHORIZE_TYPE_WRITE) {
 			gatts_params.write.value_handle = p_ble_evt->evt.gatts_evt.params.authorize_request.request.write.handle;
-			gatts_params.write.data = p_ble_evt->evt.gatts_evt.params.authorize_request.request.write.data;
+			gatts_params.write.data = (uint8_t*)p_ble_evt->evt.gatts_evt.params.authorize_request.request.write.data;
 			gatts_params.write.len = p_ble_evt->evt.gatts_evt.params.authorize_request.request.write.len;
 			gatts_params.write.offset = p_ble_evt->evt.gatts_evt.params.authorize_request.request.write.offset;
 			evt = MIBLE_GATTS_EVT_WRITE_PERMIT_REQ;
@@ -133,7 +133,7 @@ static void gatts_evt_dispatch(ble_evt_t *p_ble_evt)
 		mible_gatts_event_callback(evt, &gatts_params) ;
 }
 
-static void gattc_evt_dispatch(ble_evt_t *p_ble_evt)
+static void gattc_evt_dispatch(ble_evt_t const *p_ble_evt)
 {
 	uint8_t gattc_evt_availble = 0;
 	mible_gattc_evt_t evt;
@@ -197,7 +197,7 @@ static void gattc_evt_dispatch(ble_evt_t *p_ble_evt)
 
 }
 
-void mible_on_ble_evt(ble_evt_t *p_ble_evt)
+void mible_on_ble_evt(ble_evt_t const *p_ble_evt)
 {
 	gap_evt_dispatch(p_ble_evt);
 	gatts_evt_dispatch(p_ble_evt);

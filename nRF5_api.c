@@ -325,7 +325,6 @@ mible_status_t mible_gap_adv_stop(void)
     errno = errno == NRF_SUCCESS ? MI_SUCCESS : MI_ERR_INVALID_STATE;
     return err_code_convert(errno);
 #else
-    uint32_t errno;
     errno = sd_ble_gap_adv_stop(adv_handle);
     errno = errno == NRF_SUCCESS ? MI_SUCCESS : MI_ERR_INVALID_STATE;
     is_advertising = 0;
