@@ -32,10 +32,13 @@
 #include "SDK15.2.0_patch/nrf_drv_twi_patched.h"
 static uint8_t adv_handle = 0xFF;
 static uint8_t is_advertising;
-static uint8_t adv_data[31];
+static uint8_t adv_data_1[31];
+static uint8_t adv_data_2[31];
 static uint8_t adv_data_len;
-static uint8_t scan_rsp_data[31];
+static uint8_t scan_rsp_data_1[31];
+static uint8_t scan_rsp_data_2[31];
 static uint8_t scan_rsp_data_len;
+static uint8_t need_change_adv_buffer = false;
 #else
 #include "SDK12.3.0_patch/nrf_drv_twi_patched.h"
 #endif
@@ -233,6 +236,9 @@ mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_adv_param)
         errno = sd_ble_gap_adv_set_configure(&adv_handle, NULL, &adv_params);
         MI_ERR_CHECK(errno);
     } else {
+		uint8_t *adv_data 		= adv_data_1;
+		uint8_t *scan_rsp_data 	= scan_rsp_data_1;
+		
         ble_gap_adv_data_t gap_data = {0};
         gap_data.adv_data.p_data = adv_data;
         gap_data.adv_data.len    = adv_data_len;
@@ -269,6 +275,9 @@ mible_status_t mible_gap_adv_data_set(uint8_t const * p_data, uint8_t dlen, uint
     errno = sd_ble_gap_adv_data_set(p_data, dlen, p_sr_data, srdlen);
     MI_ERR_CHECK(errno);
 #else
+	uint8_t *adv_data 		= need_change_adv_buffer? adv_data_1 : adv_data_2;
+	uint8_t *scan_rsp_data 	= need_change_adv_buffer? scan_rsp_data_1 : scan_rsp_data_2;
+	
     if (p_data != NULL) {
         if (dlen == 0) {
             memset(adv_data, 0, sizeof(adv_data));
@@ -298,6 +307,7 @@ mible_status_t mible_gap_adv_data_set(uint8_t const * p_data, uint8_t dlen, uint
     MI_LOG_ERROR("adv len %d, scan len %d\n", adv_data_len, scan_rsp_data_len);
     if (is_advertising) {
         sd_ble_gap_adv_set_configure(&adv_handle, &gap_data, NULL);
+		need_change_adv_buffer = !need_change_adv_buffer;
     } else {
         ble_gap_adv_params_t adv_param = {0};
         adv_param.interval = 0xA0;
