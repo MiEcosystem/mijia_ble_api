@@ -152,8 +152,8 @@ typedef struct
     uint32_t                sda;                 ///< SDA pin number.
     nrf_drv_twi_frequency_t frequency;           ///< TWI frequency.
     uint8_t                 interrupt_priority;  ///< Interrupt priority.
-    bool                    clear_bus_init;      ///< Clear bus during init.
     bool                    hold_bus_uninit;     ///< Hold pull up state on gpio pins after uninit.
+    bool                    clear_bus_init;      ///< Clear bus during init.
 } nrf_drv_twi_config_t;
 
 /**
