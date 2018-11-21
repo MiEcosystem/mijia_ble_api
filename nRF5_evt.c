@@ -60,6 +60,7 @@ static void gap_evt_dispatch(ble_evt_t const *p_ble_evt)
 		gap_evt_availble = 1;
 		break;
 
+#ifndef S112
 	case BLE_GAP_EVT_ADV_REPORT:
 		evt = MIBLE_GAP_EVT_ADV_REPORT;
 		ble_gap_evt_adv_report_t adv = p_ble_evt->evt.gap_evt.params.adv_report;
@@ -79,6 +80,8 @@ static void gap_evt_dispatch(ble_evt_t const *p_ble_evt)
 
 		gap_evt_availble = 1;
 		break;
+#endif
+
 	}
 	
 	if (gap_evt_availble)

@@ -40,6 +40,12 @@ static uint8_t scan_rsp_data_len;
 #include "SDK12.3.0_patch/nrf_drv_twi_patched.h"
 #endif
 
+#ifdef S112
+#define SUPPORT_CENTRAL 0
+#else
+#define SUPPORT_CENTRAL 1
+#endif
+
 #include "mi_psm.h"
 
 #define BLE_CONN_CFG_TAG                1
@@ -129,7 +135,8 @@ mible_status_t mible_gap_address_get(mible_addr_t mac)
 mible_status_t mible_gap_scan_start(mible_gap_scan_type_t scan_type,
     mible_gap_scan_param_t scan_param)
 {   
-    uint32_t errno;
+    uint32_t errno = MI_ERR_INVALID_STATE;
+#if (SUPPORT_CENTRAL==1)
     ble_gap_scan_params_t  sdk_param = {0};
     sdk_param.active = scan_type == MIBLE_SCAN_TYPE_ACTIVE ? 1 : 0;
     sdk_param.interval = scan_param.scan_interval;
@@ -146,6 +153,7 @@ mible_status_t mible_gap_scan_start(mible_gap_scan_type_t scan_type,
 
     errno = sd_ble_gap_scan_start(&sdk_param, &adv_report);
 #endif
+#endif // SUPPORT_CENTRAL
     return err_code_convert(errno);
 }
 
@@ -157,8 +165,10 @@ mible_status_t mible_gap_scan_start(mible_gap_scan_type_t scan_type,
  * */
 mible_status_t mible_gap_scan_stop(void)
 {
-    uint32_t errno;
+    uint32_t errno = MI_ERR_INVALID_STATE;
+#if (SUPPORT_CENTRAL==1)
     errno = sd_ble_gap_scan_stop() == MI_SUCCESS ?  MI_SUCCESS : MI_ERR_INVALID_STATE;
+#endif
     return err_code_convert(errno); 
 }
 
@@ -359,7 +369,8 @@ mible_status_t mible_gap_adv_stop(void)
 mible_status_t mible_gap_connect(mible_gap_scan_param_t scan_param,
     mible_gap_connect_t conn_param)
 {
-    uint32_t errno;
+    uint32_t errno = MI_ERR_INVALID_STATE;
+#if (SUPPORT_CENTRAL==1)
     ble_gap_addr_t mac;
     ble_gap_scan_params_t sdk_scan_param = {0};
     ble_gap_conn_params_t sdk_conn_param = {0};
@@ -387,6 +398,8 @@ mible_status_t mible_gap_connect(mible_gap_scan_param_t scan_param,
 #else
     errno = sd_ble_gap_connect(&mac, &sdk_scan_param, &sdk_conn_param, BLE_CONN_CFG_TAG_DEFAULT);
 #endif
+
+#endif // SUPPORT_CENTRAL
     return err_code_convert(errno);
 }
 
