@@ -1,7 +1,5 @@
 Mijia BLE API ChangeLog (Sorted per branch, date)
 
-=  release-1.0 : tag mible-api-1.0.x released xxxx-xx-xx
-
 =  release-1.0 : tag mible-api-1.0.2 released 2018-12-27
 	* modify rssi format
 	
