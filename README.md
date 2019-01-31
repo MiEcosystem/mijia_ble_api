@@ -8,6 +8,9 @@ master分支维护最新提交，每次发版本，会merge到release分支上�
 release分支为维护正式发布的版本，每个版本会有单独的tag标识，各芯片原厂分支必须从release分支的tag上checkout。 
 release1.0 分支主要面向端设备应用。  release2.x分支补充完善gattc部分，主要面向网关设备应用。
 
+## develop-2.x分支
+增加网关api后的工作分支，由米家开发人员维护。每次发版本，会merge到release分支上。
+
 ## 芯片厂分支
 各芯片平台分支从release分支checkout得到。 
 
