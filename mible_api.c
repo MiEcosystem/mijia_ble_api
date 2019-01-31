@@ -22,83 +22,154 @@
 
 /* GAP, GATTS, GATTC event callback function */
 static uint8_t m_gap_users, m_gattc_users, m_gatts_users, m_arch_users;
-static mible_gap_callback_t m_gap_cb_table[MIBLE_MAX_USERS];
-static mible_gatts_callback_t m_gatts_cb_table[MIBLE_MAX_USERS];
-static mible_gattc_callback_t m_gattc_cb_table[MIBLE_MAX_USERS];
-static mible_arch_callback_t m_arch_cb_table[MIBLE_MAX_USERS];
+static mible_gap_callback_t m_gap_cb_table[MIBLE_MAX_USERS] = {0};
+static mible_gatts_callback_t m_gatts_cb_table[MIBLE_MAX_USERS] = {0};
+static mible_gattc_callback_t m_gattc_cb_table[MIBLE_MAX_USERS] = {0};
+static mible_arch_callback_t m_arch_cb_table[MIBLE_MAX_USERS] = {0};
+int init_state = 0;
 
 int mible_gap_register(mible_gap_callback_t cb)
 {
-    int ret;
-
     CRITICAL_SECTION_ENTER();
-    if (m_gap_users == MIBLE_MAX_USERS) {
-        ret = MI_ERR_RESOURCES;
-    } else {
-        m_gap_cb_table[m_gap_users] = cb;
-        m_gap_users++;
+	int i=0;
+	while(i < MIBLE_MAX_USERS){
+		if(m_gap_cb_table[i] == 0){
+			m_gap_cb_table[i] = cb;
+			m_gap_users++; 
+			CRITICAL_SECTION_EXIT();
+			return MI_SUCCESS;
+		}
+		i++;
+	}
+	CRITICAL_SECTION_EXIT();
+	return -1;  // full 
 
-        ret = MI_SUCCESS;
-    }
-    CRITICAL_SECTION_EXIT();
+}
 
-    return ret;
+int mible_gap_unregister(mible_gap_callback_t cb)
+{
+	
+	CRITICAL_SECTION_ENTER();
+	int i=0;
+	while(i < MIBLE_MAX_USERS){
+		if(m_gap_cb_table[i] == cb){
+			m_gap_cb_table[i] = 0;
+			m_gap_users--; 
+			CRITICAL_SECTION_EXIT();
+			return MI_SUCCESS;
+		}
+		i++;
+	}
+	CRITICAL_SECTION_EXIT();
+	return -1;
 }
 
 int mible_gattc_register(mible_gattc_callback_t cb)
 {
-    int ret;
-
     CRITICAL_SECTION_ENTER();
-    if (m_gattc_users == MIBLE_MAX_USERS) {
-        ret = MI_ERR_RESOURCES;
-    } else {
-        m_gattc_cb_table[m_gattc_users] = cb;
-        m_gattc_users++;
+	int i=0;
+	while(i < MIBLE_MAX_USERS){
+		if(m_gattc_cb_table[i] == 0){
+			m_gattc_cb_table[i] = cb;
+			m_gattc_users++; 
+			CRITICAL_SECTION_EXIT();
+			return MI_SUCCESS;
+		}
+		i++;
+	}
+	CRITICAL_SECTION_EXIT();
+	return -1;  // full 
 
-        ret = MI_SUCCESS;
-    }
-    CRITICAL_SECTION_EXIT();
+}
 
-    return ret;
+int mible_gattc_unregister(mible_gattc_callback_t cb)
+{
+	
+	CRITICAL_SECTION_ENTER();
+	int i=0;
+	while(i < MIBLE_MAX_USERS){
+		if(m_gattc_cb_table[i] == cb){
+			m_gattc_cb_table[i] = 0;
+			m_gattc_users--; 
+			CRITICAL_SECTION_EXIT();
+			return MI_SUCCESS;
+		}
+		i++;
+	}
+	CRITICAL_SECTION_EXIT();
+	return -1;
 }
 
 int mible_gatts_register(mible_gatts_callback_t cb)
 {
-    int ret;
-
     CRITICAL_SECTION_ENTER();
-    if (m_gatts_users == MIBLE_MAX_USERS) {
-        ret = MI_ERR_RESOURCES;
-    } else {
-        m_gatts_cb_table[m_gatts_users] = cb;
-        m_gatts_users++;
+	int i=0;
+	while(i < MIBLE_MAX_USERS){
+		if(m_gatts_cb_table[i] == 0){
+			m_gatts_cb_table[i] = cb;
+			m_gatts_users++; 
+			CRITICAL_SECTION_EXIT();
+			return MI_SUCCESS;
+		}
+		i++;
+	}
+	CRITICAL_SECTION_EXIT();
+	return -1;  // full 
+	
 
-        ret = MI_SUCCESS;
-    }
-    CRITICAL_SECTION_EXIT();
-
-    return ret;
+}
+int mible_gatts_unregister(mible_gatts_callback_t cb)
+{
+	CRITICAL_SECTION_ENTER();
+	int i=0;
+	while(i < MIBLE_MAX_USERS){
+		if(m_gatts_cb_table[i] == cb){
+			m_gatts_cb_table[i] = 0;
+			m_gatts_users--; 
+			CRITICAL_SECTION_EXIT();
+			return MI_SUCCESS;
+		}
+		i++;
+	}
+	CRITICAL_SECTION_EXIT();
+	return -1;
 }
 
 int mible_arch_register(mible_arch_callback_t cb)
 {
-    int ret;
-
     CRITICAL_SECTION_ENTER();
-    if (m_arch_users == MIBLE_MAX_USERS) {
-        ret = MI_ERR_RESOURCES;
-    } else {
-        m_arch_cb_table[m_arch_users] = cb;
-        m_arch_users++;
-
-        ret = MI_SUCCESS;
-    }
-    CRITICAL_SECTION_EXIT();
-
-    return ret;
+	int i=0;
+	while(i < MIBLE_MAX_USERS){
+		if(m_arch_cb_table[i] == 0){
+			m_arch_cb_table[i] = cb;
+			m_arch_users++; 
+			CRITICAL_SECTION_EXIT();
+			return MI_SUCCESS;
+		}
+		i++;
+	}
+	CRITICAL_SECTION_EXIT();
+	return -1;  // full 
 }
 
+
+int mible_arch_unregister(mible_arch_callback_t cb)
+{
+	
+	CRITICAL_SECTION_ENTER();
+	int i=0;
+	while(i < MIBLE_MAX_USERS){
+		if(m_arch_cb_table[i] == cb){
+			m_arch_cb_table[i] = 0;
+			m_arch_users--; 
+			CRITICAL_SECTION_EXIT();
+			return MI_SUCCESS;
+		}
+		i++;
+	}
+	CRITICAL_SECTION_EXIT();
+	return -1;
+}
 /**
  *@brief    This function is MIBLE GAP related event callback function.
  *@param    [in] evt : GAP EVENT
@@ -113,7 +184,7 @@ int mible_arch_register(mible_arch_callback_t cb)
 void mible_gap_event_callback(mible_gap_evt_t evt, mible_gap_evt_param_t* param)
 {
     for (int user = 0; user < MIBLE_MAX_USERS; user++) {
-        if (m_gap_cb_table[user] != NULL) {
+        if (m_gap_cb_table[user] != 0) {
             m_gap_cb_table[user](evt, param);
         }
     }
@@ -132,7 +203,7 @@ void mible_gatts_event_callback(mible_gatts_evt_t evt,
         mible_gatts_evt_param_t* param)
 {
     for (int user = 0; user < MIBLE_MAX_USERS; user++) {
-        if (m_gatts_cb_table[user] != NULL) {
+        if (m_gatts_cb_table[user] != 0) {
             m_gatts_cb_table[user](evt, param);
         }
     }
@@ -151,7 +222,7 @@ void mible_gattc_event_callback(mible_gattc_evt_t evt,
         mible_gattc_evt_param_t* param)
 {
     for (int user = 0; user < MIBLE_MAX_USERS; user++) {
-        if (m_gattc_cb_table[user] != NULL) {
+        if (m_gattc_cb_table[user] != 0) {
             m_gattc_cb_table[user](evt, param);
         }
     }
@@ -159,16 +230,16 @@ void mible_gattc_event_callback(mible_gattc_evt_t evt,
 
 /*
  *@brief    This function is mible_arch api related event callback function.
- *@param    [in] evt: asynchronous function complete event 
- *          [in] param: the return of asynchronous function 
- *@note     You should support this function in corresponding asynchronous function. 
- *          For now, mible_gatts_service_int and mible_record_write is asynchronous. 
+ *@param    [in] evt: asynchronous function complete event
+ *          [in] param: the return of asynchronous function
+ *@note     You should support this function in corresponding asynchronous function.
+ *          For now, mible_gatts_service_int and mible_record_write is asynchronous.
  * */
 void mible_arch_event_callback(mible_arch_event_t evt,
         mible_arch_evt_param_t* param)
 {
     for (int user = 0; user < MIBLE_MAX_USERS; user++) {
-        if (m_arch_cb_table[user] != NULL) {
+        if (m_arch_cb_table[user] != 0) {
             m_arch_cb_table[user](evt, param);
         }
     }
@@ -183,7 +254,7 @@ void mible_arch_event_callback(mible_arch_event_t evt,
  * @param   [out] mac: pointer to data
  * @return  MI_SUCCESS          The requested mac address were written to mac
  *          MI_ERR_INTERNAL     No mac address found.
- * @note:   You should copy gap mac to mac[6]  
+ * @note:   You should copy gap mac to mac[6]
  * */
 __WEAK mible_status_t mible_gap_address_get(mible_addr_t mac)
 {
@@ -287,8 +358,7 @@ __WEAK mible_status_t mible_gap_adv_stop(void)
  *          The connection result is given by MIBLE_GAP_EVT_CONNECTED
  * event
  * */
-__WEAK mible_status_t mible_gap_connect(mible_gap_scan_param_t scan_param,
-        mible_gap_connect_t conn_param)
+__WEAK mible_status_t mible_gap_connect(mible_device_param_t *device, mible_gap_conn_param_t *p_conn_param)
 {
     return MI_SUCCESS;
 }
@@ -334,8 +404,8 @@ __WEAK mible_status_t mible_gap_update_conn_params(uint16_t conn_handle,
 
 /**
  * @brief   Add a Service to a GATT server
- * @param   [in|out] p_server_db: pointer to mible service data type 
- * of mible_gatts_db_t, see TYPE mible_gatts_db_t for details. 
+ * @param   [in|out] p_server_db: pointer to mible service data type
+ * of mible_gatts_db_t, see TYPE mible_gatts_db_t for details.
  * @return  MI_SUCCESS             Successfully added a service declaration.
  *          MI_ERR_INVALID_ADDR    Invalid pointer supplied.
  *          MI_ERR_INVALID_PARAM   Invalid parameter(s) supplied.
@@ -424,7 +494,7 @@ __WEAK mible_status_t mible_gatts_notify_or_indicate(uint16_t conn_handle,
 /**
  * @brief   Respond to a Read/Write user authorization request.
  * @param   [in] conn_handle: conn handle
- *          [in] status:  1: permit to change value ; 0: reject to change value 
+ *          [in] status:  1: permit to change value ; 0: reject to change value
  *          [in] char_value_handle: characteristic handle
  *          [in] offset: the offset from which the attribute value has to
  * be updated
@@ -454,87 +524,55 @@ __WEAK mible_status_t mible_gatts_rw_auth_reply(uint16_t conn_handle,
  */
 
 /**
- * @brief   Discover primary service by service UUID.
+ * @brief   Discover service by service UUID.
  * @param   [in] conn_handle: connect handle
- *          [in] handle_range: search range for primary sevice
- *discovery procedure
- *          [in] p_srv_uuid: pointer to service uuid
+ *          [in] srv_uuid: service uuid
  * @return  MI_SUCCESS             Successfully started or resumed the Primary
  *Service Discovery procedure.
  *          MI_ERR_INVALID_ADDR    Invalid pointer supplied.
  *          MI_ERR_INVALID_STATE   Invalid Connection State.
  *          MI_ERR_BUSY            Procedure already in progress.
  *          MIBLE_ERR_INVALID_CONN_HANDLE  Invaild connection handle.
- * @note    The response is given through
- *MIBLE_GATTC_EVT_PRIMARY_SERVICE_DISCOVER_RESP event
+ * @note    The response is given through MIBLE_GATTC_EVT_DISCOVERY_RSP event
  * */
-__WEAK mible_status_t mible_gattc_primary_service_discover_by_uuid(
-        uint16_t conn_handle, mible_handle_range_t handle_range,
-        mible_uuid_t* p_srv_uuid)
+__WEAK mible_status_t mible_gattc_service_discovery(uint16_t conn_handle, mible_uuid_t srv_uuid)
 {
-
-    return MI_SUCCESS;
+	return MI_SUCCESS;
 }
-
 /**
- * @brief   Discover characteristic by characteristic UUID.
+ * @brief   set peer device notification and indication enable or disable.
  * @param   [in] conn_handle: connect handle
- *          [in] handle_range: search range for characteristic discovery
- * procedure
- *          [in] p_char_uuid: pointer to characteristic uuid
- * @return  MI_SUCCESS             Successfully started or resumed the
- * Characteristic Discovery procedure.
+ *          [in] char_handle: characteristic handle
+ *			[in] desc_handle: cccd handle
+ *			[in] value: cccd value
+ * @return  MI_SUCCESS             Successfully started or resumed the Primary
+ *Service Discovery procedure.
  *          MI_ERR_INVALID_ADDR    Invalid pointer supplied.
  *          MI_ERR_INVALID_STATE   Invalid Connection State.
  *          MI_ERR_BUSY            Procedure already in progress.
- *          MIBLE_ERR_INVALID_CONN_HANDLE   Invaild connection handle.
- * @note    The response is given through
- * MIBLE_GATTC_CHR_DISCOVER_BY_UUID_RESP event
+ *          MIBLE_ERR_INVALID_CONN_HANDLE  Invaild connection handle.
+ * @note    write peer with response, the response is given through MIBLE_GATTC_EVT_WRITE_RSP event
  * */
-__WEAK mible_status_t mible_gattc_char_discover_by_uuid(uint16_t conn_handle,
-        mible_handle_range_t handle_range, mible_uuid_t* p_char_uuid)
+__WEAK mible_status_t mible_gattc_set_cccd(uint16_t conn_handle, uint16_t char_handle,
+       uint16_t desc_handle, uint16_t value)
 {
-    return MI_SUCCESS;
+	return MI_SUCCESS;
 }
 
-/**
- * @brief   Discover characteristic client configuration descriptor
- * @param   [in] conn_handle: connection handle
- *          [in] handle_range: search range
- * @return  MI_SUCCESS             Successfully started Clien Config Descriptor
- * Discovery procedure.
- *          MI_ERR_INVALID_ADDR    Invalid pointer supplied.
- *          MI_ERR_INVALID_STATE   Invalid Connection State.
- *          MI_ERR_BUSY            Procedure already in progress.
- *          MIBLE_ERR_INVALID_CONN_HANDLE   Invaild connection handle.
- * @note    Maybe run the charicteristic descriptor discover procedure firstly,
- * then pick up the client configuration descriptor which att type is 0x2092
- *          The response is given through MIBLE_GATTC_CCCD_DISCOVER_RESP
- * event
- *          Only return the first cccd handle within the specified
- * range.
- * */
-__WEAK mible_status_t mible_gattc_clt_cfg_descriptor_discover(
-        uint16_t conn_handle, mible_handle_range_t handle_range)
-{
-    return MI_SUCCESS;
-}
+
 
 /**
- * @brief   Read characteristic value by UUID
+ * @brief   Read characteristic value by handle
  * @param   [in] conn_handle: connnection handle
- *          [in] handle_range: search range
- *          [in] p_char_uuid: pointer to characteristic uuid
+ *          [in] char_handle: characteristic handle 
  * @return  MI_SUCCESS             Successfully started or resumed the Read
  * using Characteristic UUID procedure.
  *          MI_ERR_INVALID_STATE   Invalid Connection State.
  *          MI_ERR_BUSY            Procedure already in progress.
  *          MIBLE_ERR_INVALID_CONN_HANDLE   Invaild connection handle.
- * @note    The response is given through
- * MIBLE_GATTC_EVT_READ_CHR_VALUE_BY_UUID_RESP event
+ * @note    The response is given through MIBLE_GATTC_EVT_READ_RSP event
  * */
-__WEAK mible_status_t mible_gattc_read_char_value_by_uuid(uint16_t conn_handle,
-        mible_handle_range_t handle_range, mible_uuid_t *p_char_uuid)
+__WEAK mible_status_t mible_gattc_read_value(uint16_t conn_handle, uint16_t char_handle)
 {
     return MI_SUCCESS;
 }
@@ -542,7 +580,7 @@ __WEAK mible_status_t mible_gattc_read_char_value_by_uuid(uint16_t conn_handle,
 /**
  * @brief   Write value by handle with response
  * @param   [in] conn_handle: connection handle
- *          [in] handle: handle to the attribute to be written.
+ *          [in] char_handle: handle to the attribute to be written.
  *          [in] p_value: pointer to data
  *          [in] len: data length
  * @return  MI_SUCCESS             Successfully started the Write with response
@@ -555,8 +593,8 @@ __WEAK mible_status_t mible_gattc_read_char_value_by_uuid(uint16_t conn_handle,
  * @note    The response is given through MIBLE_GATTC_EVT_WRITE_RESP event
  *
  * */
-__WEAK mible_status_t mible_gattc_write_with_rsp(uint16_t conn_handle,
-        uint16_t att_handle, uint8_t* p_value, uint8_t len)
+__WEAK mible_status_t mible_gattc_write_value(uint16_t conn_handle, uint16_t char_handle,
+        uint8_t* p_value, uint8_t len)
 {
     return MI_SUCCESS;
 }
@@ -564,7 +602,7 @@ __WEAK mible_status_t mible_gattc_write_with_rsp(uint16_t conn_handle,
 /**
  * @brief   Write value by handle without response
  * @param   [in] conn_handle: connection handle
- *          [in] att_handle: handle to the attribute to be written.
+ *          [in] char_handle: handle to the attribute to be written.
  *          [in] p_value: pointer to data
  *          [in] len: data length
  * @return  MI_SUCCESS             Successfully started the Write Cmd procedure.
@@ -575,8 +613,8 @@ __WEAK mible_status_t mible_gattc_write_with_rsp(uint16_t conn_handle,
  *          MIBLE_ERR_INVALID_CONN_HANDLE  Invaild connection handle.
  * @note    no response
  * */
-__WEAK mible_status_t mible_gattc_write_cmd(uint16_t conn_handle,
-        uint16_t att_handle, uint8_t* p_value, uint8_t len)
+__WEAK mible_status_t mible_gattc_write_without_response(uint16_t conn_handle, uint16_t char_handle,
+        uint8_t* p_value, uint8_t len)
 {
     return MI_SUCCESS;
 }
@@ -653,14 +691,14 @@ __WEAK mible_status_t mible_timer_stop(void* timer_id)
  */
 
 /**
- * @brief   Create a record in flash 
- * @param   [in] record_id: identify a record in flash 
+ * @brief   Create a record in flash
+ * @param   [in] record_id: identify a record in flash
  *          [in] len: record length
  * @return  MI_SUCCESS              Create successfully.
  *          MI_ERR_INVALID_LENGTH   Size was 0, or higher than the maximum
  *allowed size.
- *          MI_ERR_NO_MEM,          Not enough flash memory to be assigned 
- *              
+ *          MI_ERR_NO_MEM,          Not enough flash memory to be assigned
+ *
  * */
 __WEAK mible_status_t mible_record_create(uint16_t record_id, uint8_t len)
 {
@@ -669,8 +707,8 @@ __WEAK mible_status_t mible_record_create(uint16_t record_id, uint8_t len)
 
 /**
  * @brief   Delete a record in flash
- * @param   [in] record_id: identify a record in flash  
- * @return  MI_SUCCESS              Delete successfully. 
+ * @param   [in] record_id: identify a record in flash
+ * @return  MI_SUCCESS              Delete successfully.
  *          MI_ERR_INVALID_PARAMS   Invalid record id supplied.
  * */
 __WEAK mible_status_t mible_record_delete(uint16_t record_id)
@@ -707,7 +745,7 @@ __WEAK mible_status_t mible_record_read(uint16_t record_id, uint8_t* p_data,
  * @note    Should use asynchronous mode to implement this function.
  *          The data to be written to flash has to be kept in memory until the
  * operation has terminated, i.e., an event is received.
- *          When record writing complete , call mible_arch_event_callback function and pass MIBLE_ARCH_EVT_RECORD_WRITE_CMP event and result. 
+ *          When record writing complete , call mible_arch_event_callback function and pass MIBLE_ARCH_EVT_RECORD_WRITE_CMP event and result.
  * */
 __WEAK mible_status_t mible_record_write(uint16_t record_id, const uint8_t* p_data,
         uint8_t len)
@@ -756,12 +794,12 @@ __WEAK mible_status_t mible_aes128_encrypt(const uint8_t* key,
 }
 
 /**
- * @brief   Post a task to a task quene, which can be executed in a right place 
+ * @brief   Post a task to a task quene, which can be executed in a right place
  * (maybe a task in RTOS or while(1) in the main function).
- * @param   [in] handler: a pointer to function 
- *          [in] param: function parameters 
+ * @param   [in] handler: a pointer to function
+ *          [in] param: function parameters
  * @return  MI_SUCCESS              Successfully put the handler to quene.
- *          MI_ERR_NO_MEM           The task quene is full. 
+ *          MI_ERR_NO_MEM           The task quene is full.
  *          MI_ERR_INVALID_PARAM    Handler is NULL
  * */
 __WEAK mible_status_t mible_task_post(mible_handler_t handler, void *arg)
@@ -772,7 +810,7 @@ __WEAK mible_status_t mible_task_post(mible_handler_t handler, void *arg)
 /**
  * @brief   Function for executing all enqueued tasks.
  *
- * @note    This function must be called from within the main loop. It will 
+ * @note    This function must be called from within the main loop. It will
  * execute all events scheduled since the last time it was called.
  * */
 __WEAK void mible_tasks_exec(void)
@@ -787,10 +825,10 @@ __WEAK void mible_tasks_exec(void)
 /**
  * @brief   Function for initializing the IIC driver instance.
  * @param   [in] p_config: Pointer to the initial configuration.
- *          [in] handler: Event handler provided by the user. 
+ *          [in] handler: Event handler provided by the user.
  * @return  MI_SUCCESS              Initialized successfully.
  *          MI_ERR_INVALID_PARAM    p_config or handler is a NULL pointer.
- *              
+ *
  * */
 __WEAK mible_status_t mible_iic_init(const iic_config_t * p_config,
         mible_handler_t handler)
@@ -800,8 +838,8 @@ __WEAK mible_status_t mible_iic_init(const iic_config_t * p_config,
 
 /**
  * @brief   Function for uninitializing the IIC driver instance.
- * 
- *              
+ *
+ *
  * */
 __WEAK void mible_iic_uninit(void)
 {
@@ -820,7 +858,7 @@ __WEAK void mible_iic_uninit(void)
  *          MI_ERR_INVALID_PARAM    p_out is not vaild address.
  * @note    This function should be implemented in non-blocking mode.
  *          When tx procedure complete, the handler provided by mible_iic_init() should be called,
- * and the iic event should be passed as a argument. 
+ * and the iic event should be passed as a argument.
  * */
 __WEAK mible_status_t mible_iic_tx(uint8_t addr, uint8_t * p_out, uint16_t len,
 bool no_stop)
@@ -838,7 +876,7 @@ bool no_stop)
  *          MI_ERR_INVALID_PARAM    p_in is not vaild address.
  * @note    This function should be implemented in non-blocking mode.
  *          When rx procedure complete, the handler provided by mible_iic_init() should be called,
- * and the iic event should be passed as a argument. 
+ * and the iic event should be passed as a argument.
  * */
 __WEAK mible_status_t mible_iic_rx(uint8_t addr, uint8_t * p_in, uint16_t len)
 {
