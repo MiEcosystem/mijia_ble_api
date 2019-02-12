@@ -77,6 +77,15 @@ void mible_arch_event_callback(mible_arch_event_t evt,
  * */
 mible_status_t mible_gap_address_get(mible_addr_t mac);
 
+/** 
+ * @brief   Set BLE mac address. 
+ * @param   [in] mac: pointer to data 
+ * @return  MI_SUCCESS          The requested mac address were written to mac 
+ *          MI_ERR_INTERNAL     No mac address found. 
+ * @note:   You should copy mac to gap mac[6] 
+ * */ 
+mible_status_t mible_gap_address_set(mible_addr_t mac); 
+
 /**
  * @brief   Start scanning
  * @param   [in] scan_type: passive or active scaning
