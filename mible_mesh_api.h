@@ -328,6 +328,7 @@ typedef struct{
     uint16_t dst_addr;
     uint16_t netkey_index;
     uint8_t  netkey[MIBLE_MESH_KEY_LEN];
+    uint16_t global_netkey_index;       /* local encrypt netkey index for mesh message */
 }mible_mesh_netkey_params_t;
 
 /* appkey add/update/delete params */
@@ -336,6 +337,8 @@ typedef struct{
     uint16_t netkey_index;
     uint16_t appkey_index;
     uint8_t  appkey[MIBLE_MESH_KEY_LEN];
+    uint16_t global_netkey_index;       /* local encrypt netkey index for mesh message */
+    uint16_t global_appkey_index;       /* local appkey index */
 }mible_mesh_appkey_params_t;
 
 /* model app bind/unbind params */
@@ -343,8 +346,8 @@ typedef struct{
     uint16_t dst_addr;
     uint16_t element_addr;
     uint32_t model_id;      /* mible_mesh_model_id_t */
-    uint16_t netkey_index;
     uint16_t appkey_index;
+    uint16_t global_netkey_index;       /* local encrypt netkey index for mesh message */
 }mible_mesh_model_app_params_t;
 
 /* subscription add/delete/overwrite/delete_all params */
@@ -352,8 +355,8 @@ typedef struct{
     uint16_t dst_addr;
     uint16_t element_addr;
     uint32_t model_id;
-    uint16_t netkey_index;
     mible_mesh_address_t sub_addr;
+    uint16_t global_netkey_index;       /* local encrypt netkey index for mesh message */
 }mible_mesh_subscription_params_t;
 
 /* publication add/delete/overwrite/delete_all params */
@@ -361,7 +364,6 @@ typedef struct{
     uint16_t dst_addr;
     uint16_t element_addr;
     uint32_t model_id;
-    uint16_t netkey_index;
     uint16_t appkey_index;
     mible_mesh_address_t publish_addr;
     uint8_t  pub_ttl;
@@ -369,28 +371,29 @@ typedef struct{
     uint8_t  pub_period;
     uint8_t  pub_retrans_count;
     uint8_t  pub_retrans_intvl_steps;
+    uint16_t global_netkey_index;       /* local encrypt netkey index for mesh message */
 }mible_mesh_publication_params_t;
 
 /* reset node params */
 typedef struct{
     uint16_t dst_addr;
-    uint16_t netkey_index;
+    uint16_t global_netkey_index;       /* local encrypt netkey index for mesh message */
 }mible_mesh_reset_params_t;
 
 /* relay get/set params */
 typedef struct{
     uint16_t dst_addr;
-    uint16_t netkey_index;
     uint8_t  relay;
     uint8_t  retransmit_count;
     uint8_t  retransmit_interval_steps;
+    uint16_t global_netkey_index;       /* local encrypt netkey index for mesh message */
 }mible_mesh_relay_params_t;
 
 /* generic message params, like on_off/lightness/... */
 typedef struct{
     mible_mesh_address_t dst_addr;
-    uint16_t netkey_index;
-    uint16_t appkey_index;
+    uint16_t global_netkey_index;
+    uint16_t global_appkey_index;
     uint32_t opcode;
     uint16_t element_index;
     uint8_t  data_len;
@@ -482,7 +485,7 @@ int mible_mesh_stop_recv_unprovbeacon(void);
  *@param    [in] page: page number of the composition data
  *@return   0: success, negetive value: failure
  */
-int mible_mesh_node_get_composition_data(uint16_t unicast_address, uint16_t netkey_index, uint8_t page);
+int mible_mesh_node_get_composition_data(uint16_t unicast_address, uint16_t global_netkey_index, uint8_t page);
 
 /**
  *@brief    appkey information for node, mesh profile 4.3.2.37-39, Report 4.3.2.40 Config AppKey Status.
