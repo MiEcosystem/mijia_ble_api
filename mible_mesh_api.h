@@ -37,7 +37,7 @@ extern "C" {
 
 #define MIBLE_MESH_MODEL_ID_LIGHTNESS_SERVER                        0x1300
 #define MIBLE_MESH_MODEL_ID_LIGHTNESS_SETUP_SERVER                  0x1301
-#define MIBLE_MESH_MODEL_ID_LIGHTNESS_CIENT                         0x1302
+#define MIBLE_MESH_MODEL_ID_LIGHTNESS_CLIENT                         0x1302
 #define MIBLE_MESH_MODEL_ID_CTL_SERVER                              0x1303
 #define MIBLE_MESH_MODEL_ID_CTL_SETUP_SERVER                        0x1304
 #define MIBLE_MESH_MODEL_ID_CTL_CLIENT                              0x1305
@@ -136,10 +136,10 @@ extern "C" {
 #define MIBLE_MESH_MSG_HEALTH_ATTENTION_STATUS                      0x8007
 
 /*Generic On Off Model Message Definition*/
-#define MIBLE_MESH_MSG_GENERIC_ONOFF_GET               0x8201
-#define MIBLE_MESH_MSG_GENERIC_ONOFF_SET               0x8202
-#define MIBLE_MESH_MSG_GENERIC_ONOFF_SET_UNRELIABLE    0x8203
-#define MIBLE_MESH_MSG_GENERIC_ONOFF_STATUS            0x8204
+#define MIBLE_MESH_MSG_GENERIC_ONOFF_GET               				0x8201
+#define MIBLE_MESH_MSG_GENERIC_ONOFF_SET               				0x8202
+#define MIBLE_MESH_MSG_GENERIC_ONOFF_SET_UNACKNOWLEDFED    			0x8203
+#define MIBLE_MESH_MSG_GENERIC_ONOFF_STATUS            				0x8204
 
 /*Generic Level Model Message Definition*/
 #define MIBLE_MESH_MSG_GENERIC_LEVEL_GET                                 0x8205
