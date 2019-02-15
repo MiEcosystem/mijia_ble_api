@@ -138,7 +138,7 @@ extern "C" {
 /*Generic On Off Model Message Definition*/
 #define MIBLE_MESH_MSG_GENERIC_ONOFF_GET               				0x8201
 #define MIBLE_MESH_MSG_GENERIC_ONOFF_SET               				0x8202
-#define MIBLE_MESH_MSG_GENERIC_ONOFF_SET_UNACKNOWLEDFED    			0x8203
+#define MIBLE_MESH_MSG_GENERIC_ONOFF_SET_UNACKNOWLEDGED    			0x8203
 #define MIBLE_MESH_MSG_GENERIC_ONOFF_STATUS            				0x8204
 
 /*Generic Level Model Message Definition*/
