@@ -249,7 +249,7 @@ typedef enum {
     MIBLE_MESH_EVENT_STACK_INIT_DONE=0,   /* NULL */
     MIBLE_MESH_EVENT_LOAD_CONFIG_DONE,
     MIBLE_MESH_EVENT_ADV_PACKAGE,       /* mible_gap_adv_report_t */
-    MIBLE_MESH_EVENT_UNPROV_DEVICE,     /* mesh_unprov_beacon_t */
+    MIBLE_MESH_EVENT_UNPROV_DEVICE,     /* mible_mesh_unprov_beacon_t*/
     MIBLE_MESH_EVENT_CONFIG_MESSAGE_CB, /* Mesh Profile definition message */
     MIBLE_MESH_EVENT_GENERIC_MESSAGE_CB, /* Mesh Model definition message */
 } mible_mesh_event_type_t;
@@ -584,7 +584,9 @@ int mible_mesh_gateway_set_network_transmit_param(uint8_t count, uint8_t interva
  *@param    [in] iv_index : current IV Index
  *@param    [in] flags : contains the Key Refresh Flag and IV Update Flag
  *@return   0: success, negetive value: failure
- */
+ */id);
+
+
 int mible_mesh_gateway_update_iv_info(uint32_t iv_index, uint8_t flags);
 
 /**
@@ -619,7 +621,7 @@ int mible_mesh_gateway_set_appkey(mible_mesh_op_t op, uint16_t netkey_index, uin
  *@param    [in] appkey_index : key index for appkey
  *@return   0: success, negetive value: failure
  */
-int mible_mesh_gateway_set_model_app(mible_mesh_op_t op, uint32_t model_id, uint16_t appkey_index);
+int mible_mesh_gateway_set_model_app(mible_mesh_op_t op, uint8_t element_index, uint32_t model_id, uint16_t appkey_index);
 
 /**
  *@brief    add/delete device key.

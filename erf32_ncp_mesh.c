@@ -5,7 +5,7 @@
 #include "gecko_bglib.h"
 #include "erf32_api.h"
 
-
+bool recv_unprop = false; 
 void mible_stack_event_handler(struct gecko_cmd_packet *evt)
 {
 	if (NULL == evt) {
@@ -13,8 +13,21 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt)
   	}
 
 	switch (BGLIB_MSG_ID(evt->header)) {
-		case gecko_evt_mesh_prov_unprov_beacon_id:
-			break;
+		case gecko_evt_mesh_prov_unprov_beacon_id:{
+			if(!recv_unprop)
+				return;				
+			// MIBLE_MESH_EVENT_UNPROV_DEVICE
+			mible_mesh_unprov_beacon_t beacon;
+			memcpy(beacon.device_uuid,evt->data.evt_mesh_prov_unprov_beacon.uuid.len,16);
+			memcpy(beacon.mac, evt->data.evt_mesh_prov_unprov_beacon.address.addr,6);
+			beacon.oob_info = evt->data.evt_mesh_prov_unprov_beacon.oob_capabilities;
+			memcpy(beacon.uri_hash, (uint8_t*)&(evt->data.evt_mesh_prov_unprov_beacon.uri_hash),4);
+		}
+		break;
+		case gecko_evt_mesh_config_client_binding_status_id:
+		break; 
+		case gecko_evt_mesh_config_client_model_sub_status_id:
+		break;
 		default:
 			break; 
 	}
@@ -23,23 +36,20 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt)
  *@brief    start recv unprovision beacon, report result by MIBLE_EVENT.
  *@return   0: success, negetive value: failure
  */
-int mible_mesh_start_recv_unprovbeacon(void);
+int mible_mesh_start_recv_unprovbeacon(void){
+	recv_unprop = true; 
+	return gecko_cmd_mesh_prov_scan_unprov_beacons()->result;
+}
 
 /**
  *@brief    stop recv unprovision beacon, terminate report result.
  *@return   0: success, negetive value: failure
  */
-int mible_mesh_stop_recv_unprovbeacon(void);
-
-/**
- *@brief    Config Composition Data Get, mesh profile 4.3.2.4, Report 4.3.2.5 Config Composition Data Status.
- *          report event: MIBLE_MESH_EVENT_CONFIG_MESSAGE_CB, data: mible_mesh_access_message_rx_t.
- *@param    [in] unicast_address: node address
- *@param    [in] netkey_index: key index for node
- *@param    [in] page: page number of the composition data
- *@return   0: success, negetive value: failure
- */
-int mible_mesh_node_get_composition_data(uint16_t unicast_address, uint16_t global_netkey_index, uint8_t page);
+int mible_mesh_stop_recv_unprovbeacon(void)
+{
+	recv_unprop = false;
+	return 0;
+}
 
 /**
  *@brief    appkey information for node, mesh profile 4.3.2.37-39, Report 4.3.2.40 Config AppKey Status.
@@ -57,17 +67,74 @@ int mible_mesh_node_set_appkey(uint32_t opcode, mible_mesh_appkey_params_t *para
  *@param    [in] param : bind parameters corresponding to node
  *@return   0: success, negetive value: failure
  */
-int mible_mesh_node_bind_appkey(uint32_t opcode, mible_mesh_model_app_params_t *param);
+int mible_mesh_node_bind_appkey(uint32_t opcode, mible_mesh_model_app_params_t *param)
+{
+	if(param == NULL)
+		return -1;
+	mible_mesh_model_id_t id = (mible_mesh_model_id_t)(param->model_id);
+	switch(opcode){
+		case MIBLE_MESH_MSG_CONFIG_MODEL_APP_BIND:{
+			struct gecko_msg_mesh_config_client_bind_model_rsp_t *bind_ret; 
+			bind_ret = gecko_cmd_mesh_config_client_bind_model(param->global_netkey_index, 
+					param->dst_addr-param->element_addr, param->element_addr, 
+					param->appkey_index, id.company_id, id.model_id);
+			//bind_ret->handle;
+			return bind_ret->result;
+		}
+		break;
+		case MIBLE_MESH_MSG_CONFIG_MODEL_APP_UNBIND:{
+			struct gecko_msg_mesh_config_client_unbind_model_rsp_t *unbind_ret; 
+			unbind_ret = gecko_cmd_mesh_config_client_bind_model(param->global_netkey_index, 
+					param->dst_addr-param->element_addr, param->element_addr, 
+					param->appkey_index, id.company_id, id.model_id);
+			//unbind_ret->handle;
+			return unbind_ret->result;
+		}	
+		break;
+		default:
+			return -1; 
+	}
+
+}
 
 /**
  *@brief    set subscription information for node, mesh profile 4.3.2.19-25.
  *          Report 4.3.2.26 Config Model Subscription Status.
  *          report event: MIBLE_MESH_EVENT_CONFIG_MESSAGE_CB, data: mible_mesh_access_message_rx_t.
- *@param    [in] opcode : add/delete/overwrite ...
+ *@param    [in] opcode : delete/overwrite ...
  *@param    [in] param : subscription parameters corresponding to node
  *@return   0: success, negetive value: failure
  */
-int mible_mesh_node_set_subscription(uint32_t opcode, mible_mesh_subscription_params_t * param);
+int mible_mesh_node_set_subscription(uint32_t opcode, mible_mesh_subscription_params_t * param)
+{
+	if(param == NULL)
+		return -1;
+	mible_mesh_model_id_t id = (mible_mesh_model_id_t)(param->model_id);
+	switch(opcode){
+		case MIBLE_MESH_MSG_CONFIG_MODEL_SUBSCRIPTION_ADD:
+		case MIBLE_MESH_MSG_CONFIG_MODEL_SUBSCRIPTION_OVERWRITE:{
+			struct gecko_msg_mesh_config_client_set_model_sub_rsp_t *add_ret;
+			add_ret = gecko_cmd_mesh_config_client_set_model_sub(param->global_netkey_index, 
+					param->dst_addr-param->element_addr, param->element_addr, 
+					id.company_id, id.model_id, param->sub_addr);
+			//add_ret->handle 
+			return add_ret->result;
+		}
+		break;
+		case MIBLE_MESH_MSG_CONFIG_MODEL_SUBSCRIPTION_DELETE:{
+			struct gecko_msg_mesh_config_client_remove_model_sub_rsp_t *remove_ret;
+			remove_ret = gecko_cmd_mesh_config_client_remove_model_sub(param->global_netkey_index, 
+					param->dst_addr-param->element_addr, param->element_addr, 
+					id.company_id, id.model_id, param->sub_addr);
+			//remove_ret->handle 
+			return remove_ret->result;												 
+															 
+		}
+		break;
+		default:
+			return -1; 
+	}
+}
 
 /**
  *@brief    reset node, 4.3.2.53 Config Node Reset, Report 4.3.2.54 Config Node Reset Status.
@@ -76,7 +143,13 @@ int mible_mesh_node_set_subscription(uint32_t opcode, mible_mesh_subscription_pa
  *@param    [in] param : reset parameters corresponding to node
  *@return   0: success, negetive value: failure
  */
-int mible_mesh_node_reset(uint32_t opcode, mible_mesh_reset_params_t *param);
+int mible_mesh_node_reset(uint32_t opcode, mible_mesh_reset_params_t *param)
+{
+	if(param == NULL)
+		return -1; 
+	return gecko_cmd_mesh_config_client_reset_node(param->global_netkey_index, 
+			param->dst_addr)->result; 
+}
 
 /**
  *@brief    generic message, Mesh model 3.2, 4.2, 5.2, 6.3, or 7 Summary.
@@ -132,7 +205,22 @@ int mible_mesh_gateway_update_iv_info(uint32_t iv_index, uint8_t flags);
  *@return   0: success, negetive value: failure
  */
 int mible_mesh_gateway_set_netkey(mible_mesh_op_t op, uint16_t netkey_index, uint8_t *netkey,
-            uint16_t *stack_netkey_index);
+            uint16_t *stack_netkey_index)
+{
+	if(netkey == NULL)
+		return -1; 
+	aes_key_128 key;
+	memcpy(key.data,netkey,16); 
+	if(op == MIBLE_MESH_OP_ADD){
+		struct gecko_msg_mesh_test_add_local_key_rsp_t *add_ret;
+		add_ret = gecko_cmd_mesh_test_add_local_key(0, key, netkey_index, 0);
+		return add_ret->result; 
+	}else{
+		struct gecko_msg_mesh_test_del_local_key_rsp_t *dele_ret;
+		dele_ret = gecko_cmd_mesh_test_del_local_key(0, netkey_index);
+		return dele_ret->result; 
+	}
+}
 
 /**
  *@brief    add/delete local appkey.
@@ -145,7 +233,22 @@ int mible_mesh_gateway_set_netkey(mible_mesh_op_t op, uint16_t netkey_index, uin
  *@return   0: success, negetive value: failure
  */
 int mible_mesh_gateway_set_appkey(mible_mesh_op_t op, uint16_t netkey_index, uint16_t appkey_index,
-            uint8_t * appkey, uint16_t *stack_appkey_index);
+            uint8_t * appkey, uint16_t *stack_appkey_index)
+{
+	if(appkey == NULL)
+		return -1; 
+	aes_key_128 key;
+	memcpy(key.data, appkey, 16); 
+	if(op == MIBLE_MESH_OP_ADD){
+		struct gecko_msg_mesh_test_add_local_key_rsp_t *add_ret;
+		add_ret = gecko_cmd_mesh_test_add_local_key(1, key, appkey_index,netkey_index);
+		return add_ret->result; 
+	}else{
+		struct gecko_msg_mesh_test_del_local_key_rsp_t *dele_ret;
+		dele_ret = gecko_cmd_mesh_test_del_local_key(1, appkey_index);
+		return dele_ret->result; 
+	}
+}
 
 /**
  *@brief    bind/unbind model app.
@@ -154,7 +257,23 @@ int mible_mesh_gateway_set_appkey(mible_mesh_op_t op, uint16_t netkey_index, uin
  *@param    [in] appkey_index : key index for appkey
  *@return   0: success, negetive value: failure
  */
-int mible_mesh_gateway_set_model_app(mible_mesh_op_t op, uint32_t model_id, uint16_t appkey_index);
+int mible_mesh_gateway_set_model_app(mible_mesh_op_t op, uint8_t element_index, uint32_t model_id, uint16_t appkey_index)
+{
+	mible_mesh_model_id_t id = (mible_mesh_model_id_t)(model_id);
+
+	if(op == MIBLE_MESH_OP_ADD){
+		struct gecko_msg_mesh_test_bind_local_model_app_rsp_t *bind_ret;
+		bind_ret = gecko_cmd_mesh_test_bind_local_model_app(element_index,
+				appkey_index, id.company_id, id.model_id);
+		return bind_ret->result; 
+	}else{
+	
+		struct gecko_msg_mesh_test_unbind_local_model_app_rsp_t *unbind_ret;
+		unbind_ret = gecko_cmd_mesh_test_unbind_local_model_app(element_index,
+				appkey_index, id.company_id, id.model_id);
+		return unbind_ret->result; 
+	}
+}
 
 /**
  *@brief    add/delete device key.
@@ -163,7 +282,22 @@ int mible_mesh_gateway_set_model_app(mible_mesh_op_t op, uint32_t model_id, uint
  *@param    [in] device_key : device key value
  *@return   0: success, negetive value: failure
  */
-int mible_mesh_gateway_set_device_key(mible_mesh_op_t op, mible_mesh_node_info_t *device);
+int mible_mesh_gateway_set_device_key(mible_mesh_op_t op, mible_mesh_node_info_t *device)
+{
+	uuid_128 uuid; 
+	memcpy(uuid.data, device->uuid, 16);
+	aes_key_128 device_key; 
+	memcpy(device_key.data, device->device_key, 16);
+
+	if(op == MIBLE_MESH_OP_ADD){
+		struct gecko_msg_mesh_prov_ddb_add_rsp_t * add_ret;
+		add_ret = gecko_cmd_mesh_prov_ddb_add(uuid, device_key,device->netkey_index, 
+				device->unicast_address, device->elements_num);
+		return add_ret->result;
+	}else{
+		return gecko_cmd_mesh_prov_ddb_delete(uuid)->result;
+	}
+}
 
 /**
  *@brief    add/delete subscription params.
