@@ -37,7 +37,7 @@ extern "C" {
 
 #define MIBLE_MESH_MODEL_ID_LIGHTNESS_SERVER                        0x1300
 #define MIBLE_MESH_MODEL_ID_LIGHTNESS_SETUP_SERVER                  0x1301
-#define MIBLE_MESH_MODEL_ID_LIGHTNESS_CLIENT                         0x1302
+#define MIBLE_MESH_MODEL_ID_LIGHTNESS_CLIENT                        0x1302
 #define MIBLE_MESH_MODEL_ID_CTL_SERVER                              0x1303
 #define MIBLE_MESH_MODEL_ID_CTL_SETUP_SERVER                        0x1304
 #define MIBLE_MESH_MODEL_ID_CTL_CLIENT                              0x1305
@@ -250,6 +250,7 @@ typedef enum {
     MIBLE_MESH_EVENT_LOAD_CONFIG_DONE,
     MIBLE_MESH_EVENT_ADV_PACKAGE,       /* mible_gap_adv_report_t */
     MIBLE_MESH_EVENT_UNPROV_DEVICE,     /* mesh_unprov_beacon_t */
+    MIBLE_MESH_EVENT_IV_UPDATE,         /* mible_mesh_iv_t */
     MIBLE_MESH_EVENT_CONFIG_MESSAGE_CB, /* Mesh Profile definition message */
     MIBLE_MESH_EVENT_GENERIC_MESSAGE_CB, /* Mesh Model definition message */
 } mible_mesh_event_type_t;
@@ -310,7 +311,7 @@ typedef struct{
     uint16_t unicast_address;       /* gateway unicast address */
     uint16_t group_address;         /* subscription group address for all initial models */
     uint32_t iv_index;              /* iv index vaule*/
-    int32_t  iv_flags;
+    uint8_t  flags;                 /* iv phase and key refresh*/
     uint16_t netkey_index;
     uint16_t appkey_index;
     uint8_t  primary_netkey[MIBLE_MESH_KEY_LEN];
@@ -322,6 +323,11 @@ typedef struct{
     mible_mesh_sig_model_db_t sig_model_db;    /* sig models database */
     mible_mesh_model_db_t vendor_model_db; /* vendor models database */
 }mible_mesh_gateway_info_t;
+
+typedef struct {
+    uint32_t iv_index;
+    uint8_t  flags;
+} mible_mesh_iv_t;
 
 /* netkey add/update/delete params */
 typedef struct{
@@ -438,7 +444,7 @@ typedef struct {
 } mible_mesh_access_message_rx_t;
 
 /* ADD contains add and update operation.
- * Firstly, you should execute get-operation, 
+ * Firstly, you should execute get-operation,
  * and then, according to get result, choose you really add or update method.
  * if get-operation return null, you can call add method, otherwise, call update method. */
 typedef enum {
