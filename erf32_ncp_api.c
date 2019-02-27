@@ -933,9 +933,9 @@ mible_status_t mible_gatts_value_set(uint16_t srv_handle,
         return MI_ERR_INVALID_ADDR;
     }
 
-    if(!is_vaild_handle(value_handle)){
-    	return MIBLE_ERR_ATT_INVALID_ATT_HANDLE;
-    }
+/*    if(!is_vaild_handle(value_handle)){*/
+        /*return MIBLE_ERR_ATT_INVALID_ATT_HANDLE;*/
+    /*}*/
 
 
     for(uint8_t i=0; i<CHAR_TABLE_NUM; i++){
@@ -970,9 +970,9 @@ mible_status_t mible_gatts_value_get(uint16_t srv_handle,
         return MI_ERR_INVALID_ADDR;
     }
 
-    if(!is_vaild_handle(value_handle)){
-    	return MIBLE_ERR_ATT_INVALID_ATT_HANDLE;
-    }
+/*    if(!is_vaild_handle(value_handle)){*/
+        /*return MIBLE_ERR_ATT_INVALID_ATT_HANDLE;*/
+    /*}*/
 
     for(uint8_t i=0; i<CHAR_TABLE_NUM; i++){
     	if(m_char_table.item[i].handle == value_handle){
