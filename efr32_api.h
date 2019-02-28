@@ -43,9 +43,7 @@
 
 #define START_ADV_RETRY_BIT_MASK                (1<<30)
 
-#define TIMERS_FOR_STACK                        1
-#define TIMERS_FOR_USER                         4
-#define TOTAL_TIMERS                            TIMERS_FOR_USER+TIMERS_FOR_STACK
+#define MIBLE_TIMER_NUM                         4
 
 typedef enum {
     idle_s,
@@ -59,14 +57,6 @@ typedef struct {
     state_t cur_state;
     mible_gap_connect_t target_to_connect;
 } target_connect_t;
-
-typedef struct {
-    bool                is_running;
-    uint8_t             timer_id;
-    mible_timer_mode    mode;
-    mible_timer_handler handler;
-    void                *args;
-} timer_item_t;
 
 typedef struct {
     mible_handler_t handler;
