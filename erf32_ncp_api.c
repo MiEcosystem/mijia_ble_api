@@ -18,6 +18,7 @@
 #include "bg_types.h"
 #include "gecko_bglib.h"
 #include "erf32_api.h"
+#include "mible_log.h"
 
 #ifndef MIBLE_MAX_USERS
 #define MIBLE_MAX_USERS 4
@@ -275,8 +276,6 @@ void mible_arch_event_callback(mible_arch_event_t evt,
     }
 }
 
-
-
 void mible_stack_event_handler(struct gecko_cmd_packet *evt){
 	mible_gap_evt_param_t gap_evt_param = {0};
 	mible_gatts_evt_param_t gatts_evt_param = {0};
@@ -294,8 +293,15 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt){
         	gap_evt_param.conn_handle = evt->data.evt_le_connection_opened.connection;
         	memcpy(gap_evt_param.connect.peer_addr,
                 evt->data.evt_le_connection_opened.address.addr, 6);
-        	gap_evt_param.connect.role =
-                (mible_gap_role_t) evt->data.evt_le_connection_opened.master;
+        	
+                
+			if((mible_gap_role_t) evt->data.evt_le_connection_opened.master == 0){
+				gap_evt_param.connect.role = MIBLE_GAP_PERIPHERAL;
+			}else{
+				gap_evt_param.connect.role = MIBLE_GAP_CENTRAL;
+			}
+			
+
         	if ((evt->data.evt_le_connection_opened.address_type == le_gap_address_type_public)
                 || (evt->data.evt_le_connection_opened.address_type
                         == le_gap_address_type_public_identity)) {
@@ -559,6 +565,8 @@ mible_status_t mible_gap_scan_start(mible_gap_scan_type_t scan_type,
 
     scan_interval = scan_param.scan_interval;
     scan_window = scan_param.scan_window;
+	MI_LOG_WARNING("scan_interval = %x \n", scan_param.scan_interval);
+	MI_LOG_WARNING("scan_window = %x \n", scan_param.scan_window);
 
 	if(gecko_cmd_le_gap_set_discovery_timing(1, scan_interval, scan_window)->result != 0){
 		return MI_ERR_INVALID_PARAM;
@@ -658,14 +666,16 @@ mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_param)
     if (last_adv_data.len != 0) {
         result = gecko_cmd_le_gap_bt5_set_adv_data(ADV_HANDLE, 0,
                 last_adv_data.len, last_adv_data.data)->result;
-        if (result != bg_err_success)
+        if (result != bg_err_success){
             return MI_ERR_BUSY;
+		}
     }
     if (last_scan_rsp.len != 0) {
         result = gecko_cmd_le_gap_bt5_set_adv_data(ADV_HANDLE, 1,
                 last_scan_rsp.len, last_scan_rsp.data)->result;
-        if (result != bg_err_success)
+        if (result != bg_err_success){
             return MI_ERR_BUSY;
+		}
     }
 
 	gecko_cmd_le_gap_set_advertise_tx_power(ADV_HANDLE, 100);
@@ -881,8 +891,8 @@ mible_status_t mible_gatts_service_init(mible_gatts_db_t *p_server_db)
 		rsp = gecko_cmd_user_message_to_target(5, data);  
         
 		memcpy(&p_char_db->char_value_handle,rsp->data.data,2);
-		//printf("uuid = 0x%x, handle = 0x%x \n", 
-		//		p_char_db->char_uuid.uuid16, p_char_db->char_value_handle);
+		printf("uuid = 0x%x, handle = %d \n", 
+				p_char_db->char_uuid.uuid16, p_char_db->char_value_handle);
 
         if (rsp->result == bg_err_success) {
             memcpy(&p_char_db->char_value_handle,rsp->data.data,2);
@@ -895,7 +905,6 @@ mible_status_t mible_gatts_service_init(mible_gatts_db_t *p_server_db)
             memcpy(m_char_table.item[i].data, p_char_db->p_value, p_char_db->char_value_len);
             m_char_table.num = 1 + i;
         } else {
-            /*MI_LOG_ERROR("no char %d found.\n", p_char_db->char_uuid.uuid16);*/
             ret = MI_ERR_INTERNAL;
             goto exception;
         }
@@ -904,6 +913,7 @@ mible_status_t mible_gatts_service_init(mible_gatts_db_t *p_server_db)
     param.srv_init_cmp.p_gatts_db = p_server_db;
     param.srv_init_cmp.status = ret;
     mible_arch_event_callback(MIBLE_ARCH_EVT_GATTS_SRV_INIT_CMP, &param);
+	return 0;
 
 exception:
     return ret;
