@@ -289,7 +289,7 @@ typedef struct {
 } mible_mesh_address_t;
 
 /**
- * @brief mible mesh model description, uint32_t model_id.
+ * @brief mible mesh model description.
  */
 typedef struct {
     uint16_t model_id;
@@ -297,7 +297,7 @@ typedef struct {
 } __packed mible_mesh_model_id_t;
 
 /**
- * @brief mible opcode description, uint32_t opcode.
+ * @brief mible opcode description.
  */
 typedef struct {
     uint16_t company_id;    /**< SIG ID: 0xFFFF */
