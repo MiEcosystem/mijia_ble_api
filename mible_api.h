@@ -77,14 +77,14 @@ void mible_arch_event_callback(mible_arch_event_t evt,
  * */
 mible_status_t mible_gap_address_get(mible_addr_t mac);
 
-/** 
- * @brief   Set BLE mac address. 
- * @param   [in] mac: pointer to data 
- * @return  MI_SUCCESS          The requested mac address were written to mac 
- *          MI_ERR_INTERNAL     No mac address found. 
- * @note:   You should copy mac to gap mac[6] 
- * */ 
-mible_status_t mible_gap_address_set(mible_addr_t mac); 
+/**
+ * @brief   Set BLE mac address.
+ * @param   [in] mac: pointer to data
+ * @return  MI_SUCCESS          The requested mac address were written to mac
+ *          MI_ERR_INTERNAL     No mac address found.
+ * @note:   You should copy mac to gap mac[6]
+ * */
+mible_status_t mible_gap_address_set(mible_addr_t mac);
 
 /**
  * @brief   Start scanning
@@ -323,7 +323,7 @@ mible_status_t mible_gatts_rw_auth_reply(uint16_t conn_handle, uint8_t status,
  *          MIBLE_ERR_INVALID_CONN_HANDLE  Invaild connection handle.
  * @note    The response is given through MIBLE_GATTC_EVT_DISCOVERY_RSP event
  * */
-mible_status_t mible_gattc_service_discovery(uint16_t conn_handle, mible_uuid_t srv_uuid);
+mible_status_t mible_gattc_service_discovery(uint16_t conn_handle, mible_uuid_t *srv_uuid);
 
 /**
  * @brief   set peer device notification and indication enable or disable.

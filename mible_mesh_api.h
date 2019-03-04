@@ -5,6 +5,10 @@
 extern "C" {
 #endif
 
+#ifndef __packed
+#define __packed __attribute__((packed))
+#endif
+
 #include "mijia_ble_api/mible_type.h"
 
 /*SIG Generic model ID */
@@ -215,18 +219,20 @@ extern "C" {
 
 
 /** Mesh vendor models **/
-#define MIBLE_MESH_MIOT_SPEC_SERVER_MODEL                           0x038f0000
-#define MIBLE_MESH_MIOT_SPEC_CLIENT_MODEL                           0x038f0001
-#define MIBLE_MESH_MIJIA_SERVER_MODEL                               0x038f0002
-#define MIBLE_MESH_MIJIA_CLIENT_MODEL                               0x038f0003
+#define MIBLE_MESH_MIOT_SPEC_SERVER_MODEL                           0000 //0x038f0000
+#define MIBLE_MESH_MIOT_SPEC_CLIENT_MODEL                           0001 //0x038f0001
+#define MIBLE_MESH_MIJIA_SERVER_MODEL                               0002 //0x038f0002
+#define MIBLE_MESH_MIJIA_CLIENT_MODEL                               0003 //0x038f0003
 
 /*** Mesh vendor opcodes ***/
-#define MIBLE_MESH_MIOT_SPEC_GET                                    0xC1038F
-#define MIBLE_MESH_MIOT_SPEC_SET                                    0xC3038F
-#define MIBLE_MESH_MIOT_SPEC_SET_NOACK                              0xC4038F
-#define MIBLE_MESH_MIOT_SPEC_STATUS                                 0xC5038F
+#define MIBLE_MESH_MIOT_SPEC_GET                                    0x00C1 //0xC1038F
+#define MIBLE_MESH_MIOT_SPEC_SET                                    0x00C3 //0xC3038F
+#define MIBLE_MESH_MIOT_SPEC_SET_NOACK                              0x00C4 //0xC4038F
+#define MIBLE_MESH_MIOT_SPEC_STATUS                                 0x00C5 //0xC5038F
 
-#define MIBLE_MESH_COMPANY_ID                                       0x038F
+#define MIBLE_MESH_COMPANY_ID_SIG                                   0xFFFF
+#define MIBLE_MESH_COMPANY_ID_XIAOMI                                0x038F
+
 #define MIBLE_MESH_ADV_PKT_INTERNAL                                 40 //48
 #define MIBLE_MESH_ADV_PKT_COUNTER                                  3
 
@@ -246,130 +252,164 @@ extern "C" {
 
 /* mible_mesh_event and callback data */
 typedef enum {
-    MIBLE_MESH_EVENT_STACK_INIT_DONE=0,   /* NULL */
-    MIBLE_MESH_EVENT_LOAD_CONFIG_DONE,
-    MIBLE_MESH_EVENT_ADV_PACKAGE,       /* mible_gap_adv_report_t */
-    MIBLE_MESH_EVENT_UNPROV_DEVICE,     /* mesh_unprov_beacon_t */
-    MIBLE_MESH_EVENT_IV_UPDATE,         /* mible_mesh_iv_t */
-    MIBLE_MESH_EVENT_CONFIG_MESSAGE_CB, /* Mesh Profile definition message */
-    MIBLE_MESH_EVENT_GENERIC_MESSAGE_CB, /* Mesh Model definition message */
+    MIBLE_MESH_EVENT_STACK_INIT_DONE=0,     /**< NULL */
+    MIBLE_MESH_EVENT_PROVISIONER_INIT_DONE, /**< NULL */
+    MIBLE_MESH_EVENT_ADV_PACKAGE,           /**< mible_gap_adv_report_t */
+    MIBLE_MESH_EVENT_UNPROV_DEVICE,         /**< mible_mesh_unprov_beacon_t */
+    MIBLE_MESH_EVENT_IV_UPDATE,             /**< mible_mesh_iv_t */
+    MIBLE_MESH_EVENT_CONFIG_MESSAGE_CB,     /**< Mesh Profile definition message */
+    MIBLE_MESH_EVENT_GENERIC_MESSAGE_CB,    /**< Mesh Model definition message */
 } mible_mesh_event_type_t;
 
-/* provision type */
+/**
+ * @brief mible mesh provision type.
+ */
 typedef enum {
     MIBLE_MESH_PB_ADV,
     MIBLE_MESH_PB_GATT,
 } mible_mesh_pb_type_t;
 
-/* mible mesh address type */
+/**
+ * @brief mible mesh address type.
+ */
 typedef enum {
-    MIBLE_MESH_ADDRESS_TYPE_UNASSIGNED = 0,
-    MIBLE_MESH_ADDRESS_TYPE_UNICAST,
-    MIBLE_MESH_ADDRESS_TYPE_VIRTUAL,
-    MIBLE_MESH_ADDRESS_TYPE_GROUP,
+    MIBLE_MESH_ADDRESS_TYPE_UNASSIGNED = 0, /**< 0b0000000000000000 */
+    MIBLE_MESH_ADDRESS_TYPE_UNICAST,        /**< 0b0xxxxxxxxxxxxxxx (excluding 0b0000000000000000) */
+    MIBLE_MESH_ADDRESS_TYPE_VIRTUAL,        /**< 0b10xxxxxxxxxxxxxx */
+    MIBLE_MESH_ADDRESS_TYPE_GROUP,          /**< 0b11xxxxxxxxxxxxxx */
 } mible_mesh_address_type_t;
 
-/* mible mesh address description */
+/**
+ * @brief mible mesh address description.
+ */
 typedef struct {
     mible_mesh_address_type_t type;
-    uint16_t value;
+    uint16_t value;                 /**< mesh address */
     const uint8_t *virtual_uuid;    /**< virtual uuid value, must be NULL unless address type is #MIBLE_MESH_ADDRESS_TYPE_VIRTUAL */
 } mible_mesh_address_t;
 
-/* mible mesh model description, uint32_t model_id*/
+/**
+ * @brief mible mesh model description.
+ */
 typedef struct {
     uint16_t model_id;
     uint16_t company_id;
-} mible_mesh_model_id_t;
+} __packed mible_mesh_model_id_t;
 
-/* mible opcode description, uint32_t opcode*/
+/**
+ * @brief mible opcode description.
+ */
 typedef struct {
-    uint16_t company_id;
-    uint16_t opcode;
-} mible_mesh_opcode_t;
+    uint16_t company_id;    /**< SIG ID: 0xFFFF */
+    uint16_t opcode;        /**< 1, 2, 3 octets */
+} __packed mible_mesh_opcode_t;
 
-/* mible opcode database for special model id */
+/**
+ * @brief mible opcode database for vendor model id.
+ */
 typedef struct {
-    uint32_t model_id;
-    uint32_t opcode_num;
-    uint32_t *opcode;
+    mible_mesh_model_id_t model_id;
+    uint16_t opcode_num;
+    uint16_t *opcode;
 } mible_mesh_model_opcodes_t;
 
-/* mible vendor model id database */
+/**
+ * @brief mible vendor model id database.
+ */
 typedef struct {
-    uint32_t model_num;
-    mible_mesh_model_opcodes_t *model_list;
+    uint16_t model_num;     /**< vendor model number */
+    mible_mesh_model_opcodes_t *model_list; /**< vendor model opcode list */
 } mible_mesh_model_db_t;
 
+/**
+ * @brief mible sig model id database.
+ */
 typedef struct {
-    uint32_t model_num;
-    uint32_t *model_list;
+    uint16_t model_num;     /**< sig model number */
+    uint16_t *model_list;   /**< sig model list */
 } mible_mesh_sig_model_db_t;
 
-/* mible gateway init data*/
+/**
+ * @brief mible mesh init data.
+ */
 typedef struct{
-    uint16_t unicast_address;       /* gateway unicast address */
-    uint16_t group_address;         /* subscription group address for all initial models */
-    uint32_t iv_index;              /* iv index vaule*/
-    uint8_t  flags;                 /* iv phase and key refresh*/
-    uint16_t netkey_index;
-    uint16_t appkey_index;
-    uint8_t  primary_netkey[MIBLE_MESH_KEY_LEN];
-    uint8_t  primary_appkey[MIBLE_MESH_KEY_LEN];
-    uint8_t  max_num_netkey;        /* stack support netkey num */
-    uint8_t  max_num_appkey;        /* stack support appkey num */
-    uint16_t replay_list_size;      /* replay protection list size */
-    uint16_t default_ttl;           /* default ttl */
-    mible_mesh_sig_model_db_t sig_model_db;    /* sig models database */
-    mible_mesh_model_db_t vendor_model_db; /* vendor models database */
+    uint16_t unicast_address;       /**< gateway unicast address */
+    uint16_t group_address;         /**< subscription group address for all initial models */
+    uint32_t iv_index;              /**< iv index vaule */
+    uint8_t  flags;                 /**< iv phase and key refresh */
+    uint16_t netkey_index;          /**< gloabl netkey index */
+    uint16_t appkey_index;          /**< global netkey index */
+    uint8_t  primary_netkey[MIBLE_MESH_KEY_LEN];    /**< netkey */
+    uint8_t  primary_appkey[MIBLE_MESH_KEY_LEN];    /**< appkey */
+    uint8_t  max_num_netkey;        /**< stack support netkey num */
+    uint8_t  max_num_appkey;        /**< stack support appkey num */
+    uint16_t replay_list_size;      /**< replay protection list size */
+    uint16_t default_ttl;           /**< default ttl */
+    mible_mesh_sig_model_db_t sig_model_db;    /**< sig models database */
+    mible_mesh_model_db_t vendor_model_db; /**< vendor models database */
 }mible_mesh_gateway_info_t;
 
+/**
+ * @brief mible mesh iv info.
+ */
 typedef struct {
-    uint32_t iv_index;
-    uint8_t  flags;
+    uint32_t iv_index;  /**< mesh network iv index */
+    uint8_t  flags;     /**< iv flag and key refresh */
 } mible_mesh_iv_t;
 
-/* netkey add/update/delete params */
+/**
+ * @brief netkey add/update/delete params.
+ */
 typedef struct{
     uint16_t dst_addr;
     uint16_t netkey_index;
     uint8_t  netkey[MIBLE_MESH_KEY_LEN];
-    uint16_t global_netkey_index;       /* local encrypt netkey index for mesh message */
+    uint16_t global_netkey_index;       /**< local encrypt netkey index for mesh message */
 }mible_mesh_netkey_params_t;
 
-/* appkey add/update/delete params */
+/**
+ * @brief   appkey add/update/delete params.
+ *          global_appkey_index: if your stack can use appkey[] send directly msg, this parameter is redundant;
+ *          some stacks need to find appkey by global_appkey_index, and then send out add ... nesh msg.
+ */
 typedef struct{
     uint16_t dst_addr;
     uint16_t netkey_index;
     uint16_t appkey_index;
     uint8_t  appkey[MIBLE_MESH_KEY_LEN];
-    uint16_t global_netkey_index;       /* local encrypt netkey index for mesh message */
-    uint16_t global_appkey_index;       /* local appkey index */
+    uint16_t global_netkey_index;       /**< local encrypt netkey index for mesh message */
+    uint16_t global_appkey_index;       /**< local appkey index */
 }mible_mesh_appkey_params_t;
 
-/* model app bind/unbind params */
+/**
+ * @brief model app bind/unbind params.
+ */
 typedef struct{
     uint16_t dst_addr;
     uint16_t element_addr;
-    uint32_t model_id;      /* mible_mesh_model_id_t */
+    mible_mesh_model_id_t model_id;      /**< mible_mesh_model_id_t */
     uint16_t appkey_index;
-    uint16_t global_netkey_index;       /* local encrypt netkey index for mesh message */
+    uint16_t global_netkey_index;       /**< local encrypt netkey index for mesh message */
 }mible_mesh_model_app_params_t;
 
-/* subscription add/delete/overwrite/delete_all params */
+/**
+ * @brief subscription add/delete/overwrite/delete_all params.
+ */
 typedef struct{
     uint16_t dst_addr;
     uint16_t element_addr;
-    uint32_t model_id;
+    mible_mesh_model_id_t model_id;
     mible_mesh_address_t sub_addr;
-    uint16_t global_netkey_index;       /* local encrypt netkey index for mesh message */
+    uint16_t global_netkey_index;       /**< local encrypt netkey index for mesh message */
 }mible_mesh_subscription_params_t;
 
-/* publication add/delete/overwrite/delete_all params */
+/**
+ * @brief publication add/delete/overwrite/delete_all params.
+ */
 typedef struct{
     uint16_t dst_addr;
     uint16_t element_addr;
-    uint32_t model_id;
+    mible_mesh_model_id_t model_id;
     uint16_t appkey_index;
     mible_mesh_address_t publish_addr;
     uint8_t  pub_ttl;
@@ -377,36 +417,44 @@ typedef struct{
     uint8_t  pub_period;
     uint8_t  pub_retrans_count;
     uint8_t  pub_retrans_intvl_steps;
-    uint16_t global_netkey_index;       /* local encrypt netkey index for mesh message */
+    uint16_t global_netkey_index;       /**< local encrypt netkey index for mesh message */
 }mible_mesh_publication_params_t;
 
-/* reset node params */
+/**
+ * @brief reset node params.
+ */
 typedef struct{
     uint16_t dst_addr;
-    uint16_t global_netkey_index;       /* local encrypt netkey index for mesh message */
+    uint16_t global_netkey_index;       /**< local encrypt netkey index for mesh message */
 }mible_mesh_reset_params_t;
 
-/* relay get/set params */
+/**
+ * @brief relay get/set params.
+ */
 typedef struct{
     uint16_t dst_addr;
     uint8_t  relay;
     uint8_t  retransmit_count;
     uint8_t  retransmit_interval_steps;
-    uint16_t global_netkey_index;       /* local encrypt netkey index for mesh message */
+    uint16_t global_netkey_index;       /**< local encrypt netkey index for mesh message */
 }mible_mesh_relay_params_t;
 
-/* generic message params, like on_off/lightness/... */
+/**
+ * @brief generic message params, like on_off/lightness/...
+ */
 typedef struct{
     mible_mesh_address_t dst_addr;
     uint16_t global_netkey_index;
     uint16_t global_appkey_index;
-    uint32_t opcode;
+    mible_mesh_opcode_t opcode;
     uint16_t element_index;
     uint8_t  data_len;
-    uint8_t* data;      /* mesh message raw data */
+    uint8_t* data;      /**< mesh message raw data */
 }mible_mesh_generic_params_t;
 
-/* provision device info */
+/**
+ * @brief provision device info.
+ */
 typedef struct {
     uint8_t address[MIBLE_ADDR_LEN];
     uint8_t address_type;
@@ -414,7 +462,9 @@ typedef struct {
     uint8_t pbtranstype;    /* provision type */
 }mible_mesh_remote_device_info_t;
 
-/* unprovision beacon */
+/**
+ * @brief unprovision beacon.
+ */
 typedef struct{
     uint8_t  device_uuid[MIBLE_MESH_DEV_UUID_LEN];
     uint16_t oob_info;
@@ -422,7 +472,9 @@ typedef struct{
     uint8_t  mac[MIBLE_ADDR_LEN];
 }mible_mesh_unprov_beacon_t;
 
-/* mesh message meta data */
+/**
+ * @brief mesh message meta data.
+ */
 typedef struct {
     uint16_t src_addr;
     uint16_t dst_addr;
@@ -432,34 +484,41 @@ typedef struct {
     uint8_t  ttl;
 } mible_mesh_message_rx_meta_t;
 
-/* mesh status data report*/
+/**
+ * @brief mesh message.
+ */
 typedef struct {
-    union{
-        uint32_t opcode;
-        mible_mesh_opcode_t op;
-    };
+    mible_mesh_opcode_t opcode;
     mible_mesh_message_rx_meta_t meta_data;
     uint16_t buf_len;       /* mesh raw data len*/
     uint8_t* buf;           /* mesh raw data, see mesh profile 4.3 */
 } mible_mesh_access_message_rx_t;
 
-/* ADD contains add and update operation.
- * Firstly, you should execute get-operation,
- * and then, according to get result, choose you really add or update method.
- * if get-operation return null, you can call add method, otherwise, call update method. */
+/**
+ * @brief ADD contains add and update operation.
+ *        Firstly, you should execute get-operation,
+ *        and then, according to get result, choose you really add or update method.
+ *        if get-operation return null, you can call add method, otherwise, call update method.
+ */
 typedef enum {
     MIBLE_MESH_OP_ADD=0,
     MIBLE_MESH_OP_DELETE,
 }mible_mesh_op_t;
 
+/**
+ * @brief mible mesh uuid definition.
+ */
 typedef struct {
-    uint16_t cid;
-    uint16_t pdid;
-    uint16_t reserved;
-    uint8_t  did[4];
-    uint8_t  mac[MIBLE_ADDR_LEN];
+    uint16_t cid;       /**< company id */
+    uint16_t pdid;      /**< product id */
+    uint16_t reserved;  /**< reserved for future */
+    uint8_t  did[4];    /**< device id lower 4 bytes */
+    uint8_t  mac[MIBLE_ADDR_LEN];   /**< mac address */
 }mible_mesh_uuid_t;
 
+/**
+ * @brief mesh device information.
+ */
 typedef struct {
     uint16_t unicast_address;
     uint16_t elements_num;
@@ -468,8 +527,334 @@ typedef struct {
     uint16_t netkey_index;
 }mible_mesh_node_info_t;
 
-typedef uint32_t mible_mesh_event_t;
-typedef int (*mible_mesh_event_cb_t)(mible_mesh_event_t event,void *data);
+
+/**********************************************************************//**
+ * Config Message Status Definitions
+ **********************************************************************/
+
+/**
+ * @brief Mesh Config Beacon Status event paramater type.
+ */
+typedef struct
+{
+    uint8_t beacon;
+} mible_mesh_conf_beacon_status;
+
+/**
+ * @brief Mesh Config Composition Data Status event paramater type.
+ */
+typedef struct
+{
+    uint8_t page;
+    uint16_t company_id;
+    uint16_t product_id;
+    uint16_t version_id;
+    uint16_t crpl;
+    uint16_t features;
+    void *data;
+} mible_mesh_conf_compo_data_status;
+
+/**
+ * @brief Mesh Config Default TTL Status event paramater type.
+ */
+typedef struct
+{
+    uint8_t ttl;
+} mible_mesh_conf_def_ttl_status;
+
+/**
+ * @brief Mesh Config GATT Proxy Status event paramater type.
+ */
+typedef struct
+{
+  uint8_t gatt_proxy;
+} mible_mesh_conf_gatt_proxy_status;
+
+/**
+ * @brief Mesh Config Relay Status event paramater type.
+ */
+typedef struct
+{
+    uint8_t relay;
+    uint8_t relay_retrans_cnt;
+    uint8_t relay_retrans_intvlsteps;
+} mible_mesh_conf_relay_status;
+
+/**
+ * @brief Mesh Config Model Publication Status event paramater type.
+ */
+typedef struct
+{
+    uint8_t status;
+    uint16_t elem_addr;
+    uint16_t pub_addr;
+    uint16_t appkey_index;
+    uint8_t cred_flag;
+    uint8_t pub_ttl;
+    uint8_t pub_perid;
+    uint8_t pub_retrans_cnt;
+    uint8_t pub_retrans_intvl_steps;
+    mible_mesh_model_id_t model_id;
+} mible_mesh_conf_model_pub_status;
+
+/**
+ * @brief Mesh Config Model Sublication Status event paramater type.
+ */
+typedef struct
+{
+    uint8_t status;
+    uint16_t elem_addr;
+    uint16_t address;
+    mible_mesh_model_id_t model_id;
+} mible_mesh_conf_model_sub_status;
+
+/**
+ * @brief Mesh Config Sig Model Sublication List event paramater type.
+ */
+typedef struct
+{
+    uint8_t status;
+    uint16_t elem_addr;
+    uint16_t sig_model_id;
+    uint16_t num;
+    uint16_t *addresses;
+} mible_mesh_conf_sig_model_sub_list;
+
+/**
+ * @brief Mesh Config Vendor Model Sublication List event paramater type.
+ */
+typedef struct
+{
+  uint8_t status;
+  uint16_t elem_addr;
+  mible_mesh_model_id_t vnd_model_id;
+  uint16_t num;
+  uint16_t *addresses;
+} mible_mesh_conf_vnd_model_sub_list;
+
+/**
+ * @brief Mesh Config NetKey Status event paramater type.
+ */
+typedef struct
+{
+    uint8_t status;
+    uint16_t netkey_index;
+} mible_mesh_conf_netkey_status;
+
+/**
+ * @brief Mesh Config NetKey List event paramater type.
+ */
+typedef struct
+{
+    uint16_t num_of_netkey;
+    uint16_t *pnetkeyindexes;
+} mible_mesh_conf_netkey_list;
+
+/**
+ * @brief Mesh Config AppKey List event paramater type.
+ */
+typedef struct
+{
+    uint16_t netkey_index;
+    uint16_t num_of_appkey;
+    uint16_t *pappkeyindexes;
+} mible_mesh_conf_appkey_list;
+
+/**
+ * @brief Mesh Config AppKey Status event paramater type.
+ */
+typedef struct
+{
+    uint8_t status;
+    uint16_t netkey_index;
+    uint16_t appkey_index;
+} mible_mesh_conf_appkey_status;
+
+/**
+ * @brief Mesh Config Node Identity Status event paramater type.
+ */
+typedef struct
+{
+    uint8_t status;
+    uint16_t netkey_index;
+    uint8_t identity;
+} mible_mesh_conf_node_ident_status;
+
+/**
+ * @brief Mesh Config Model App Status event paramater type.
+ */
+typedef struct
+{
+    uint8_t status;
+    uint16_t elem_addr;
+    uint16_t appkey_index;
+    mible_mesh_model_id_t model_id;
+} mible_mesh_conf_model_app_status;
+
+/**
+ * @brief Mesh Config SIG Model App List event paramater type.
+ */
+typedef struct
+{
+    uint8_t status;
+    uint16_t elem_addr;
+    uint16_t model_id;
+    uint16_t num_of_appkey;
+    uint16_t *pappkeyindexes;
+} mible_mesh_conf_sig_model_app_list;
+
+/**
+ * @brief Mesh Config Vendor Model App List event paramater type.
+ */
+typedef struct
+{
+    uint8_t status;
+    uint16_t elem_addr;
+    mible_mesh_model_id_t vnd_model_id;
+    uint16_t num_of_appkey;
+    uint16_t *pappkeyindexes;
+} mible_mesh_conf_vnd_model_app_list;
+
+/**
+ * @brief Mesh Config Friend Status event paramater type.
+ */
+typedef struct
+{
+    uint8_t friend;
+} mible_mesh_conf_frnd_status;
+
+/**
+ * @brief Mesh Config Key Refresh Phase  Status event paramater type.
+ */
+typedef struct
+{
+    uint8_t status;
+    uint16_t netkey_index;
+    uint8_t phase;
+} mible_mesh_conf_keyrefresh_phase_status;
+
+/**
+ * @brief Mesh Config    Heartbeat Publication Status event paramater type.
+ */
+typedef struct
+{
+    uint8_t status;
+    uint16_t dest_addr;
+    uint8_t count_log;
+    uint8_t period_log;
+    uint8_t ttl;
+    uint16_t features;
+    uint16_t netkey_index;
+} mible_mesh_conf_hb_pub_status;
+
+/**
+ * @brief Mesh Config    Heartbeat Subscription Status event paramater type.
+ */
+typedef struct
+{
+    uint8_t status;
+    uint16_t src_addr;
+    uint16_t dst_addr;
+    uint8_t period_log;
+    uint8_t count_log;
+    uint8_t min_hops;
+    uint8_t max_hops;
+} mible_mesh_conf_hb_sub_status;
+
+/**
+ * @brief Mesh Config Low Power Node PollTimeout Status event paramater type.
+ */
+typedef struct
+{
+    uint16_t lpn_addr;
+    uint32_t polltimeout;
+} mible_mesh_conf_lpn_polltimeout_status;
+
+/**
+ * @brief Mesh Config Network Transmit Status event paramater type.
+ */
+typedef struct
+{
+    uint8_t nwk_transcnt;
+    uint8_t nwk_trans_intvl_steps;
+} mible_mesh_conf_nwk_trans_status;
+
+/**
+ * @brief Mesh Health Current/Fault Status event paramater type.
+ */
+typedef struct
+{
+  uint8_t test_id;
+  uint16_t company_id;
+  uint8_t fault_num;
+  uint8_t *fault_array;
+} mible_mesh_hlth_fault_status;
+
+/**
+ * @brief Mesh Health Period Status event paramater type.
+ */
+typedef struct
+{
+  uint8_t fast_peirod_div;
+} mible_mesh_hlth_period_status;
+
+/**
+ * @brief Mesh Health Attention Status event paramater type.
+ */
+typedef struct
+{
+  uint8_t attention;
+} mible_mesh_hlth_atten_status;
+
+/**
+ * @brief Mesh Model Client event paramater type.
+ *
+ */
+typedef struct
+{
+    mible_mesh_opcode_t opcode;
+    mible_mesh_message_rx_meta_t meta_data;
+    union{
+        mible_mesh_conf_beacon_status conf_beacon_status;
+        mible_mesh_conf_compo_data_status conf_compo_data_status;
+        mible_mesh_conf_def_ttl_status conf_def_ttl_status;
+        mible_mesh_conf_gatt_proxy_status conf_gatt_proxy_status;
+        mible_mesh_conf_relay_status conf_relay_status;
+        mible_mesh_conf_model_pub_status conf_model_pub_status;
+        mible_mesh_conf_model_sub_status conf_model_sub_status;
+        mible_mesh_conf_sig_model_sub_list conf_sig_model_sub_list;
+        mible_mesh_conf_vnd_model_sub_list conf_vnd_model_sub_list;
+        mible_mesh_conf_netkey_status conf_netkey_status;
+        mible_mesh_conf_netkey_list conf_netkey_list;
+        mible_mesh_conf_appkey_list conf_appkey_list;
+        mible_mesh_conf_appkey_status conf_appkey_status;
+        mible_mesh_conf_node_ident_status conf_node_ident_status;
+        mible_mesh_conf_model_app_status conf_model_app_status;
+        mible_mesh_conf_sig_model_app_list conf_sig_model_app_list;
+        mible_mesh_conf_vnd_model_app_list conf_vnd_model_app_list;
+        mible_mesh_conf_frnd_status conf_frnd_status;
+        mible_mesh_conf_keyrefresh_phase_status conf_keyrefresh_phase_status;
+        mible_mesh_conf_hb_pub_status conf_hb_pub_status;
+        mible_mesh_conf_hb_sub_status conf_hb_sub_status;
+        mible_mesh_conf_lpn_polltimeout_status conf_lpn_polltimeout_status;
+        mible_mesh_conf_nwk_trans_status conf_nwk_trans_status;
+
+        mible_mesh_hlth_fault_status hlth_fault_status;
+        mible_mesh_hlth_period_status hlth_period_status;
+        mible_mesh_hlth_atten_status hlth_atten_status;
+    }param;
+}mible_mesh_config_status_t;
+
+
+typedef union {
+    mible_gap_adv_report_t *p_adv_report;
+    mible_mesh_unprov_beacon_t *p_unprov_beacon;
+    mible_mesh_iv_t *p_mesh_iv;
+    mible_mesh_config_status_t *p_config_msg;
+    mible_mesh_access_message_rx_t *p_generic_msg;
+} mible_mesh_event_params_t;
+
+typedef int (*mible_mesh_event_cb_t)(mible_mesh_event_type_t type, mible_mesh_event_params_t *data);
 
 /**
  *@brief    start recv unprovision beacon, report result by MIBLE_EVENT.
@@ -482,6 +867,15 @@ int mible_mesh_start_recv_unprovbeacon(void);
  *@return   0: success, negetive value: failure
  */
 int mible_mesh_stop_recv_unprovbeacon(void);
+
+/**********************************************************************//**
+ * Provisioner Local Operation Definitions
+ * opcode: mesh spec define opcode
+ * global_netkey_index: local key index, is used to encrypt network data;
+ * global_appkey_index: local key index, is used to encrypt app data;
+ * netkey_index: mesh spec define payload in mesh message raw data
+ * appkey_index: mesh spec define payload in mesh message raw data
+ **********************************************************************/
 
 /**
  *@brief    Config Composition Data Get, mesh profile 4.3.2.4, Report 4.3.2.5 Config Composition Data Status.
@@ -496,49 +890,49 @@ int mible_mesh_node_get_composition_data(uint16_t unicast_address, uint16_t glob
 /**
  *@brief    appkey information for node, mesh profile 4.3.2.37-39, Report 4.3.2.40 Config AppKey Status.
  *          report event: MIBLE_MESH_EVENT_CONFIG_MESSAGE_CB, data: mible_mesh_access_message_rx_t.
- *@param    [in] opcode : add/update/delete ...
+ *@param    [in] opcode : mesh spec opcode, add/update/delete ...
  *@param    [in] param : appkey parameters corresponding to node
  *@return   0: success, negetive value: failure
  */
-int mible_mesh_node_set_appkey(uint32_t opcode, mible_mesh_appkey_params_t *param);
+int mible_mesh_node_set_appkey(uint16_t opcode, mible_mesh_appkey_params_t *param);
 
 /**
  *@brief    bind appkey information for node, mesh profile 4.3.2.46-47, Report 4.3.2.48 Config Model App Status.
  *          report event: MIBLE_MESH_EVENT_CONFIG_MESSAGE_CB, data: mible_mesh_access_message_rx_t.
- *@param    [in] opcode : bind/unbind
+ *@param    [in] opcode : mesh spec opcode, bind/unbind
  *@param    [in] param : bind parameters corresponding to node
  *@return   0: success, negetive value: failure
  */
-int mible_mesh_node_bind_appkey(uint32_t opcode, mible_mesh_model_app_params_t *param);
+int mible_mesh_node_bind_appkey(uint16_t opcode, mible_mesh_model_app_params_t *param);
 
 /**
  *@brief    set publication information for node, mesh profile 4.3.2.15-17,
  *          Report 4.3.2.18 Config Model Publication Status.
  *          report event: MIBLE_MESH_EVENT_CONFIG_MESSAGE_CB, data: mible_mesh_access_message_rx_t.
- *@param    [in] opcode : add/delete/overwrite ...
+ *@param    [in] opcode : mesh spec opcode, add/delete/overwrite ...
  *@param    [in] param : publish parameters corresponding to node
  *@return   0: success, negetive value: failure
  */
-int mible_mesh_node_set_publication(uint32_t opcode, mible_mesh_publication_params_t * param);
+int mible_mesh_node_set_publication(uint16_t opcode, mible_mesh_publication_params_t * param);
 
 /**
  *@brief    set subscription information for node, mesh profile 4.3.2.19-25.
  *          Report 4.3.2.26 Config Model Subscription Status.
  *          report event: MIBLE_MESH_EVENT_CONFIG_MESSAGE_CB, data: mible_mesh_access_message_rx_t.
- *@param    [in] opcode : add/delete/overwrite ...
+ *@param    [in] opcode : mesh spec opcode, add/delete/overwrite ...
  *@param    [in] param : subscription parameters corresponding to node
  *@return   0: success, negetive value: failure
  */
-int mible_mesh_node_set_subscription(uint32_t opcode, mible_mesh_subscription_params_t * param);
+int mible_mesh_node_set_subscription(uint16_t opcode, mible_mesh_subscription_params_t * param);
 
 /**
  *@brief    reset node, 4.3.2.53 Config Node Reset, Report 4.3.2.54 Config Node Reset Status.
  *          report event: MIBLE_MESH_EVENT_CONFIG_MESSAGE_CB, data: mible_mesh_access_message_rx_t.
- *@param    [in] opcode : reset
+ *@param    [in] opcode : mesh spec opcode, reset
  *@param    [in] param : reset parameters corresponding to node
  *@return   0: success, negetive value: failure
  */
-int mible_mesh_node_reset(uint32_t opcode, mible_mesh_reset_params_t *param);
+int mible_mesh_node_reset(uint16_t opcode, mible_mesh_reset_params_t *param);
 
 /**
  *@brief    set relay params node, mesh profile 4.3.2.12, Report 4.3.2.14 Config Relay Status.
@@ -547,7 +941,7 @@ int mible_mesh_node_reset(uint32_t opcode, mible_mesh_reset_params_t *param);
  *@param    [in] param : relay parameters corresponding to node
  *@return   0: success, negetive value: failure
  */
-int mible_mesh_node_set_relay_param(uint32_t opcode, mible_mesh_relay_params_t *param);
+int mible_mesh_node_set_relay_param(uint16_t opcode, mible_mesh_relay_params_t *param);
 
 /**
  *@brief    generic message, Mesh model 3.2, 4.2, 5.2, 6.3, or 7 Summary.
@@ -558,24 +952,55 @@ int mible_mesh_node_set_relay_param(uint32_t opcode, mible_mesh_relay_params_t *
  */
 int mible_mesh_node_generic_control(mible_mesh_generic_params_t * param);
 
-/**
- *@brief    mesh stack init, register event callback
- *          init mesh ble hardware, memory; init mesh thread, prepare for creating mesh network, .
- *          report event: MIBLE_MESH_EVENT_STACK_INIT_DONE, data: NULL.
- *@param    [in] mible_mesh_event_cb : event callback
- *@param    [in] info : init parameters corresponding to gateway
- *@return   0: success, negetive value: failure
- */
-int mible_mesh_init_stack(mible_mesh_event_cb_t mible_mesh_event_cb, mible_mesh_gateway_info_t *info);
+
+/**********************************************************************//**
+ * Provisioner Local Operation Definitions
+ * netkey_index: local key index, global_netkey_index, is used to encrypt network data;
+ * appkey_index: local key index, global_appkey_index, is used to encrypt app data;
+ **********************************************************************/
 
 /**
- *@brief    init mesh provisioner, after this step, mesh network is avilable.
- *          load iv/seq_num, init model, load netkey, bind appkey, sub group address 0xFEFF,
- *          report event: MIBLE_MESH_EVENT_GATEWAY_INIT_DONE, data: NULL.
+ *@brief    sync method, register event callback
+ *@param    [in] mible_mesh_event_cb : event callback
+ *@return   0: success, negetive value: failure
+ */
+int mible_mesh_gateway_register_event_callback(mible_mesh_event_cb_t mible_mesh_event_cb);
+
+/**
+ *@brief    sync method, unregister event callback
+ *@param    [in] mible_mesh_event_cb : event callback
+ *@return   0: success, negetive value: failure
+ */
+int mible_mesh_gateway_unregister_event_callback(mible_mesh_event_cb_t mible_mesh_event_cb);
+
+/**
+ *@brief    async method, init mesh stack.
+ *          report event: MIBLE_MESH_EVENT_STACK_INIT_DONE, data: NULL.
+ *@return   0: success, negetive value: failure
+ */
+int mible_mesh_gateway_init_stack(void);
+
+/**
+ *@brief    async method, init mesh provisioner
+ *          load self info, include unicast address, iv, seq_num, init model;
+ *          clear local db, related appkey_list, netkey_list, device_key_list,
+ *          we will load latest data for cloud;
+ *          report event: MIBLE_MESH_EVENT_PROVISIONER_INIT_DONE, data: NULL.
  *@param    [in] info : init parameters corresponding to gateway
  *@return   0: success, negetive value: failure
  */
-int mible_mesh_load_config(mible_mesh_gateway_info_t *info);
+int mible_mesh_gateway_init_provisioner(mible_mesh_gateway_info_t *info);
+
+/**
+ *@brief    sync method, create mesh network for provisioner.
+ *@param    [in] netkey_index : key index for netkey
+ *@param    [in] netkey : netkey value
+ *@param    [in|out] stack_netkey_index : [in] default value: 0xFFFF, [out] stack generates netkey_index
+ *          if your stack don't manage netkey_index and stack_netkey_index relationships, update stack_netkey_index;
+ *          otherwise, do nothing.
+ *@return   0: success, negetive value: failure
+ */
+int mible_mesh_gateway_create_network(uint16_t netkey_index, uint8_t *netkey, uint16_t *stack_netkey_index);
 
 /**
  *@brief    set local provisioner network transmit params.
@@ -621,11 +1046,13 @@ int mible_mesh_gateway_set_appkey(mible_mesh_op_t op, uint16_t netkey_index, uin
 /**
  *@brief    bind/unbind model app.
  *@param    [in] op : bind is MIBLE_MESH_OP_ADD, unbind is MIBLE_MESH_OP_DELETE
- *@param    [in] model_id : key index for netkey
+ *@param    [in] company_id: company id
+ *@param    [in] model_id : model_id
  *@param    [in] appkey_index : key index for appkey
  *@return   0: success, negetive value: failure
  */
-int mible_mesh_gateway_set_model_app(mible_mesh_op_t op, uint32_t model_id, uint16_t appkey_index);
+int mible_mesh_gateway_set_model_app(mible_mesh_op_t op, uint16_t company_id, uint16_t model_id,
+            uint16_t appkey_index);
 
 /**
  *@brief    add/delete device key.
