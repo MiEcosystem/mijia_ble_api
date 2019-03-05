@@ -140,10 +140,10 @@ extern "C" {
 #define MIBLE_MESH_MSG_HEALTH_ATTENTION_STATUS                      0x8007
 
 /*Generic On Off Model Message Definition*/
-#define MIBLE_MESH_MSG_GENERIC_ONOFF_GET               				0x8201
-#define MIBLE_MESH_MSG_GENERIC_ONOFF_SET               				0x8202
-#define MIBLE_MESH_MSG_GENERIC_ONOFF_SET_UNACKNOWLEDGED    			0x8203
-#define MIBLE_MESH_MSG_GENERIC_ONOFF_STATUS            				0x8204
+#define MIBLE_MESH_MSG_GENERIC_ONOFF_GET                            0x8201
+#define MIBLE_MESH_MSG_GENERIC_ONOFF_SET                            0x8202
+#define MIBLE_MESH_MSG_GENERIC_ONOFF_SET_UNACKNOWLEDGED             0x8203
+#define MIBLE_MESH_MSG_GENERIC_ONOFF_STATUS                         0x8204
 
 /*Generic Level Model Message Definition*/
 #define MIBLE_MESH_MSG_GENERIC_LEVEL_GET                                 0x8205
@@ -331,6 +331,9 @@ typedef struct {
 
 /**
  * @brief mible mesh init data.
+ * flags    Bits Definition
+ *          bit0 Key Refresh Flag   0: False 1: True
+ *          bit1 IV Update Flag     0: Normal operation 1: IV Update active
  */
 typedef struct{
     uint16_t unicast_address;       /**< gateway unicast address */
@@ -338,9 +341,9 @@ typedef struct{
     uint32_t iv_index;              /**< iv index vaule */
     uint8_t  flags;                 /**< iv phase and key refresh */
     uint16_t netkey_index;          /**< gloabl netkey index */
-    uint16_t appkey_index;          /**< global netkey index */
+    //uint16_t appkey_index;          /**< global netkey index */
     uint8_t  primary_netkey[MIBLE_MESH_KEY_LEN];    /**< netkey */
-    uint8_t  primary_appkey[MIBLE_MESH_KEY_LEN];    /**< appkey */
+    //uint8_t  primary_appkey[MIBLE_MESH_KEY_LEN];    /**< appkey */
     uint8_t  max_num_netkey;        /**< stack support netkey num */
     uint8_t  max_num_appkey;        /**< stack support appkey num */
     uint16_t replay_list_size;      /**< replay protection list size */
@@ -496,6 +499,8 @@ typedef struct {
 
 /**
  * @brief ADD contains add and update operation.
+ *        This is only used to mesh provisioner local opertions for mible_mesh_gateway_*.
+ *        DO NOT BE USE TO mible_mesh_node_* functions.
  *        Firstly, you should execute get-operation,
  *        and then, according to get result, choose you really add or update method.
  *        if get-operation return null, you can call add method, otherwise, call update method.
@@ -854,22 +859,17 @@ typedef union {
     mible_mesh_access_message_rx_t *p_generic_msg;
 } mible_mesh_event_params_t;
 
+
+/**
+ *@brief    mible mesh event callback, report to applications
+ *@param    [in] type : mible_mesh_event_type_t definitions
+ *@param    [in] data : pointer corresponding with type.
+ *@return   0: success, negetive value: failure
+ */
 typedef int (*mible_mesh_event_cb_t)(mible_mesh_event_type_t type, mible_mesh_event_params_t *data);
 
-/**
- *@brief    start recv unprovision beacon, report result by MIBLE_EVENT.
- *@return   0: success, negetive value: failure
- */
-int mible_mesh_start_recv_unprovbeacon(void);
-
-/**
- *@brief    stop recv unprovision beacon, terminate report result.
- *@return   0: success, negetive value: failure
- */
-int mible_mesh_stop_recv_unprovbeacon(void);
-
 /**********************************************************************//**
- * Provisioner Local Operation Definitions
+ * Provisioner interacts with node by air interface.
  * opcode: mesh spec define opcode
  * global_netkey_index: local key index, is used to encrypt network data;
  * global_appkey_index: local key index, is used to encrypt app data;
@@ -1009,6 +1009,18 @@ int mible_mesh_gateway_create_network(uint16_t netkey_index, uint8_t *netkey, ui
  *@return   0: success, negetive value: failure
  */
 int mible_mesh_gateway_set_network_transmit_param(uint8_t count, uint8_t interval_steps);
+
+/**
+ *@brief    start recv unprovision beacon, report result by MIBLE_EVENT.
+ *@return   0: success, negetive value: failure
+ */
+int mible_mesh_start_recv_unprovbeacon(void);
+
+/**
+ *@brief    stop recv unprovision beacon, terminate report result.
+ *@return   0: success, negetive value: failure
+ */
+int mible_mesh_stop_recv_unprovbeacon(void);
 
 /**
  *@brief    update iv index, .
