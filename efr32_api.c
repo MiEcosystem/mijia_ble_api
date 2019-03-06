@@ -22,7 +22,7 @@
 #define CHAR_DATA_LEN_MAX               20
 
 // connection handle
-uint8_t connection_handle = DISCONNECTION;
+uint8_t m_conn_handle = DISCONNECTION;
 
 // scanning? advertising? .. It could be optimized to use bit mask
 uint8_t scanning = 0;
@@ -41,37 +41,58 @@ typedef struct {
 	uint8_t data[CHAR_DATA_LEN_MAX];
 } user_char_t;
 
-
 struct{
 	uint8_t num;
 	user_char_t item[CHAR_TABLE_NUM];
 } m_char_table;
 
+#define TIMER_MAX_NUM 4
 
-/* timer handler - 0xFF and one timer are always reserved for GAP */
-static struct {
-    uint8_t active_timers;
-    timer_item_t timer[TIMERS_FOR_USER];
-} timer_pool;
+typedef struct {
+    uint8_t id;
+    uint8_t is_avail;
+    mible_timer_mode is_single_shot;
+    mible_timer_handler handler;
+    void * p_ctx;
+} timer_item_t;
 
-/* Find the timer index in timer pool, return -1 if no match */
-static int8_t get_idx_by_timer_id(void *p_timer_id)
+static timer_item_t m_timer_pool[TIMER_MAX_NUM] = {
+    [0] = { .id = 0, .is_avail = 1, },
+    [1] = { .id = 1, .is_avail = 1, },
+    [2] = { .id = 2, .is_avail = 1, },
+    [3] = { .id = 3, .is_avail = 1, },
+};
+
+static timer_item_t* acquire_timer()
 {
-    for (uint8_t i = 0; i < TIMERS_FOR_USER; i++) {
-        if (*(uint8_t *) p_timer_id == timer_pool.timer[i].timer_id) {
+    uint8_t i;
+    for (i = 0; i < TIMER_MAX_NUM; i++) {
+        if (m_timer_pool[i].is_avail) {
+            m_timer_pool[i].is_avail = 0;
+            return &m_timer_pool[i];
+        }
+    }
+    return NULL;
+}
+
+static int release_timer(void* timer_id)
+{
+    for (uint8_t i = 0; i < TIMER_MAX_NUM; i++) {
+        if (timer_id == &m_timer_pool[i]) {
+            m_timer_pool[i].is_avail = 1;
             return i;
         }
     }
     return -1;
 }
-/* Find the available timer index in timer pool, return -1 if pool is full */
-static int8_t find_avail_timer(void)
+
+static int assert_timer(void* timer_id)
 {
-    for (uint8_t i = 0; i < TIMERS_FOR_USER; i++) {
-        if (timer_pool.timer[i].timer_id == TIMER_NOT_USED)
+    for (uint8_t i = 0; i < TIMER_MAX_NUM; i++) {
+        if (timer_id == &m_timer_pool[i]) {
             return i;
+        }
     }
-    /* Should not reach here at all, timer_create should be responsible for checking if the pool is already full */
     return -1;
 }
 
@@ -83,7 +104,7 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt)
 
     switch (BGLIB_MSG_ID(evt->header)) {
     case gecko_evt_le_connection_opened_id:
-        connection_handle = evt->data.evt_le_connection_opened.connection;
+        m_conn_handle = evt->data.evt_le_connection_opened.connection;
         gap_evt_param.conn_handle = evt->data.evt_le_connection_opened.connection;
         memcpy(gap_evt_param.connect.peer_addr,
                 evt->data.evt_le_connection_opened.address.addr, 6);
@@ -101,7 +122,7 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt)
     break;
 
     case gecko_evt_le_connection_closed_id:
-        connection_handle = DISCONNECTION;
+        m_conn_handle = DISCONNECTION;
         gap_evt_param.conn_handle = evt->data.evt_le_connection_closed.connection;
         if (evt->data.evt_le_connection_closed.reason == bg_err_bt_connection_timeout) {
             gap_evt_param.disconnect.reason = CONNECTION_TIMEOUT;
@@ -273,15 +294,8 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt)
         if (handle == SCAN_TIMEOUT_TIMER_ID) {
             scan_timeout_for_retry = 0;
             mible_gap_scan_stop();
-        } else if (0 < handle && handle < TIMERS_FOR_USER) {
-            int8_t index = get_idx_by_timer_id(&handle);
-            if (index != -1 ) {
-                if (timer_pool.timer[index].is_running) {
-                    timer_pool.timer[index].handler(timer_pool.timer[index].args);
-                    timer_pool.timer[index].is_running =
-                    timer_pool.timer[index].mode == MIBLE_TIMER_SINGLE_SHOT ? false : true;
-                }
-            }
+        } else if (handle < MIBLE_TIMER_NUM) {
+            m_timer_pool[handle].handler(m_timer_pool[handle].p_ctx);
         }
     }
     break;
@@ -432,7 +446,7 @@ mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_param)
         channel_map |= 0x04;
     }
 
-    if ((connection_handle != DISCONNECTION)
+    if ((m_conn_handle != DISCONNECTION)
             && (p_param->adv_type == MIBLE_ADV_TYPE_CONNECTABLE_UNDIRECTED)) {
         return MI_ERR_INVALID_STATE;
     }
@@ -581,7 +595,7 @@ mible_status_t mible_gap_connect(mible_gap_scan_param_t scan_param,
 mible_status_t mible_gap_disconnect(uint16_t conn_handle)
 {
     struct gecko_msg_le_connection_close_rsp_t *ret;
-    if (connection_handle == DISCONNECTION) {
+    if (m_conn_handle == DISCONNECTION) {
         return MI_ERR_INVALID_STATE;
     }
 
@@ -616,7 +630,7 @@ mible_status_t mible_gap_update_conn_params(uint16_t conn_handle,
         mible_gap_conn_param_t conn_params)
 {
     struct gecko_msg_le_connection_set_parameters_rsp_t *ret;
-    if (connection_handle == DISCONNECTION) {
+    if (m_conn_handle == DISCONNECTION) {
         return MI_ERR_INVALID_STATE;
     }
 
@@ -938,9 +952,9 @@ mible_status_t mible_gatts_rw_auth_reply(uint16_t conn_handle,
 
 /*
  * @brief 	Create a timer.
- * @param 	[out] p_timer_id: a pointer to timer id address which can uniquely identify the timer.
- * 			[in] timeout_handler: a pointer to a function which can be
- * called when the timer expires.
+ * @param 	[out] pp_timer: a pointer to timer handle address which can uniquely
+ *  identify the timer.
+ * 			[in] timeout_handler: a function will be called when the timer expires.
  * 			[in] mode: repeated or single shot.
  * @return  MI_SUCCESS             If the timer was successfully created.
  *          MI_ERR_INVALID_PARAM   Invalid pointer supplied.
@@ -949,54 +963,40 @@ mible_status_t mible_gatts_rw_auth_reply(uint16_t conn_handle,
  *          MI_ERR_NO_MEM          timer pool is full.
  *
  * */
-mible_status_t mible_timer_create(void** p_timer_id, mible_timer_handler timeout_handler,
+mible_status_t mible_timer_create(void** pp_timer, mible_timer_handler timeout_handler,
         mible_timer_mode mode)
 {
-    if (timer_pool.active_timers == TIMERS_FOR_USER) {
-        return MI_ERR_NO_MEM;
-    }
-
-    if (p_timer_id == NULL || timeout_handler == NULL) {
+    if (pp_timer == NULL || timeout_handler == NULL)
         return MI_ERR_INVALID_PARAM;
-    }
 
-    timer_pool.active_timers++;
-    uint8_t index = find_avail_timer();
-    timer_pool.timer[index].timer_id = index + 1;
-    timer_pool.timer[index].handler = timeout_handler;
-    timer_pool.timer[index].mode = mode;
-    *p_timer_id = &timer_pool.timer[index].timer_id;
+    *pp_timer = acquire_timer();
+    if (*pp_timer == NULL)
+        return MI_ERR_NO_MEM;
+
+    timer_item_t * p_timer = *pp_timer;
+    p_timer->handler = timeout_handler;
+    p_timer->is_single_shot = mode == MIBLE_TIMER_SINGLE_SHOT;
     return MI_SUCCESS;
 }
 
 /*
  * @brief 	Delete a timer.
- * @param 	[in] timer_id: timer id
+ * @param 	[in] timer_handle: unique index of the timer.
  * @return  MI_SUCCESS             If the timer was successfully deleted.
  *          MI_ERR_INVALID_PARAM   Invalid timer id supplied..
  * */
-mible_status_t mible_timer_delete(void* timer_id)
+mible_status_t mible_timer_delete(void* timer_handle)
 {
-    int8_t index;
-    if (*(uint8_t *) timer_id == 0) {
-        return MI_SUCCESS;
-    }
-
-    index = get_idx_by_timer_id(timer_id);
-    if (index == -1) {
+    if (release_timer(timer_handle) == -1)
         return MI_ERR_INVALID_PARAM;
-    }
-    mible_timer_stop(timer_id);
-
-    timer_pool.active_timers--;
-    memset(&timer_pool.timer[index], 0, sizeof(timer_item_t));
-    return MI_SUCCESS;
+    else
+        return MI_SUCCESS;
 }
 
 /*
  * @brief 	Start a timer.
- * @param 	[in] timer_id: timer id
- *          [in] timeout_value: Number of milliseconds to time-out event
+ * @param 	[in] timer_handle: unique index of the timer.
+ *          [in] time_ms: number of milliseconds to time-out event
  * (minimum 10 ms).
  * 			[in] p_context: parameters that can be passed to
  * timeout_handler
@@ -1008,67 +1008,39 @@ mible_status_t mible_timer_delete(void* timer_id)
  *         	MI_ERR_NO_MEM          If the timer operations queue was full.
  * @note 	If the timer has already started, it will start counting again.
  * */
-mible_status_t mible_timer_start(void* timer_id, uint32_t timeout_value, void* p_context)
+mible_status_t mible_timer_start(void* timer_handle, uint32_t time_ms, void* p_context)
 {
-    int8_t index;
-    struct gecko_msg_hardware_set_soft_timer_rsp_t *ret;
-
-    if (*(uint8_t *) timer_id == 0) {
-        return MI_ERR_INVALID_STATE;
-    }
-
-    if (timer_id == NULL) {
+    if (assert_timer(timer_handle) == -1)
         return MI_ERR_INVALID_PARAM;
-    }
 
-    index = get_idx_by_timer_id(timer_id);
-    if (index == -1) {
-        return MI_ERR_INVALID_STATE;
-    }
+    timer_item_t * p_timer = timer_handle;
+    int ret = gecko_cmd_hardware_set_soft_timer(
+                    TIMER_MS_2_TIMERTICK(time_ms),
+                    p_timer->id,
+                    p_timer->is_single_shot)->result;
 
-    /* Added here, but no suitable value from the description */
-    if (timeout_value < 10) {
-        return MI_ERR_INVALID_PARAM;
-    }
-
-    timer_pool.timer[index].args = p_context;
-    ret = gecko_cmd_hardware_set_soft_timer(TIMER_MS_2_TIMERTICK(timeout_value),
-            timer_pool.timer[index].timer_id,
-            timer_pool.timer[index].mode == MIBLE_TIMER_SINGLE_SHOT);
-    if (ret->result != bg_err_success) {
-        MI_LOG_ERROR("start timer %d error 0x%X\n", index, ret->result);
-        return MI_ERR_NO_MEM;
-    }
-    timer_pool.timer[index].is_running = true;
-    return MI_SUCCESS;
+    return ret == 0 ? MI_SUCCESS : MI_ERR_INVALID_STATE;
 }
 
 /*
  * @brief 	Stop a timer.
- * @param 	[in] timer_id: timer id
+ * @param 	[in] timer_handle: unique index of the timer.
  * @return  MI_SUCCESS             If the timer was successfully stopped.
  *          MI_ERR_INVALID_PARAM   Invalid timer id supplied.
  *
  * */
-mible_status_t mible_timer_stop(void* timer_id)
+mible_status_t mible_timer_stop(void* timer_handle)
 {
-    int8_t index;
-
-    if (*(uint8_t *) timer_id == 0) {
+    if (assert_timer(timer_handle) == -1)
         return MI_ERR_INVALID_PARAM;
-    }
 
-    if (timer_id == NULL) {
-        return MI_ERR_INVALID_PARAM;
-    }
+    timer_item_t * p_timer = timer_handle;
+    int ret = gecko_cmd_hardware_set_soft_timer(
+                    0,
+                    p_timer->id,
+                    p_timer->is_single_shot)->result;
 
-    index = get_idx_by_timer_id(timer_id);
-    if (index == -1) {
-        return MI_ERR_INVALID_PARAM;
-    }
-    gecko_cmd_hardware_set_soft_timer(0, timer_pool.timer[index].timer_id, 1);
-    timer_pool.timer[index].is_running = false;
-    return MI_SUCCESS;
+    return ret == 0 ? MI_SUCCESS : MI_ERR_INVALID_PARAM;
 }
 
 /* FLASH related function*/
