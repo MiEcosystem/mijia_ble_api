@@ -345,6 +345,8 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt){
 
     	case gecko_evt_le_gap_scan_response_id:
         /* Invalid the connection handle since no connection yet*/
+			if( evt->data.evt_le_gap_scan_response.data.len == 0 || 
+					evt->data.evt_le_gap_scan_response.data.len >31)
         	gap_evt_param.conn_handle = INVALID_CONNECTION_HANDLE;
         	memcpy(gap_evt_param.report.peer_addr,
                 evt->data.evt_le_gap_scan_response.address.addr, 6);
