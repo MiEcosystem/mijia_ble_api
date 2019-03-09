@@ -264,7 +264,8 @@ int mible_mesh_gateway_set_device_key(mible_mesh_op_t op, mible_mesh_node_info_t
     return 0;
 }
 
-int mible_mesh_gateway_set_sub_address(mible_mesh_op_t op, mible_mesh_subscription_params_t *param)
+int mible_mesh_gateway_set_sub_address(mible_mesh_op_t op,  uint16_t company_id, uint16_t model_id,
+        mible_mesh_address_t *sub_addr)
 {
     if(op == MIBLE_MESH_OP_ADD){
         // add subscription
