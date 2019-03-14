@@ -29,12 +29,14 @@
 #define ADV_HANDLE   0 // ble adv handle 
 #define CHAR_TABLE_NUM                  10
 #define CHAR_DATA_LEN_MAX               20
-static uint8_t ble_scanning = 0;
+uint8_t ble_scanning = 0;        // 1 means scaning; 0 means no scaning
 static uint8_t ble_advertising = 0;
 static uint8_t connection_handle = DISCONNECTION;
 static uint8_t wait_discover_char = 0; // 1 
 static uint8_t char_num = 0; 
 static mible_uuid_t discover_srv_uuid = {0}; 
+
+
 typedef struct {
 	uint16_t handle;
 	bool rd_author;		// read authorization. Enabel or Disable MIBLE_GATTS_READ_PERMIT_REQ event
@@ -553,6 +555,7 @@ mible_status_t mible_gap_scan_start(mible_gap_scan_type_t scan_type,
 {
 	uint16_t scan_interval, scan_window;
     uint8_t active;
+	int ret = 0; 
 
     if (ble_scanning) {
         return MI_ERR_INVALID_STATE;
@@ -571,19 +574,26 @@ mible_status_t mible_gap_scan_start(mible_gap_scan_type_t scan_type,
 	MI_LOG_WARNING("scan_interval = %x \n", scan_param.scan_interval);
 	MI_LOG_WARNING("scan_window = %x \n", scan_param.scan_window);
 
-	if(gecko_cmd_le_gap_set_discovery_timing(1, scan_interval, scan_window)->result != 0){
-		return MI_ERR_INVALID_PARAM;
-	}
-	
-	if(gecko_cmd_le_gap_set_discovery_type(1,1)->result != 0){
-		return MI_ERR_INVALID_PARAM;
+	ret = gecko_cmd_le_gap_set_discovery_timing(1, scan_interval, scan_window)->result;
+	if(ret != 0){
+		MI_LOG_ERROR("set discovery timing\n"); 
+		return ret;
 	}
 
-	if(gecko_cmd_le_gap_start_discovery(1,le_gap_discover_observation)->result){
-		return MIBLE_ERR_UNKNOWN;
+	ret = gecko_cmd_le_gap_set_discovery_type(1,1)->result;  
+	if(ret != 0){
+		MI_LOG_ERROR("set discovery type \n");
+		return ret;
+	}
+
+	ret = gecko_cmd_le_gap_start_discovery(1,le_gap_discover_observation)->result; 
+	if( ret != 0){
+		MI_LOG_ERROR("start_discovery \n"); 
+		return ret;
 	}
 
     ble_scanning = 1;
+	MI_LOG_DEBUG("scan start return 0");
     return MI_SUCCESS;
 }
 
@@ -1203,4 +1213,21 @@ mible_status_t mible_gattc_confirm_indication(uint16_t conn_handle, uint16_t cha
 	struct gecko_msg_gatt_send_characteristic_confirmation_rsp_t *ret;
 	ret = gecko_cmd_gatt_send_characteristic_confirmation(conn_handle);
 	return ret->result;
+}
+#include <time.h>
+#include <sys/time.h>
+void get_time()
+{
+	struct timeval tv; 
+	struct timezone tz; 
+	gettimeofday(&tv, &tz);
+	
+	struct tm *tm_now;
+    time_t now;
+	time(&now);
+	tm_now = localtime(&now);	
+	char datetime[50] = {0};
+ 
+    strftime(datetime, 50, "%H:%M:%S", tm_now);
+	printf("[%s.%d]", datetime, tv.tv_usec); 
 }

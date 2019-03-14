@@ -27,6 +27,8 @@ typedef struct {
     mible_gap_connect_t target_to_connect;
 } target_connect_t;
 
+extern uint8_t ble_scanning; 
 
+void get_time();
 #endif
 
