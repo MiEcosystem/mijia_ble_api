@@ -137,6 +137,7 @@ device_info dev_info = {
         .bonding = STRONG_BONDING,
         .pid = 930,
         .version = "0000",
+        .strict_bind_confirm = 0,
 };
 
 wiced_bt_device_address_t  host_addr;
