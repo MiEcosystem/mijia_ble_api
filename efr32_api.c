@@ -728,18 +728,18 @@ mible_status_t mible_gatts_service_init(mible_gatts_db_t *p_server_db)
     extract_service_region(&p_server_db->p_srv_db->srv_uuid, &begin, &end);
 
     mible_gatts_char_db_t * p_char_db = p_server_db->p_srv_db->p_char_db;
-    for(int i = 0; i < p_server_db->p_srv_db->char_num && i < CHAR_TABLE_NUM; i++, p_char_db++) {
+    for(int n = 0; n < p_server_db->p_srv_db->char_num && m_char_table.num < CHAR_TABLE_NUM; n++, p_char_db++) {
         uint16_t handle = search_char_handle(&p_char_db->char_uuid, begin, end);
         if (handle != -1) {
             p_char_db->char_value_handle = handle + 1;
-
-            m_char_table.item[i].handle = p_char_db->char_value_handle;
-            m_char_table.item[i].rd_author = p_char_db->rd_author;
-            m_char_table.item[i].wr_author = p_char_db->wr_author;
-            m_char_table.item[i].char_property = p_char_db->char_property;
-            m_char_table.item[i].len = p_char_db->char_value_len;
-            memcpy(m_char_table.item[i].data, p_char_db->p_value, p_char_db->char_value_len);
-            m_char_table.num = 1 + i;
+            uint8_t idx = m_char_table.num;
+            m_char_table.item[idx].handle = p_char_db->char_value_handle;
+            m_char_table.item[idx].rd_author = p_char_db->rd_author;
+            m_char_table.item[idx].wr_author = p_char_db->wr_author;
+            m_char_table.item[idx].char_property = p_char_db->char_property;
+            m_char_table.item[idx].len = p_char_db->char_value_len;
+            memcpy(m_char_table.item[idx].data, p_char_db->p_value, p_char_db->char_value_len);
+            m_char_table.num++;
         } else {
             MI_LOG_ERROR("no char %d found.\n", p_char_db->char_uuid.uuid16);
             ret = MI_ERR_INTERNAL;

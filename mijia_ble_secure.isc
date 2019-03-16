@@ -1,0 +1,105 @@
+#ISD afv6
+# Simplicity Studio version: 5.2.2.201902221249-1438
+
+# Application configuration
+stackId: com.silabs.sdk.stack.super
+stackRoot: /Applications/Simplicity Studio.app/Contents/Eclipse/developer/sdks/gecko_sdk_suite/v2.5
+appId: ble
+frameworkRoot: app/bluetooth/appbuilder/fwk
+architecture: efr32~family[B]~series[1]~device_configuration[3]~performance[P]~radio[632]~flash[512K]~temp[G]~package[M]~pins[48]~!module+BRD4104A+gcc
+exactArchitectureToolchain: com.silabs.ss.tool.ide.arm.toolchain.gnu.cdt:7.2.1.20170904
+deviceName: mijia_ble_secure
+sourceSampleAppId: soc-empty
+generationDirectory: PATH(ISC_RELATIVE):.
+
+# Devices
+
+# UI customization
+hiddenLayoutElements: plugins,callbacks,other,radio
+
+# Plugin configuration
+appPlugin: mpsi=false
+appPlugin: mpsi-ipc=false
+appPlugin: mpsi-storage=false
+appPlugin: mpsi_ble_transport_server=false
+appPlugin: psstore=false
+appPlugin: slot-manager=false
+appPlugin: stack_bridge=false
+
+# Setup configurations
+{setupId:additionalFiles
+}
+{setupId:bleGattConfigurator
+<?xml version="1.0" encoding="UTF-8"?><gatt gatt_caching="false" generic_attribute_service="true" header="gatt_db.h" name="Custom BLE GATT" out="gatt_db.c" prefix="gattdb_">
+  <service advertise="false" name="Generic Access" requirement="mandatory" sourceId="org.bluetooth.service.generic_access" type="primary" uuid="1800">
+    <informativeText>Abstract: The generic_access service contains generic information about the device. All available Characteristics are readonly. </informativeText>
+    <characteristic id="device_name" name="Device Name" sourceId="org.bluetooth.characteristic.gap.device_name" uuid="2A00">
+      <informativeText/>
+      <value length="20" type="utf-8" variable_length="true">secure demo</value>
+      <properties const="false" const_requirement="optional" read="true" read_requirement="mandatory"/>
+    </characteristic>
+  </service>
+  <service advertise="false" name="Mi" requirement="mandatory" sourceId="custom.type" type="primary" uuid="FE95">
+    <informativeText>Custom service</informativeText>
+    <characteristic id="version" name="Version" sourceId="custom.type" uuid="0004">
+      <informativeText>Custom characteristic</informativeText>
+      <value length="20" type="user" variable_length="true">0x00</value>
+      <properties read="true" read_requirement="optional"/>
+    </characteristic>
+    <characteristic id="ctrlp" name="Control Point" sourceId="custom.type" uuid="0010">
+      <informativeText>Custom characteristic</informativeText>
+      <value length="4" type="user" variable_length="false">0x00</value>
+      <properties notify="true" notify_requirement="optional" write_no_response="true" write_no_response_requirement="optional"/>
+    </characteristic>
+    <characteristic id="secure_auth" name="Secure Auth" sourceId="custom.type" uuid="0016">
+      <informativeText>Custom characteristic</informativeText>
+      <value length="20" type="user" variable_length="true">0</value>
+      <properties notify="true" notify_requirement="optional" write_no_response="true" write_no_response_requirement="optional"/>
+    </characteristic>
+    <characteristic id="ota_ctrlp" name="OTA control point" sourceId="custom.type" uuid="0017">
+      <informativeText>Custom characteristic</informativeText>
+      <value length="20" type="user" variable_length="true"/>
+      <properties notify="true" notify_requirement="optional" write="true" write_requirement="optional"/>
+    </characteristic>
+    <characteristic id="ota_data" name="OTA data" sourceId="custom.type" uuid="0018">
+      <informativeText>Custom characteristic</informativeText>
+      <value length="20" type="user" variable_length="true"/>
+      <properties notify="true" notify_requirement="optional" write_no_response="true" write_no_response_requirement="optional"/>
+    </characteristic>
+  </service>
+  <service advertise="false" name="Mijia lock service" requirement="mandatory" sourceId="custom.type" type="primary" uuid="00001000-0065-6c62-2e74-6f696d2e696d">
+    <informativeText>Custom service</informativeText>
+    <characteristic id="lock_ops" name="Lock Operation" sourceId="custom.type" uuid="00001001-0065-6c62-2e74-6f696d2e696d">
+      <informativeText>Custom characteristic</informativeText>
+      <value length="7" type="user" variable_length="false">0x00</value>
+      <properties write="true" write_requirement="optional"/>
+    </characteristic>
+    <characteristic id="lock_stat" name="Lock State" sourceId="custom.type" uuid="00001002-0065-6c62-2e74-6f696d2e696d">
+      <informativeText>Custom characteristic</informativeText>
+      <value length="7" type="user" variable_length="false">0x00</value>
+      <properties notify="true" notify_requirement="optional" read="true" read_requirement="optional"/>
+    </characteristic>
+    <characteristic id="lock_logs" name="Lock logs" sourceId="custom.type" uuid="00001003-0065-6c62-2e74-6f696d2e696d">
+      <informativeText>Custom characteristic</informativeText>
+      <value length="20" type="user" variable_length="true">0x00</value>
+      <properties notify="true" notify_requirement="optional" read="true" read_requirement="optional"/>
+    </characteristic>
+  </service>
+</gatt>
+}
+{setupId:callbackConfiguration
+}
+{setupId:hwConfig
+featureLevel=1
+active=true
+}
+{setupId:macros
+}
+{setupId:mpsi
+- mappings
+- custom messages
+}
+{setupId:quizz
+}
+
+# Plugin options
