@@ -650,12 +650,21 @@ mible_status_t mible_gap_update_conn_params(uint16_t conn_handle,
 }
 
 /* GATTS related function  */
-static uint16_t get_uuid16_index(const struct bg_gattdb_def *bg_gattdb, uint16_t uuid16)
+static uint16_t get_uuid_index(const struct bg_gattdb_def *bg_gattdb, mible_uuid_t *p_uuid)
 {
     uint16_t index;
-    for (index = 0; index < bg_gattdb->uuidtable_16_size ; index++)
-        if (bg_gattdb->uuidtable_16[index] == uuid16)
-            return index;
+    if (p_uuid->type == 0) {
+        // UUID16
+        for (index = 0; index < bg_gattdb->uuidtable_16_size ; index++)
+            if (bg_gattdb->uuidtable_16[index] == p_uuid->uuid16)
+                return index;
+
+    } else {
+        // UUID128
+        for (index = 0; index < bg_gattdb->uuidtable_128_size ; index++)
+            if (memcmp(bg_gattdb->uuidtable_128 + index * 16, p_uuid->uuid128, 16) == 0)
+                return index;
+    }
 
     return -1;
 }
@@ -670,14 +679,17 @@ static uint16_t iterate_get_att_handle(uint16_t uuid_idx, uint16_t begin, uint16
     return -1;
 }
 
-static int extract_service_region(uint16_t service_uuid16, uint16_t *begin_handle, uint16_t *end_handle)
+static int extract_service_region(mible_uuid_t *p_srv_uuid, uint16_t *begin_handle, uint16_t *end_handle)
 {
-    uint16_t pri_srv_uuid_idx = get_uuid16_index(bg_gattdb, 0x2800);
+    mible_uuid_t pri_srv_uuid = {
+            .uuid16 = 0x2800,
+    };
+    uint16_t pri_srv_uuid_idx = get_uuid_index(bg_gattdb, &pri_srv_uuid);
 
     uint16_t handle = 0;
     do {
         handle = iterate_get_att_handle(pri_srv_uuid_idx, handle, bg_gattdb->attributes_max);
-        if (memcmp(bg_gattdb->attributes[handle].constdata->data, &service_uuid16, 2) == 0) {
+        if (memcmp(bg_gattdb->attributes[handle].constdata->data, p_srv_uuid->uuid128, p_srv_uuid->type ? 16 : 2) == 0) {
             *begin_handle = handle;
             *end_handle = iterate_get_att_handle(pri_srv_uuid_idx, handle+1, bg_gattdb->attributes_max);
             return 0;
@@ -689,11 +701,12 @@ static int extract_service_region(uint16_t service_uuid16, uint16_t *begin_handl
     return -1;
 }
 
-static uint16_t search_char_handle(uint16_t char_uuid16, uint16_t begin_handle, uint16_t end_handle)
+static uint16_t search_char_handle(mible_uuid_t *p_char_uuid, uint16_t begin_handle, uint16_t end_handle)
 {
-    uint16_t char_uuid16_idx = get_uuid16_index(bg_gattdb, char_uuid16);
-    return iterate_get_att_handle(char_uuid16_idx, begin_handle, end_handle);
-
+    uint16_t char_uuid_idx = get_uuid_index(bg_gattdb, p_char_uuid);
+    if (p_char_uuid->type == 1)
+        char_uuid_idx |= 0x8000;
+    return iterate_get_att_handle(char_uuid_idx, begin_handle, end_handle);
 }
 
 /*
@@ -712,12 +725,11 @@ mible_status_t mible_gatts_service_init(mible_gatts_db_t *p_server_db)
     mible_arch_evt_param_t param;
     uint16_t begin, end;
 
-    extract_service_region(p_server_db->p_srv_db->srv_uuid.uuid16, &begin, &end);
+    extract_service_region(&p_server_db->p_srv_db->srv_uuid, &begin, &end);
 
     mible_gatts_char_db_t * p_char_db = p_server_db->p_srv_db->p_char_db;
-
     for(int i = 0; i < p_server_db->p_srv_db->char_num && i < CHAR_TABLE_NUM; i++, p_char_db++) {
-        uint16_t handle = search_char_handle(p_char_db->char_uuid.uuid16, begin, end);
+        uint16_t handle = search_char_handle(&p_char_db->char_uuid, begin, end);
         if (handle != -1) {
             p_char_db->char_value_handle = handle + 1;
 
