@@ -306,7 +306,7 @@ mible_status_t mible_gap_adv_data_set(uint8_t const * p_data, uint8_t dlen, uint
     gap_data.scan_rsp_data.p_data = scan_rsp_data;
     gap_data.scan_rsp_data.len    = scan_rsp_data_len;
 
-    MI_LOG_ERROR("adv len %d, scan len %d\n", adv_data_len, scan_rsp_data_len);
+    MI_LOG_DEBUG("adv len %d, scan len %d\n", adv_data_len, scan_rsp_data_len);
     if (is_advertising) {
         /* configure adtvertising without data to circumvent Nordics new Buffer rule. */
         errno = sd_ble_gap_adv_set_configure(&adv_handle, NULL, NULL);
