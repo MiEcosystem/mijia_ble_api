@@ -5,7 +5,17 @@
 #include "gecko_bglib.h"
 #include "erf32_api.h"
 
-bool recv_unprop = false; 
+static mible_mesh_event_cb_t mible_mesh_event_callback_handler;
+static bool recv_unprop = false; 
+static int mible_mesh_event_callback(mible_mesh_event_type_t type, void * data)
+{
+    if(mible_mesh_event_callback_handler != NULL){
+        mible_mesh_event_callback_handler(type, (mible_mesh_event_params_t *)data);
+    }
+    return 0;
+}
+
+
 void mible_stack_event_handler(struct gecko_cmd_packet *evt)
 {
 	if (NULL == evt) {
@@ -32,33 +42,15 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt)
 			break; 
 	}
 }
-/**
- *@brief    start recv unprovision beacon, report result by MIBLE_EVENT.
- *@return   0: success, negetive value: failure
- */
-int mible_mesh_start_recv_unprovbeacon(void){
-	recv_unprop = true; 
-	return gecko_cmd_mesh_prov_scan_unprov_beacons()->result;
-}
-
-/**
- *@brief    stop recv unprovision beacon, terminate report result.
- *@return   0: success, negetive value: failure
- */
-int mible_mesh_stop_recv_unprovbeacon(void)
-{
-	recv_unprop = false;
-	return 0;
-}
 
 /**
  *@brief    appkey information for node, mesh profile 4.3.2.37-39, Report 4.3.2.40 Config AppKey Status.
  *          report event: MIBLE_MESH_EVENT_CONFIG_MESSAGE_CB, data: mible_mesh_access_message_rx_t.
- *@param    [in] opcode : add/update/delete ...
+ *@param    [in] opcode : mesh spec opcode, add/update/delete ...
  *@param    [in] param : appkey parameters corresponding to node
  *@return   0: success, negetive value: failure
  */
-int mible_mesh_node_set_appkey(uint32_t opcode, mible_mesh_appkey_params_t *param);
+int mible_mesh_node_set_appkey(uint16_t opcode, mible_mesh_appkey_params_t *param);
 
 /**
  *@brief    bind appkey information for node, mesh profile 4.3.2.46-47, Report 4.3.2.48 Config Model App Status.
@@ -94,7 +86,6 @@ int mible_mesh_node_bind_appkey(uint32_t opcode, mible_mesh_model_app_params_t *
 		default:
 			return -1; 
 	}
-
 }
 
 /**
@@ -158,26 +149,156 @@ int mible_mesh_node_reset(uint32_t opcode, mible_mesh_reset_params_t *param)
  *          according to opcode, generate a mesh message; extral params: ack_opcode, tid, get_or_set.
  *@return   0: success, negetive value: failure
  */
-int mible_mesh_node_generic_control(mible_mesh_generic_params_t * param);
+int mible_mesh_node_generic_control(mible_mesh_generic_params_t * param)
+{
+	uint8_t flags = 0; 
+	struct gecko_msg_mesh_generic_client_get_rsp_t *get_ret;
+	struct gecko_msg_mesh_generic_client_set_rsp_t *set_ret;
+
+	switch(param->opcode){
+		// GENERIC ONOFF 
+		case MIBLE_MESH_MSG_GENERIC_ONOFF_GET:
+
+			get_ret = gecko_cmd_mesh_generic_client_get(
+					MIBLE_MESH_MODEL_ID_GENERIC_ONOFF_CLIENT, param->element_index, 
+					param->dst_addr, param->global_appkey_index, 
+					MESH_GENERIC_CLIENT_state_on_off);
+			return get_ret->result; 
+
+		case MIBLE_MESH_MSG_GENERIC_ONOFF_SET:
+
+			flags = 1; 
+
+		case MIBLE_MESH_MSG_GENERIC_ONOFF_SET_UNACKNOWLEDGED:
+
+			flags = 0; 
+			set_ret = gecko_cmd_mesh_generic_client_set(
+					MIBLE_MESH_MODEL_ID_GENERIC_ONOFF_CLIENT, param->element_index, 
+					param->dst_addr, param->global_appkey_index, param->data[1], 0, 0, flags, 
+					MESH_GENERIC_CLIENT_state_on_off, 1, param->data);
+			return set_ret->result; 
+				
+		// LIGHTNESS 
+		case MIBLE_MESH_MSG_LIGHT_LIGHTNESS_GET:
+			
+			get_ret = gecko_cmd_mesh_generic_client_get(
+					MIBLE_MESH_MODEL_ID_LIGHTNESS_CLIENT, param->element_index, 
+					param->dst_addr, param->global_appkey_index, 
+					MESH_GENERIC_CLIENT_state_lightness_actual);
+			return get_ret->result; 
+
+		case MIBLE_MESH_MSG_LIGHT_LIGHTNESS_SET:
+
+			flags = 1; 
+	
+		case MIBLE_MESH_MSG_LIGHT_LIGHTNESS_SET_UNACKNOWLEDGED:
+
+			flags = 0; 
+			set_ret = gecko_cmd_mesh_generic_client_set(
+					MIBLE_MESH_MODEL_ID_LIGHTNESS_CLIENT, param->element_index, 
+					param->dst_addr, param->global_appkey_index, param->data[2], 0, 0, flags, 
+					MESH_GENERIC_CLIENT_state_lightness_actual, 2, param->data);
+			return set_ret->result; 
+
+		// LIGHTCTL
+		case MIBLE_MESH_MSG_LIGHT_CTL_TEMPERATURE_GET:
+		
+			get_ret = gecko_cmd_mesh_generic_client_get(
+					MIBLE_MESH_MODEL_ID_CTL_CLIENT, param->element_index, 
+					param->dst_addr, param->global_appkey_index, 
+					MESH_GENERIC_CLIENT_state_ctl_temperature);
+			return get_ret->result; 
+			
+		case MIBLE_MESH_MSG_LIGHT_CTL_TEMPERATURE_SET: 
+			
+			flags = 1; 
+			   
+		case MIBLE_MESH_MSG_LIGHT_CTL_TEMPERATURE_SET_UNACKNOWLEDGED:
+
+			flags = 0; 
+			set_ret = gecko_cmd_mesh_generic_client_set(
+					MIBLE_MESH_MODEL_ID_CTL_CLIENT, param->element_index, 
+					param->dst_addr, param->global_appkey_index, param->data[4], 0, 0, flags, 
+					MESH_GENERIC_CLIENT_state_ctl_temperature, 4, param->data);
+			return set_ret->result; 
+
+		default:
+			break; 
+	} 
+}
+
+/**********************************************************************//**
+ * Provisioner Local Operation Definitions
+ * netkey_index: local key index, global_netkey_index, is used to encrypt network data;
+ * appkey_index: local key index, global_appkey_index, is used to encrypt app data;
+ **********************************************************************/
 
 /**
- *@brief    mesh stack init, register event callback
- *          init mesh ble hardware, memory; init mesh thread, prepare for creating mesh network, .
- *          report event: MIBLE_MESH_EVENT_STACK_INIT_DONE, data: NULL.
+ *@brief    sync method, register event callback
  *@param    [in] mible_mesh_event_cb : event callback
- *@param    [in] info : init parameters corresponding to gateway
  *@return   0: success, negetive value: failure
  */
-int mible_mesh_init_stack(mible_mesh_event_cb_t mible_mesh_event_cb, mible_mesh_gateway_info_t *info);
+int mible_mesh_gateway_register_event_callback(mible_mesh_event_cb_t mible_mesh_event_cb)
+{
+	mible_mesh_event_callback_handler = mible_mesh_event_cb;
+	return 0;
+}
 
 /**
- *@brief    init mesh provisioner, after this step, mesh network is avilable.
- *          load iv/seq_num, init model, load netkey, bind appkey, sub group address 0xFEFF,
- *          report event: MIBLE_MESH_EVENT_GATEWAY_INIT_DONE, data: NULL.
+ *@brief    sync method, unregister event callback
+ *@param    [in] mible_mesh_event_cb : event callback
+ *@return   0: success, negetive value: failure
+ */
+int mible_mesh_gateway_unregister_event_callback(mible_mesh_event_cb_t mible_mesh_event_cb)
+{
+	if(mible_mesh_event_callback_handler == mible_mesh_event_cb){
+        mible_mesh_event_callback_handler = NULL;
+        return 0;
+    }
+    return -1;
+}
+
+/**
+ *@brief    async method, init mesh stack.
+ *          report event: MIBLE_MESH_EVENT_STACK_INIT_DONE, data: NULL.
+ *@return   0: success, negetive value: failure
+ */
+int mible_mesh_gateway_init_stack(void)
+{
+	// TODO 
+	mible_mesh_event_callback(MIBLE_MESH_EVENT_STACK_INIT_DONE, NULL); 
+	return 0;
+}
+
+/**
+ *@brief    async method, init mesh provisioner
+ *          load self info, include unicast address, iv, seq_num, init model;
+ *          clear local db, related appkey_list, netkey_list, device_key_list,
+ *          we will load latest data for cloud;
+ *          report event: MIBLE_MESH_EVENT_PROVISIONER_INIT_DONE, data: NULL.
  *@param    [in] info : init parameters corresponding to gateway
  *@return   0: success, negetive value: failure
  */
-int mible_mesh_load_config(mible_mesh_gateway_info_t *info);
+int mible_mesh_gateway_init_provisioner(mible_mesh_gateway_info_t *info)
+{
+	struct gecko_msg_mesh_prov_initialize_network_rsp_t *ret; 
+	ret = gecko_cmd_mesh_prov_initialize_network(info->unicast_address, info->iv_index);
+	return ret->result; 
+}
+
+/**
+ *@brief    sync method, create mesh network for provisioner.
+ *@param    [in] netkey_index : key index for netkey
+ *@param    [in] netkey : netkey value
+ *@param    [in|out] stack_netkey_index : [in] default value: 0xFFFF, [out] stack generates netkey_index
+ *          if your stack don't manage netkey_index and stack_netkey_index relationships, update stack_netkey_index;
+ *          otherwise, do nothing.
+ *@return   0: success, negetive value: failure
+ */
+int mible_mesh_gateway_create_network(uint16_t netkey_index, uint8_t *netkey, uint16_t *stack_netkey_index)
+{
+	return 0;
+}
 
 /**
  *@brief    set local provisioner network transmit params.
@@ -185,7 +306,31 @@ int mible_mesh_load_config(mible_mesh_gateway_info_t *info);
  *@param    [in] interval_steps : adv interval = interval_steps*0.625ms
  *@return   0: success, negetive value: failure
  */
-int mible_mesh_gateway_set_network_transmit_param(uint8_t count, uint8_t interval_steps);
+int mible_mesh_gateway_set_network_transmit_param(uint8_t count, uint8_t interval_steps)
+{
+	return 0; 
+}
+
+/**
+ *@brief    start recv unprovision beacon, report result by MIBLE_EVENT.
+ *@return   0: success, negetive value: failure
+ */
+int mible_mesh_start_recv_unprovbeacon(void)
+{
+	recv_unprop = true; 
+	return gecko_cmd_mesh_prov_scan_unprov_beacons()->result;
+
+}
+
+/**
+ *@brief    stop recv unprovision beacon, terminate report result.
+ *@return   0: success, negetive value: failure
+ */
+int mible_mesh_stop_recv_unprovbeacon(void)
+{
+	recv_unprop = false; 
+	return 0;
+}
 
 /**
  *@brief    update iv index, .
@@ -193,7 +338,11 @@ int mible_mesh_gateway_set_network_transmit_param(uint8_t count, uint8_t interva
  *@param    [in] flags : contains the Key Refresh Flag and IV Update Flag
  *@return   0: success, negetive value: failure
  */
-int mible_mesh_gateway_update_iv_info(uint32_t iv_index, uint8_t flags);
+
+int mible_mesh_gateway_update_iv_info(uint32_t iv_index, uint8_t flags)
+{
+	return 0;
+}
 
 /**
  *@brief    add/delete local netkey.
@@ -204,8 +353,7 @@ int mible_mesh_gateway_update_iv_info(uint32_t iv_index, uint8_t flags);
  *          if your stack don't manage netkey_index and stack_netkey_index relationships, update stack_netkey_index.
  *@return   0: success, negetive value: failure
  */
-int mible_mesh_gateway_set_netkey(mible_mesh_op_t op, uint16_t netkey_index, uint8_t *netkey,
-            uint16_t *stack_netkey_index)
+int mible_mesh_gateway_set_netkey(mible_mesh_op_t op, uint16_t netkey_index, uint8_t *netkey, uint16_t *stack_netkey_index)
 {
 	if(netkey == NULL)
 		return -1; 
@@ -232,8 +380,7 @@ int mible_mesh_gateway_set_netkey(mible_mesh_op_t op, uint16_t netkey_index, uin
  *          if your stack don't manage appkey_index and stack_appkey_index relationships, update stack_appkey_index.
  *@return   0: success, negetive value: failure
  */
-int mible_mesh_gateway_set_appkey(mible_mesh_op_t op, uint16_t netkey_index, uint16_t appkey_index,
-            uint8_t * appkey, uint16_t *stack_appkey_index)
+int mible_mesh_gateway_set_appkey(mible_mesh_op_t op, uint16_t netkey_index, uint16_t appkey_index,uint8_t * appkey, uint16_t *stack_appkey_index)
 {
 	if(appkey == NULL)
 		return -1; 
@@ -253,26 +400,26 @@ int mible_mesh_gateway_set_appkey(mible_mesh_op_t op, uint16_t netkey_index, uin
 /**
  *@brief    bind/unbind model app.
  *@param    [in] op : bind is MIBLE_MESH_OP_ADD, unbind is MIBLE_MESH_OP_DELETE
- *@param    [in] model_id : key index for netkey
+ *@param    [in] company_id: company id
+ *@param    [in] model_id : model_id
  *@param    [in] appkey_index : key index for appkey
  *@return   0: success, negetive value: failure
  */
-int mible_mesh_gateway_set_model_app(mible_mesh_op_t op, uint8_t element_index, uint32_t model_id, uint16_t appkey_index)
+int mible_mesh_gateway_set_model_app(mible_mesh_op_t op, uint16_t company_id, uint16_t model_id, uint16_t appkey_index)
 {
-	mible_mesh_model_id_t id = (mible_mesh_model_id_t)(model_id);
-
 	if(op == MIBLE_MESH_OP_ADD){
 		struct gecko_msg_mesh_test_bind_local_model_app_rsp_t *bind_ret;
-		bind_ret = gecko_cmd_mesh_test_bind_local_model_app(element_index,
-				appkey_index, id.company_id, id.model_id);
+		bind_ret = gecko_cmd_mesh_test_bind_local_model_app(0,
+				appkey_index, company_id, model_id);
 		return bind_ret->result; 
 	}else{
 	
 		struct gecko_msg_mesh_test_unbind_local_model_app_rsp_t *unbind_ret;
-		unbind_ret = gecko_cmd_mesh_test_unbind_local_model_app(element_index,
-				appkey_index, id.company_id, id.model_id);
+		unbind_ret = gecko_cmd_mesh_test_unbind_local_model_app(0,
+				appkey_index, company_id, model_id);
 		return unbind_ret->result; 
 	}
+
 }
 
 /**
@@ -305,14 +452,21 @@ int mible_mesh_gateway_set_device_key(mible_mesh_op_t op, mible_mesh_node_info_t
  *@param    [in] param: subscription params
  *@return   0: success, negetive value: failure
  */
-int mible_mesh_gateway_set_sub_address(mible_mesh_op_t op, mible_mesh_subscription_params_t *param);
+
+int mible_mesh_gateway_set_sub_address(mible_mesh_op_t op, uint16_t company_id, uint16_t model_id, mible_mesh_address_t *sub_addr)
+{
+	struct gecko_msg_mesh_test_add_local_model_sub_rsp_t *ret; 
+	ret = gecko_cmd_mesh_test_add_local_model_sub(0, company_id,
+			model_id, sub_addr->type); 
+}
 
 /**
  *@brief    suspend adv send for mesh stack.
  *@param    [in] NULL
  *@return   0: success, negetive value: failure
  */
-int mible_mesh_suspend_transmission(void){
+int mible_mesh_suspend_transmission(void)
+{
 	return 0; 
 }
 
@@ -321,12 +475,7 @@ int mible_mesh_suspend_transmission(void){
  *@param    [in] NULL
  *@return   0: success, negetive value: failure
  */
-int mible_mesh_resume_transmission(void){
-	return 0;
+int mible_mesh_resume_transmission(void)
+{
+	return 0; 
 }
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif

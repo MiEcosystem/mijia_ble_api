@@ -327,7 +327,7 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt){
                 == bg_err_bt_connection_terminated_by_local_host) {
             	gap_evt_param.disconnect.reason = LOCAL_HOST_TERMINATED;
         	}
-        	mible_gap_event_callback(MIBLE_GAP_EVT_DISCONNET, &gap_evt_param);
+        	mible_gap_event_callback(MIBLE_GAP_EVT_DISCONNETED, &gap_evt_param);
     	break;
 
     	case gecko_evt_le_connection_parameters_id:
