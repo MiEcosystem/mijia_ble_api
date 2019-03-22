@@ -450,7 +450,6 @@ typedef struct{
     uint16_t global_netkey_index;
     uint16_t global_appkey_index;
     mible_mesh_opcode_t opcode;
-    uint16_t element_index;
     uint8_t  data_len;
     uint8_t* data;      /**< mesh message raw data */
 }mible_mesh_generic_params_t;
