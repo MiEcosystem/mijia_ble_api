@@ -281,7 +281,7 @@ void mible_arch_event_callback(mible_arch_event_t evt,
 void mible_stack_event_handler(struct gecko_cmd_packet *evt){
 	mible_gap_evt_param_t gap_evt_param = {0};
 	mible_gatts_evt_param_t gatts_evt_param = {0};
-	mible_gattc_evt_param_t gattc_evt_param = {0};
+	//mible_gattc_evt_param_t gattc_evt_param = {0};
   
 	if (NULL == evt) {
     	return;
@@ -291,6 +291,7 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt){
   	switch (BGLIB_MSG_ID(evt->header)) {
 
 		case gecko_evt_le_connection_opened_id:
+			MI_LOG_INFO("gecko_evt_le_connection_opened_id \n"); 
         	connection_handle = evt->data.evt_le_connection_opened.connection;
         	gap_evt_param.conn_handle = evt->data.evt_le_connection_opened.connection;
         	memcpy(gap_evt_param.connect.peer_addr,
@@ -316,6 +317,8 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt){
     	break;
 
     	case gecko_evt_le_connection_closed_id:
+			
+			MI_LOG_INFO("gecko_evt_le_connection_closed_id \n"); 
         	connection_handle = DISCONNECTION;
         	gap_evt_param.conn_handle = evt->data.evt_le_connection_closed.connection;
         	if (evt->data.evt_le_connection_closed.reason == bg_err_bt_connection_timeout) {
@@ -327,7 +330,7 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt){
                 == bg_err_bt_connection_terminated_by_local_host) {
             	gap_evt_param.disconnect.reason = LOCAL_HOST_TERMINATED;
         	}
-        	mible_gap_event_callback(MIBLE_GAP_EVT_DISCONNETED, &gap_evt_param);
+        	mible_gap_event_callback(MIBLE_GAP_EVT_DISCONNECTED, &gap_evt_param);
     	break;
 
     	case gecko_evt_le_connection_parameters_id:
@@ -580,7 +583,7 @@ mible_status_t mible_gap_scan_start(mible_gap_scan_type_t scan_type,
 		return ret;
 	}
 
-	ret = gecko_cmd_le_gap_set_discovery_type(1,1)->result;  
+	ret = gecko_cmd_le_gap_set_discovery_type(1,active)->result;  
 	if(ret != 0){
 		MI_LOG_ERROR("set discovery type \n");
 		return ret;
@@ -1105,16 +1108,16 @@ __WEAK mible_status_t mible_gatts_rw_auth_reply(uint16_t conn_handle,
  *          MIBLE_ERR_INVALID_CONN_HANDLE  Invaild connection handle.
  * @note    The response is given through MIBLE_GATTC_EVT_DISCOVERY_RSP event
  * */
-mible_status_t mible_gattc_service_discovery(uint16_t conn_handle, mible_uuid_t srv_uuid)
+mible_status_t mible_gattc_service_discovery(uint16_t conn_handle, mible_uuid_t *srv_uuid)
 {
 	struct gecko_msg_gatt_discover_primary_services_by_uuid_rsp_t *ret; 
-	memcpy((uint8_t *)&discover_srv_uuid, (uint8_t *)&srv_uuid, sizeof(mible_uuid_t));
-	if(srv_uuid.type == 0)
+	memcpy((uint8_t *)&discover_srv_uuid, (uint8_t *)srv_uuid, sizeof(mible_uuid_t));
+	if(srv_uuid->type == 0)
 		ret = gecko_cmd_gatt_discover_primary_services_by_uuid(
-				conn_handle, 2, (const uint8_t *)&srv_uuid.uuid16); 	
+				conn_handle, 2, (const uint8_t *)&srv_uuid->uuid16); 	
 	else
 		ret = gecko_cmd_gatt_discover_primary_services_by_uuid(
-				conn_handle, 16 , (const uint8_t *)srv_uuid.uuid128);
+				conn_handle, 16 , (const uint8_t *)&srv_uuid->uuid128);
 	return ret->result;
 }
 /**

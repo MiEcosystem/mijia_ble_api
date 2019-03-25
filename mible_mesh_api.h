@@ -9,7 +9,7 @@ extern "C" {
 #define __packed __attribute__((packed))
 #endif
 
-#include "mijia_ble_api/mible_type.h"
+#include "mible_type.h"
 
 /*SIG Generic model ID */
 #define MIBLE_MESH_MODEL_ID_CONFIGURATION_SERVER                    0x0000
@@ -1031,7 +1031,7 @@ int mible_mesh_stop_recv_unprovbeacon(void);
  *@param    [in] iv_index : current IV Index
  *@param    [in] flags : contains the Key Refresh Flag and IV Update Flag
  *@return   0: success, negetive value: failure
- */id);
+ */
 
 
 int mible_mesh_gateway_update_iv_info(uint32_t iv_index, uint8_t flags);
