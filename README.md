@@ -3,7 +3,7 @@
 master分支为工作分支，由米家开发人员维护，抽象mijia BLE 底层通用 API 。mible_api.c 中函数为弱定义实现。api的具体说明详见https://miecosystem.github.io/mijia_ble_api/
 
 ## 芯片厂分支
-此分支为telink平台适配实现，SDK版本2.3。
+此分支为telink平台适配实现，SDK版本3.2。
 
 各芯片厂提供兼容层适配：
 
