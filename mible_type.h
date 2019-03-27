@@ -1,5 +1,6 @@
 #ifndef MIBLE_TYPE_H__
 #define MIBLE_TYPE_H__
+#include "../../../../vendor/common/user_config.h"
 
 // Copyright [2017] [Beijing Xiaomi Mobile Software Co., Ltd]
 //
@@ -66,6 +67,15 @@ typedef struct {
 	} ch_mask;
 } mible_gap_adv_param_t;
 
+typedef struct {
+    uint8_t adv_data[31];                      // advertising data
+    uint8_t adv_len;                           // advertising data length
+    uint8_t scan_rsp_data[31];                 // response data in active scanning
+    uint8_t scan_rsp_len;                      // response data length in active scanning
+    uint8_t clear_adv_data;
+    uint8_t clear_scan_data;
+} mible_gap_adv_data_t;
+
 typedef enum {
     ADV_DATA,           // advertising data
     SCAN_RSP_DATA,      // response data from active scanning
@@ -75,7 +85,7 @@ typedef struct {
     mible_addr_t peer_addr;
     mible_addr_type_t addr_type;
     mible_gap_adv_data_type_t adv_type;
-    int8_t rssi;
+    uint8_t rssi;
     uint8_t data[31];
     uint8_t data_len;
 } mible_gap_adv_report_t;
@@ -131,6 +141,8 @@ typedef enum {
 } mible_gap_evt_t;
 
 /*GATTS related*/
+#define MIBLE_UUID_16 	0
+#define MIBLE_UUID_128	1
 
 // GATTS database
 typedef struct {

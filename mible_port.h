@@ -15,12 +15,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <stdbool.h>
+//#include <stdbool.h>
 #include <stdint.h>
+#include "../../../../common/types.h"
 
-#ifndef NULL
-#define NULL 0
-#endif
+
+
 
 #if defined(__CC_ARM)
 #pragma anon_unions
@@ -113,11 +113,16 @@
 #define CRITICAL_SECTION_ENTER()
 #define CRITICAL_SECTION_EXIT()
 
-#define MI_PRINTF(...)
-#define MI_HEXDUMP(base_addr, bytes)
+#define MI_LOG_ENABLED 	1
 
-#define TRACE_INIT(pin)
-#define TRACE_ENTER(pin)
-#define TRACE_EXIT(pin)
+#if MI_LOG_ENABLED
+
+#define MI_LOG_PRINTF(...)			my_printf_uart(__VA_ARGS__)	
+#define MI_LOG_HEXDUMP(...)			my_printf_uart_hexdump(__VA_ARGS__)
+
+#else
+#define MI_LOG_PRINTF(...)		
+#define MI_LOG_HEXDUMP(...)
+#endif 
 
 #endif // MIBLE_PORT_H__

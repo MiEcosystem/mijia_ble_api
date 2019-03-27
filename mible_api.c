@@ -42,7 +42,7 @@ int mible_gap_register(mible_gap_callback_t cb)
     }
     CRITICAL_SECTION_EXIT();
 
-    return ret;
+    return MI_SUCCESS;
 }
 
 int mible_gattc_register(mible_gattc_callback_t cb)
@@ -60,7 +60,7 @@ int mible_gattc_register(mible_gattc_callback_t cb)
     }
     CRITICAL_SECTION_EXIT();
 
-    return ret;
+    return MI_SUCCESS;
 }
 
 int mible_gatts_register(mible_gatts_callback_t cb)
@@ -78,7 +78,7 @@ int mible_gatts_register(mible_gatts_callback_t cb)
     }
     CRITICAL_SECTION_EXIT();
 
-    return ret;
+    return MI_SUCCESS;
 }
 
 int mible_arch_register(mible_arch_callback_t cb)
@@ -96,7 +96,7 @@ int mible_arch_register(mible_arch_callback_t cb)
     }
     CRITICAL_SECTION_EXIT();
 
-    return ret;
+    return MI_SUCCESS;
 }
 
 /**
@@ -187,7 +187,7 @@ void mible_arch_event_callback(mible_arch_event_t evt,
  * */
 __WEAK mible_status_t mible_gap_address_get(mible_addr_t mac)
 {
-    return MI_SUCCESS;
+    return telink_ble_mi_get_gap_address(mac);
 }
 
 /**
@@ -239,7 +239,7 @@ __WEAK mible_status_t mible_gap_scan_stop(void)
  * */
 __WEAK mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_param)
 {
-    return MI_SUCCESS;
+    return telink_ble_mi_adv_start(p_param);
 }
 
 /**
@@ -255,6 +255,7 @@ __WEAK mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_param)
 __WEAK mible_status_t mible_gap_adv_data_set(uint8_t const * p_data,
         uint8_t dlen, uint8_t const *p_sr_data, uint8_t srdlen)
 {
+	telink_ble_mi_gap_adv_data_set(p_data,dlen,p_sr_data,srdlen);
     return MI_SUCCESS;
 }
 
@@ -266,7 +267,7 @@ __WEAK mible_status_t mible_gap_adv_data_set(uint8_t const * p_data,
  * */
 __WEAK mible_status_t mible_gap_adv_stop(void)
 {
-    return MI_SUCCESS;
+    return telink_ble_mi_adv_stop();
 }
 
 /**
@@ -325,7 +326,7 @@ __WEAK mible_status_t mible_gap_disconnect(uint16_t conn_handle)
 __WEAK mible_status_t mible_gap_update_conn_params(uint16_t conn_handle,
         mible_gap_conn_param_t conn_params)
 {
-    return MI_SUCCESS;
+    return telink_ble_mi_update_conn_params(conn_handle,conn_params);
 }
 
 /**
@@ -344,7 +345,11 @@ __WEAK mible_status_t mible_gap_update_conn_params(uint16_t conn_handle,
  * */
 __WEAK mible_status_t mible_gatts_service_init(mible_gatts_db_t *p_server_db)
 {
-    return MI_SUCCESS;
+    mible_arch_evt_param_t param;
+	param.srv_init_cmp.status = telink_ble_mi_gatts_service_init(p_server_db);
+	param.srv_init_cmp.p_gatts_db = p_server_db;
+	mible_arch_event_callback(MIBLE_ARCH_EVT_GATTS_SRV_INIT_CMP, &param);
+	return param.srv_init_cmp.status;
 }
 
 /**
@@ -367,7 +372,7 @@ __WEAK mible_status_t mible_gatts_service_init(mible_gatts_db_t *p_server_db)
 __WEAK mible_status_t mible_gatts_value_set(uint16_t srv_handle,
         uint16_t value_handle, uint8_t offset, uint8_t* p_value, uint8_t len)
 {
-    return MI_SUCCESS;
+    return telink_ble_mi_gatts_value_set(srv_handle,value_handle,offset,p_value,len);
 }
 
 /**
@@ -385,7 +390,7 @@ __WEAK mible_status_t mible_gatts_value_set(uint16_t srv_handle,
 __WEAK mible_status_t mible_gatts_value_get(uint16_t srv_handle,
         uint16_t value_handle, uint8_t* p_value, uint8_t *p_len)
 {
-    return MI_SUCCESS;
+    return telink_ble_mi_gatts_value_get(srv_handle,value_handle,p_value,p_len);
 }
 
 /**
@@ -418,7 +423,8 @@ __WEAK mible_status_t mible_gatts_notify_or_indicate(uint16_t conn_handle,
         uint16_t srv_handle, uint16_t char_value_handle, uint8_t offset,
         uint8_t* p_value, uint8_t len, uint8_t type)
 {
-    return MI_SUCCESS;
+    return telink_ble_mi_gatts_notify_or_indicate(conn_handle,srv_handle,
+    char_value_handle,offset,p_value,len,type);
 }
 
 /**
@@ -601,7 +607,7 @@ __WEAK mible_status_t mible_gattc_write_cmd(uint16_t conn_handle,
 __WEAK mible_status_t mible_timer_create(void** p_timer_id,
         mible_timer_handler timeout_handler, mible_timer_mode mode)
 {
-    return MI_SUCCESS;
+    return telink_mi_timer_create(p_timer_id,timeout_handler,mode);
 }
 
 /**
@@ -612,7 +618,7 @@ __WEAK mible_status_t mible_timer_create(void** p_timer_id,
  * */
 __WEAK mible_status_t mible_timer_delete(void* timer_id)
 {
-    return MI_SUCCESS;
+    return  telink_mi_timer_delete(timer_id); 
 }
 
 /**
@@ -633,7 +639,7 @@ __WEAK mible_status_t mible_timer_delete(void* timer_id)
 __WEAK mible_status_t mible_timer_start(void* timer_id, uint32_t timeout_value,
         void* p_context)
 {
-    return MI_SUCCESS;
+    return telink_mi_timer_start(timer_id,timeout_value*1000,p_context);
 }
 
 /**
@@ -645,7 +651,7 @@ __WEAK mible_status_t mible_timer_start(void* timer_id, uint32_t timeout_value,
  * */
 __WEAK mible_status_t mible_timer_stop(void* timer_id)
 {
-    return MI_SUCCESS;
+    return telink_mi_timer_stop(timer_id);
 }
 
 /**
@@ -664,7 +670,7 @@ __WEAK mible_status_t mible_timer_stop(void* timer_id)
  * */
 __WEAK mible_status_t mible_record_create(uint16_t record_id, uint8_t len)
 {
-    return MI_SUCCESS;
+    return  telink_record_create(record_id, len);
 }
 
 /**
@@ -675,7 +681,7 @@ __WEAK mible_status_t mible_record_create(uint16_t record_id, uint8_t len)
  * */
 __WEAK mible_status_t mible_record_delete(uint16_t record_id)
 {
-    return MI_SUCCESS;
+    return telink_record_delete(record_id);
 }
 
 /**
@@ -692,7 +698,7 @@ __WEAK mible_status_t mible_record_delete(uint16_t record_id)
 __WEAK mible_status_t mible_record_read(uint16_t record_id, uint8_t* p_data,
         uint8_t len)
 {
-    return MI_SUCCESS;
+    return telink_record_read(record_id, p_data,len);
 }
 
 /**
@@ -712,7 +718,7 @@ __WEAK mible_status_t mible_record_read(uint16_t record_id, uint8_t* p_data,
 __WEAK mible_status_t mible_record_write(uint16_t record_id, const uint8_t* p_data,
         uint8_t len)
 {
-    return MI_SUCCESS;
+    return telink_record_write(record_id,(uint8_t*)p_data,len);
 }
 
 /**
@@ -732,7 +738,7 @@ __WEAK mible_status_t mible_record_write(uint16_t record_id, const uint8_t* p_da
  * */
 __WEAK mible_status_t mible_rand_num_generator(uint8_t* p_buf, uint8_t len)
 {
-    return MI_SUCCESS;
+    return telink_ble_mi_rand_num_generator(p_buf,len);
 }
 
 /**
@@ -752,7 +758,7 @@ __WEAK mible_status_t mible_rand_num_generator(uint8_t* p_buf, uint8_t len)
 __WEAK mible_status_t mible_aes128_encrypt(const uint8_t* key,
         const uint8_t* plaintext, uint8_t plen, uint8_t* ciphertext)
 {
-    return MI_SUCCESS;
+    return telink_ble_mi_aes128_encrypt(key,plaintext,plen,ciphertext)	;
 }
 
 /**
@@ -766,7 +772,7 @@ __WEAK mible_status_t mible_aes128_encrypt(const uint8_t* key,
  * */
 __WEAK mible_status_t mible_task_post(mible_handler_t handler, void *arg)
 {
-    return MI_SUCCESS;
+    return telink_mi_task_post(handler,arg);
 }
 
 /**
@@ -777,7 +783,7 @@ __WEAK mible_status_t mible_task_post(mible_handler_t handler, void *arg)
  * */
 __WEAK void mible_tasks_exec(void)
 {
-
+	telink_mi_task_exec();
 }
 
 /**
@@ -829,7 +835,7 @@ bool no_stop)
 }
 
 /**
- * @brief   Function for receiving data from a IIC slave.
+ * @brief   Function for reciving data to a IIC slave.
  * @param   [in] addr:   Address of a specific slave device (only 7 LSB).
  *          [out] p_in:  Pointer to rx data
  *          [in] len:    Data length
@@ -857,38 +863,4 @@ __WEAK int mible_iic_scl_pin_read(uint8_t port, uint8_t pin)
     return 0;
 }
 
-__WEAK mible_status_t mible_nvm_init(void)
-{
-    return MI_SUCCESS;
-}
 
-/**
- * @brief   Function for reading data from Non-Volatile Memory.
- * @param   [out] p_data:  Pointer to data to be restored.
- *          [in] length:   Data size in bytes.
- *          [in] address:  Address in Non-Volatile Memory to read.
- * @return  MI_ERR_INTERNAL:  invalid NVM address.
- *          MI_SUCCESS
- * */
-__WEAK mible_status_t mible_nvm_read(void * p_data, uint32_t length, uint32_t address)
-{
-    return MI_ERR_BUSY;
-}
-
-/**
- * @brief   Writes data to Non-Volatile Memory.
- * @param   [in] p_data:   Pointer to data to be stored.
- *          [in] length:   Data size in bytes.
- *          [in] address:  Start address used to store data.
- * @return  MI_ERR_INTERNAL:  invalid NVM address.
- *          MI_SUCCESS
- * */
-__WEAK mible_status_t mible_nvm_write(void * p_data, uint32_t length, uint32_t address)
-{
-    return MI_ERR_BUSY;
-}
-
-__WEAK mible_status_t mible_upgrade_firmware(void)
-{
-    return MI_ERR_BUSY;
-}

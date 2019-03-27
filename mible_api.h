@@ -1,5 +1,5 @@
-#ifndef MIBLE_API_H__
-#define MIBLE_API_H__
+#ifndef MIBLE_ARCH_H__
+#define MIBLE_ARCH_H__
 
 // Copyright [2017] [Beijing Xiaomi Mobile Software Co., Ltd]
 //
@@ -17,7 +17,7 @@
 
 #include "mible_port.h"
 #include "mible_type.h"
-
+#include "telink_sdk_mible_api.h"
 #ifndef MIN
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #endif
@@ -42,9 +42,8 @@ mible_status_t mible_gap_scan_stop(void);
 
 mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_adv_param);
 
-mible_status_t mible_gap_adv_data_set(uint8_t const * p_data, uint8_t dlen,
-		uint8_t const *p_sr_data, uint8_t srdlen);
-
+mible_status_t mible_gap_adv_data_set(uint8_t const * p_data,
+        uint8_t dlen, uint8_t const *p_sr_data, uint8_t srdlen);
 mible_status_t mible_gap_adv_stop(void);
 
 mible_status_t mible_gap_connect(mible_gap_scan_param_t scan_param,
@@ -142,11 +141,11 @@ int mible_gatts_register(mible_gatts_callback_t cb);
 
 int mible_arch_register(mible_arch_callback_t cb);
 
-mible_status_t mible_nvm_init(void);
+int mible_gap_register(mible_gap_callback_t cb);
+int mible_gattc_register(mible_gattc_callback_t cb);
+int mible_gatts_register(mible_gatts_callback_t cb);
+int mible_arch_register(mible_arch_callback_t cb);
 
-mible_status_t mible_nvm_write(void * p_data, uint32_t length, uint32_t address);
 
-mible_status_t mible_nvm_read(void * p_data, uint32_t length, uint32_t address);
 
-mible_status_t mible_upgrade_firmware(void);
 #endif

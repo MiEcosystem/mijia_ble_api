@@ -32,17 +32,16 @@
 
 #include "mible_log_internal.h"
 
-#define MI_LOG_ERROR(...)                       MI_LOG_INTERNAL_ERROR(__VA_ARGS__)
-#define MI_LOG_WARNING(...)                     MI_LOG_INTERNAL_WARNING( __VA_ARGS__)
-#define MI_LOG_INFO(...)                        MI_LOG_INTERNAL_INFO( __VA_ARGS__)
-#define MI_LOG_DEBUG(...)                       MI_LOG_INTERNAL_DEBUG( __VA_ARGS__)
-#define MI_LOG_HEXDUMP(...)                     MI_LOG_INTERNAL_HEXDUMP( __VA_ARGS__)
+#define MI_LOG_ERROR(...)                     	MI_LOG_INTERNAL_ERROR(__VA_ARGS__)
+#define MI_LOG_WARNING(...)                   	MI_LOG_INTERNAL_WARNING( __VA_ARGS__)
+#define MI_LOG_INFO(...)                      	MI_LOG_INTERNAL_INFO( __VA_ARGS__)
+#define MI_LOG_DEBUG(...) 		                MI_LOG_INTERNAL_DEBUG( __VA_ARGS__)
+
 #else // MI_LOG_ENABLED
 #define MI_LOG_ERROR(...)
 #define MI_LOG_WARNING(...)
 #define MI_LOG_INFO(...)
 #define MI_LOG_DEBUG(...)
-#define MI_LOG_HEXDUMP(...)
 #endif // MI_LOG_ENABLED
 
 
@@ -51,7 +50,7 @@
 #define MI_ERR_HANDLER(ERR_CODE)                                       \
     do                                                                 \
     {                                                                  \
-        MI_LOG_ERROR("Error code 0x%04X <%d>.  %s:%d\n", ERR_CODE, ERR_CODE, (uint32_t)__FILE__, __LINE__); \
+        MI_LOG_ERROR("Error code 0x%04X.  %s:%d\n", ERR_CODE, (uint32_t)__FILE__, __LINE__);  \
     } while (0)
 
 #define MI_ERR_CHECK(ERR_CODE)                              \
@@ -76,9 +75,8 @@
 #else // MI_ASSERT
 
 #define MI_ERR_CHECK(ERR_CODE)
-#define MI_ERR_TEST(ERR_CODE, EXPECT)
-
-#endif // MI_ASSERT END
+#define MI_ERR_TEST(ERR_CODE, EXPECT)                       
+#endif // MI_ASSERT
 
 
 
