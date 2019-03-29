@@ -17,17 +17,15 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include "wiced_memory.h"
 #include "wiced_bt_trace.h"
 
 #ifndef NULL
 #define NULL 0
 #endif
 
-#define free(ptr)                      wiced_bt_free_buffer(ptr)
-#define malloc(size)                   wiced_bt_get_buffer(size)
+#define free                   wiced_bt_free_buffer
+#define malloc                 wiced_bt_get_buffer
 
-#define MI_LOG_ENABLED
 
 #if defined(__CC_ARM)
 #pragma anon_unions

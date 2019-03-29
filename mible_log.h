@@ -45,6 +45,18 @@
 #define MI_LOG_HEXDUMP(...)
 #endif // MI_LOG_ENABLED
 
+#ifdef CY_BRINGUP_LOG_ENABLE
+#define CY_BRINGUP_GATT_DEBUG_ENABLE
+
+#define CY_LOG_INFO(...)                        MI_LOG_INTERNAL_INFO( __VA_ARGS__)
+#define CY_LOG_HEXDUMP(...)                     MI_LOG_INTERNAL_HEXDUMP( __VA_ARGS__)
+//#define CY_LOG_ERROR(...)                       MI_LOG_INTERNAL_ERROR(__VA_ARGS__)
+
+#else
+#define CY_LOG_INFO(...)
+#define CY_LOG_HEXDUMP(...)
+//#define CY_LOG_ERROR(...)  
+#endif
 
 #ifdef MI_ASSERT
 
