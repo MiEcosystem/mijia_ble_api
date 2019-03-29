@@ -304,7 +304,6 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt){
 				gap_evt_param.connect.role = MIBLE_GAP_CENTRAL;
 			}
 			
-
         	if ((evt->data.evt_le_connection_opened.address_type == le_gap_address_type_public)
                 || (evt->data.evt_le_connection_opened.address_type
                         == le_gap_address_type_public_identity)) {
@@ -314,11 +313,15 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt){
         	}
 
         	mible_gap_event_callback(MIBLE_GAP_EVT_CONNECTED, &gap_evt_param);
+			
+			//struct gecko_msg_le_connection_set_parameters_rsp_t *param_ret;
+			//param_ret = gecko_cmd_le_connection_set_parameters(connection_handle,
+			//	0x28, 0x50, 4, 0x12c);
     	break;
 
     	case gecko_evt_le_connection_closed_id:
 			
-			MI_LOG_INFO("gecko_evt_le_connection_closed_id \n"); 
+			MI_LOG_DEBUG("gecko_evt_le_connection_closed_id \n"); 
         	connection_handle = DISCONNECTION;
         	gap_evt_param.conn_handle = evt->data.evt_le_connection_closed.connection;
         	if (evt->data.evt_le_connection_closed.reason == bg_err_bt_connection_timeout) {
@@ -334,6 +337,7 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt){
     	break;
 
     	case gecko_evt_le_connection_parameters_id:
+			MI_LOG_DEBUG("gecko_evt_le_connection_parameters_id \n"); 
         	gap_evt_param.conn_handle =
                 evt->data.evt_le_connection_parameters.connection;
         	gap_evt_param.update_conn.conn_param.min_conn_interval =
@@ -344,6 +348,10 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt){
                 evt->data.evt_le_connection_parameters.latency;
         	gap_evt_param.update_conn.conn_param.conn_sup_timeout =
                 evt->data.evt_le_connection_parameters.timeout;
+			MI_LOG_DEBUG("connection parameters update: interval:0x%x, latency:%d, timeout: 0x%x\n",
+					evt->data.evt_le_connection_parameters.interval,
+					evt->data.evt_le_connection_parameters.latency,
+					evt->data.evt_le_connection_parameters.timeout);
 
         	mible_gap_event_callback(MIBLE_GAP_EVT_CONN_PARAM_UPDATED, &gap_evt_param);
     	break;
@@ -368,6 +376,7 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt){
                 evt->data.evt_le_gap_scan_response.data.len);
         	gap_evt_param.report.data_len = evt->data.evt_le_gap_scan_response.data.len;
 
+			MI_LOG_DEBUG("scan report. \n"); 
         	mible_gap_event_callback(MIBLE_GAP_EVT_ADV_REPORT, &gap_evt_param);
     	break;
 
@@ -561,7 +570,7 @@ mible_status_t mible_gap_scan_start(mible_gap_scan_type_t scan_type,
 	int ret = 0; 
 
     if (ble_scanning) {
-        return MI_ERR_INVALID_STATE;
+		gecko_cmd_le_gap_end_procedure();
     }
 
     if (scan_type == MIBLE_SCAN_TYPE_PASSIVE) {
@@ -574,24 +583,24 @@ mible_status_t mible_gap_scan_start(mible_gap_scan_type_t scan_type,
 
     scan_interval = scan_param.scan_interval;
     scan_window = scan_param.scan_window;
-	MI_LOG_WARNING("scan_interval = %x \n", scan_param.scan_interval);
-	MI_LOG_WARNING("scan_window = %x \n", scan_param.scan_window);
+	MI_LOG_WARNING("scan_interval = 0x%x \n", scan_param.scan_interval);
+	MI_LOG_WARNING("scan_window = 0x%x \n", scan_param.scan_window);
 
 	ret = gecko_cmd_le_gap_set_discovery_timing(1, scan_interval, scan_window)->result;
 	if(ret != 0){
-		MI_LOG_ERROR("set discovery timing\n"); 
+		MI_LOG_ERROR("set discovery timing error 0x%x \n", ret); 
 		return ret;
 	}
 
 	ret = gecko_cmd_le_gap_set_discovery_type(1,active)->result;  
 	if(ret != 0){
-		MI_LOG_ERROR("set discovery type \n");
+		MI_LOG_ERROR("set discovery type error 0x%x \n", ret);
 		return ret;
 	}
 
 	ret = gecko_cmd_le_gap_start_discovery(1,le_gap_discover_observation)->result; 
 	if( ret != 0){
-		MI_LOG_ERROR("start_discovery \n"); 
+		MI_LOG_ERROR("start_discovery error 0x%x \n", ret); 
 		return ret;
 	}
 
