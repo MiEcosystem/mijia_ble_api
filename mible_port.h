@@ -17,6 +17,8 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <ti/sysbios/hal/Hwi.h>
+#include <ti/sysbios/knl/Swi.h>
 
 #ifndef NULL
 #define NULL 0
@@ -79,7 +81,7 @@
     
     #define GET_SP()                __get_SP()
 
-#elif defined   ( __GNUC__ )
+#elif defined( __GNUC__ )
 
     #ifndef __ASM
         #define __ASM               __asm
@@ -108,16 +110,60 @@
         register unsigned sp __ASM("sp");
         return sp;
     }
+#elif (defined __TI_COMPILER_VERSION__)
+
+    #ifndef __ASM
+        #define __ASM               __asm
+    #endif
+
+    #ifndef __INLINE
+        #define __INLINE            inline
+    #endif
+
+    #ifndef __WEAK
+        #define __WEAK              __attribute__((weak))
+    #endif
+
+    #ifndef __ALIGN
+        #define __ALIGN(n)          __attribute__((aligned(n)))
+    #endif
+
+    #ifndef __PACKED
+        #define __PACKED           __attribute__((packed))
+    #endif
+
+    #define GET_SP()               gcc_current_sp()
+
+    static inline unsigned int gcc_current_sp(void)
+    {
+        void* p = NULL;
+        return((int)&p);
+    }
 #endif
 
-#define CRITICAL_SECTION_ENTER()
-#define CRITICAL_SECTION_EXIT()
+#define CRITICAL_SECTION_ENTER()    uint_least16_t swikey  = (uint_least16_t) Swi_disable(); \
+                                    uint_least16_t hwikey = (uint_least16_t) Hwi_disable(); 
 
-#define MI_PRINTF(...)
-#define MI_HEXDUMP(base_addr, bytes)
+#define CRITICAL_SECTION_EXIT()    Hwi_restore((UInt) hwikey); \
+                                   Swi_restore((UInt) swikey);
 
-#define TRACE_INIT(pin)
-#define TRACE_ENTER(pin)
-#define TRACE_EXIT(pin)
+
+//#define MI_LOG_ENABLED
+
+#ifdef MI_LOG_ENABLED 
+#include <UartLog.h>  // Comment out if using xdc Log
+    // Precompiler define for CCS to get only filename: uartlog_FILE="\"${InputFileName}\""
+    // IAR project should have extra option --no_path_in_file_macros to only have base file name.
+    #if !defined(uartlog_FILE)
+    #  define uartlog_FILE __FILE__
+    #endif
+#define MI_LOG_PRINTF(...) UartLog_log(uartlog_FILE, __LINE__, LEVEL_INFO, __VA_ARGS__);  // UARTLOG_ENABLE Need to be enable at project level.
+#define MI_LOG_HEXDUMP(...)            
+#else
+#define MI_LOG_PRINTF(...)
+#define MI_LOG_HEXDUMP(...)
+#endif
+
+//#include "cmsis_compiler.h"
 
 #endif // MIBLE_PORT_H__
