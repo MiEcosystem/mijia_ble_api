@@ -46,11 +46,9 @@
 #endif // MI_LOG_ENABLED
 
 #ifdef CY_BRINGUP_LOG_ENABLE
-#define CY_BRINGUP_GATT_DEBUG_ENABLE
-
 #define CY_LOG_INFO(...)                        MI_LOG_INTERNAL_INFO( __VA_ARGS__)
 #define CY_LOG_HEXDUMP(...)                     MI_LOG_INTERNAL_HEXDUMP( __VA_ARGS__)
-//#define CY_LOG_ERROR(...)                       MI_LOG_INTERNAL_ERROR(__VA_ARGS__)
+//#define CY_LOG_ERROR(...)                                    MI_LOG_INTERNAL_ERROR(__VA_ARGS__)
 
 #else
 #define CY_LOG_INFO(...)
@@ -63,7 +61,7 @@
 #define MI_ERR_HANDLER(ERR_CODE)                                       \
     do                                                                 \
     {                                                                  \
-        MI_LOG_ERROR("Error code 0x%04X.  %s:%d\n", ERR_CODE, (uint32_t)__FILE__, __LINE__);  \
+        MI_LOG_ERROR("Error code 0x%04X <%d>.  %s:%d\n", ERR_CODE, ERR_CODE, (uint32_t)__FILE__, __LINE__); \
     } while (0)
 
 #define MI_ERR_CHECK(ERR_CODE)                              \
@@ -88,7 +86,7 @@
 #else // MI_ASSERT
 
 #define MI_ERR_CHECK(ERR_CODE)
-#define MI_ERR_TEST(ERR_CODE)
+#define MI_ERR_TEST(ERR_CODE, EXPECT)
 
 #endif // MI_ASSERT END
 

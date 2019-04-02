@@ -34,7 +34,7 @@
 #include "wiced_hal_nvram.h"
 #include "queue.h"
 
-#include "mible_wiced.h"
+#include "wiced_bridge.h"
 
 #ifndef MIBLE_MAX_USERS
 #define MIBLE_MAX_USERS 4
@@ -289,7 +289,6 @@ mible_status_t mible_gap_address_get(mible_addr_t mac)
     return MI_SUCCESS;
 }
 
-
 /**
  * @brief   Start scanning
  * @param   [in] scan_type: passive or active scaning
@@ -467,7 +466,6 @@ mible_status_t mible_gap_adv_stop(void)
  *          The connection result is given by MIBLE_GAP_EVT_CONNECTED
  * event
  * */
-
 mible_status_t mible_gap_connect(mible_gap_scan_param_t scan_param,
         mible_gap_connect_t conn_param)
 {
@@ -500,7 +498,6 @@ mible_status_t mible_gap_connect(mible_gap_scan_param_t scan_param,
 		return MIBLE_ERR_UNKNOWN;
 	
 	CY_LOG_INFO("mible_gap_connect---\r\n");
-
 }
 
 /**
@@ -520,7 +517,6 @@ mible_status_t mible_gap_connect(mible_gap_scan_param_t scan_param,
         return MIBLE_ERR_UNKNOWN ;
     }
     CY_LOG_INFO("mible_gap_disconnect_success\r\n");
-	
     return MI_SUCCESS;
 }
 
@@ -563,7 +559,6 @@ mible_status_t mible_gap_connect(mible_gap_scan_param_t scan_param,
         return MIBLE_ERR_UNKNOWN;
     }
 	CY_LOG_INFO("mible_gap_update_conn_params: MI_SUCCESS \r\n");
-	
     return MI_SUCCESS;
 }
 
@@ -1011,7 +1006,6 @@ mible_status_t mible_timer_delete(void* timer_id)
     CY_LOG_INFO("mible_timer_delete: MI_SUCCESS\r\n");
 	
     return MI_SUCCESS;
-
 }
 
 /**
@@ -1125,8 +1119,7 @@ mible_status_t mible_record_create(uint16_t record_id, uint8_t len)
 {
     //Cypress SDK don't need to create the record, and can write directly. 
 	CY_LOG_INFO("mible_record_create: return success directly, record_id=%d, len=%d\r\n", record_id, len);
-
-	return MI_SUCCESS;
+    return MI_SUCCESS;
 }
 
 /**
@@ -1163,7 +1156,7 @@ mible_status_t mible_record_delete(uint16_t record_id)
 
 	CY_LOG_INFO("******mible_record_delete: Successful, deleted_id=%d\r\n",vs_id);
 
-	return MI_SUCCESS;
+    return MI_SUCCESS;
 }
 
 /**
@@ -1208,8 +1201,7 @@ mible_status_t mible_record_read(uint16_t record_id, uint8_t* p_data,
  	}
 	CY_LOG_INFO("mible_record_read: Successful, record_id=%d, len=%d, data=\r\n",record_id,len);
 	CY_LOG_HEXDUMP(p_data,  (uint16_t)len);
-
-	return MI_SUCCESS;
+    return MI_SUCCESS;
 }
 
 /**
@@ -1279,7 +1271,6 @@ mible_status_t mible_record_write(uint16_t record_id, const uint8_t* p_data,
  * there were not enough random bytes available.
  * @note    SHOULD use TRUE random num generator
  * */
- 
 mible_status_t mible_rand_num_generator(uint8_t* p_buf, uint8_t len)
 {
      uint8_t i,j;
@@ -1334,7 +1325,6 @@ mible_status_t mible_rand_num_generator(uint8_t* p_buf, uint8_t len)
  *          MI_ERR_BUSY             Encryption module already in progress.
  * @note    SHOULD use synchronous mode to implement this function
  * */
-
 mible_status_t mible_aes128_encrypt(const uint8_t* key,
         const uint8_t* plaintext, uint8_t plen, uint8_t* ciphertext)
 {
@@ -1392,7 +1382,6 @@ mible_status_t mible_aes128_encrypt(const uint8_t* key,
  *          MI_ERR_NO_MEM           The task quene is full. 
  *          MI_ERR_INVALID_PARAM    Handler is NULL
  * */
-
  mible_status_t mible_task_post(mible_handler_t handler, void *arg)
 {
 	mible_task_t task;
@@ -1422,7 +1411,7 @@ mible_status_t mible_aes128_encrypt(const uint8_t* key,
  * @note    This function must be called from within the main loop. It will 
  * execute all events scheduled since the last time it was called.
  * */
- __WEAK void mible_tasks_exec(void)
+__WEAK void mible_tasks_exec(void)
 {
 	CY_LOG_INFO("mible_tasks_exec, this API is not done!!!\r\n");
 }
@@ -1539,4 +1528,3 @@ __WEAK mible_status_t mible_upgrade_firmware(void)
 {
     return MI_ERR_BUSY;
 }
-
