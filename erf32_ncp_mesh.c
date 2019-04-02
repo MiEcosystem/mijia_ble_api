@@ -111,27 +111,40 @@ void mible_mesh_stack_event_handler(struct gecko_cmd_packet *evt)
 			switch(evt->data.evt_mesh_generic_client_server_status.type){
 				case MESH_GENERIC_CLIENT_state_on_off:
 
+					MI_LOG_INFO("receive onoff message from 0x%x \n", 
+							evt->data.evt_mesh_generic_client_server_status.server_address);
+					MI_HEXDUMP(evt->data.evt_mesh_generic_client_server_status.parameters.data,
+							evt->data.evt_mesh_generic_client_server_status.parameters.len); 
 					generic_status.opcode.opcode = MIBLE_MESH_MSG_GENERIC_ONOFF_STATUS;
-					
+					break; 
 			  	case MESH_GENERIC_CLIENT_state_lightness_actual:
 
+					MI_LOG_INFO("receive lightness message from 0x%x \n", 
+							evt->data.evt_mesh_generic_client_server_status.server_address);
 					generic_status.opcode.opcode = MIBLE_MESH_MSG_LIGHT_LIGHTNESS_STATUS;
-
+					break; 
 			  	case MESH_GENERIC_CLIENT_state_ctl_temperature:
 
-			  		generic_status.opcode.opcode = MIBLE_MESH_MSG_LIGHT_CTL_STATUS;
-					generic_status.opcode.company_id = MIBLE_MESH_COMPANY_ID_SIG;
-					generic_status.meta_data.dst_addr = prov_info.address;
-					generic_status.meta_data.src_addr = 
-						evt->data.evt_mesh_generic_client_server_status.server_address;
-					generic_status.buf = 
-						evt->data.evt_mesh_generic_client_server_status.parameters.data; 
-					generic_status.buf_len = 
-						evt->data.evt_mesh_generic_client_server_status.parameters.len; 
+					MI_LOG_INFO("receive lightctl message from 0x%x \n", 
+							evt->data.evt_mesh_generic_client_server_status.server_address);
+					MI_HEXDUMP(evt->data.evt_mesh_generic_client_server_status.parameters.data,
+							evt->data.evt_mesh_generic_client_server_status.parameters.len); 
+					generic_status.opcode.opcode = MIBLE_MESH_MSG_LIGHT_CTL_TEMPERATURE_STATUS;
 					break; 
 			  	default:
-					break; 
+					return; 
 			}
+			generic_status.opcode.company_id = MIBLE_MESH_COMPANY_ID_SIG;
+			generic_status.meta_data.dst_addr = prov_info.address;
+			generic_status.meta_data.src_addr = 
+					evt->data.evt_mesh_generic_client_server_status.server_address;
+			generic_status.buf = 
+					evt->data.evt_mesh_generic_client_server_status.parameters.data; 
+			generic_status.buf_len = 
+						evt->data.evt_mesh_generic_client_server_status.parameters.len; 
+
+			mible_mesh_event_callback_handler(MIBLE_MESH_EVENT_GENERIC_MESSAGE_CB, 
+					&generic_status); 
 			break; 
 
 		case gecko_evt_mesh_vendor_model_receive_id:
@@ -682,7 +695,12 @@ int mible_mesh_gateway_set_sub_address(mible_mesh_op_t op, uint16_t company_id, 
 		struct gecko_msg_mesh_test_add_local_model_sub_rsp_t *add_ret; 
 		add_ret = gecko_cmd_mesh_test_add_local_model_sub(0, company_id,
 				model_id, sub_addr->value);
-	   	return add_ret->result; 	
+		if(add_ret->result != 0){
+			MI_LOG_ERROR("model sub address error. 0x%x\n", add_ret->result); 
+	   		return add_ret->result; 	
+		}else{
+			MI_LOG_WARNING("model sub address: company_id = 0x%x, modle_id = 0x%x, sub_addr = 0x%x\n", company_id, model_id, sub_addr->value); 
+		}
 	}else{
 		struct gecko_msg_mesh_test_del_local_model_sub_rsp_t *del_ret;
 	   	del_ret = gecko_cmd_mesh_test_del_local_model_sub(0, company_id, 
