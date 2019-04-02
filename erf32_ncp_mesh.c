@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include "mible_mesh_api.h"
 #include "mible_api.h"
 #include "mible_type.h"
 #include "mible_port.h"
@@ -48,7 +47,7 @@ typedef struct{
 static stack_sub_status_t sub_status_record={0};
 static mible_mesh_access_message_rx_t generic_status; 
 
-static int mible_mesh_event_callback(mible_mesh_event_type_t type, void * data)
+int mible_mesh_event_callback(mible_mesh_event_type_t type, void * data)
 {
     if(mible_mesh_event_callback_handler != NULL){
         mible_mesh_event_callback_handler(type, (mible_mesh_event_params_t *)data);
@@ -63,7 +62,10 @@ void mible_mesh_stack_event_handler(struct gecko_cmd_packet *evt)
   	}
 
 	switch (BGLIB_MSG_ID(evt->header)) {
+
 		case gecko_evt_mesh_prov_initialized_id:
+
+
 			MI_LOG_WARNING("gecko_evt_mesh_prov_initialized_id. \n"); 
 			if(evt->data.evt_mesh_prov_initialized.networks == 0){
 				MI_LOG_DEBUG("Have not been configured yet.\n"); 
@@ -89,6 +91,7 @@ void mible_mesh_stack_event_handler(struct gecko_cmd_packet *evt)
 			
 			mible_mesh_event_callback(MIBLE_MESH_EVENT_STACK_INIT_DONE,NULL);
 			break; 									
+
 		case gecko_evt_mesh_prov_unprov_beacon_id:
 
 			MI_LOG_WARNING("gecko_evt_mesh_prov_unprov_beacon_id. \n"); 
@@ -102,20 +105,9 @@ void mible_mesh_stack_event_handler(struct gecko_cmd_packet *evt)
 			memcpy(beacon.uri_hash, (uint8_t*)&(evt->data.evt_mesh_prov_unprov_beacon.uri_hash),4);
 			mible_mesh_event_callback(MIBLE_MESH_EVENT_UNPROV_DEVICE, &beacon);
 			break;
-		/*case gecko_evt_mesh_config_client_model_sub_status_id:
 
-			if(evt->data.evt_mesh_config_client_model_sub_status.handle == 
-					sub_status_record.handle){
-				
-				mible_mesh_event_callback(MIBLE_MESH_EVENT_CONFIG_MESSAGE_CB, 
-						&sub_status_record.config_sub_status);
-			}else{
-				MI_LOG_ERROR("[gecko_evt_mesh_config_client_model_sub_status_id]Unknown handle\n");
-			}
-
-			break;*/
 		case gecko_evt_mesh_generic_client_server_status_id:
-			
+			MI_LOG_DEBUG("receive evt mesh staus\n");
 			switch(evt->data.evt_mesh_generic_client_server_status.type){
 				case MESH_GENERIC_CLIENT_state_on_off:
 
@@ -141,6 +133,11 @@ void mible_mesh_stack_event_handler(struct gecko_cmd_packet *evt)
 					break; 
 			}
 			break; 
+
+		case gecko_evt_mesh_vendor_model_receive_id:
+			MI_LOG_ERROR("vendor model received. \n"); 
+			break; 
+
 		default:
 			break; 
 	}
@@ -393,13 +390,18 @@ int mible_mesh_gateway_unregister_event_callback(mible_mesh_event_cb_t mible_mes
  */
 int mible_mesh_gateway_init_stack(void)
 {
-	MI_LOG_WARNING("[mible_mesh_gateway_init_stack] \n"); 
-	// event: gecko_evt_mesh_prov_initialized_id 
-	struct gecko_msg_mesh_prov_init_rsp_t *ret = gecko_cmd_mesh_prov_init();
-	if(ret->result != 0){
-		MI_LOG_ERROR("mesh prov init error. \n"); 
+    MI_LOG_WARNING("[mible_mesh_gateway_init_stack] \n"); 
+	gecko_cmd_mesh_prov_init();
+	gecko_cmd_mesh_generic_client_init();
+	// init vendor client 
+	uint8_t opcode[6] = {0x01,0x03,0x04,0x05,0x0e,0x0f}; 
+	struct gecko_msg_mesh_vendor_model_init_rsp_t *vendor_init_ret = 
+			gecko_cmd_mesh_vendor_model_init(0, 0x038f, 0x0001, 0, 6, opcode); 
+	if(vendor_init_ret->result != 0){
+		MI_LOG_ERROR("vendor model init error. 0x%x\n", vendor_init_ret->result);
 	}
-	return ret->result;
+
+	return 0;
 }
 
 /**
@@ -423,16 +425,10 @@ int mible_mesh_gateway_init_provisioner(mible_mesh_gateway_info_t *info)
 			MI_LOG_ERROR("prov initialize failed \n"); 
 			return ret->result;
 		}
-
 	}
 	// TODO 
-	// scan start 
-	mible_gap_scan_param_t scan_param={
-		.scan_interval = 0x100,
-		.scan_window = 0x100, 	
-		.timeout = 0, 	
-	};
-	mible_gap_scan_start(MIBLE_SCAN_TYPE_ACTIVE, scan_param);
+	gecko_cmd_le_gap_set_discovery_type(1,1);
+	
 	mible_mesh_event_callback(MIBLE_MESH_EVENT_PROVISIONER_INIT_DONE, NULL);
 	return 0; 
 }
@@ -452,6 +448,7 @@ int mible_mesh_gateway_create_network(uint16_t netkey_index, uint8_t *netkey, ui
 	// can only be invoked once.
 	if(prov_configured == false){
 		
+		MI_LOG_DEBUG("Create new network\n"); 
 		struct gecko_msg_mesh_prov_create_network_rsp_t *network_ret; 
 		network_ret = gecko_cmd_mesh_prov_create_network(MIBLE_MESH_KEY_LEN, netkey);
 		if(network_ret->result != 0){

@@ -278,6 +278,7 @@ void mible_arch_event_callback(mible_arch_event_t evt,
     }
 }
 
+#include "mible_mesh_api.h"
 void mible_stack_event_handler(struct gecko_cmd_packet *evt){
 	mible_gap_evt_param_t gap_evt_param = {0};
 	mible_gatts_evt_param_t gatts_evt_param = {0};
@@ -361,8 +362,8 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt){
 			if( evt->data.evt_le_gap_scan_response.data.len == 0 || 
 					evt->data.evt_le_gap_scan_response.data.len >31)
 				break; 
-        	gap_evt_param.conn_handle = INVALID_CONNECTION_HANDLE;
-        	memcpy(gap_evt_param.report.peer_addr,
+        	
+			memcpy(gap_evt_param.report.peer_addr,
                 evt->data.evt_le_gap_scan_response.address.addr, 6);
         	gap_evt_param.report.addr_type =
                 (mible_addr_type_t) evt->data.evt_le_gap_scan_response.address_type;
@@ -376,8 +377,16 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt){
                 evt->data.evt_le_gap_scan_response.data.len);
         	gap_evt_param.report.data_len = evt->data.evt_le_gap_scan_response.data.len;
 
-			MI_LOG_DEBUG("scan report. \n"); 
         	mible_gap_event_callback(MIBLE_GAP_EVT_ADV_REPORT, &gap_evt_param);
+		
+			mible_mesh_event_callback(MIBLE_MESH_EVENT_ADV_PACKAGE, &gap_evt_param.report);
+			
+			uint8_t target_mac[6] = {0x19,0x2d,0xef,0x57,0x0b,0x00}; 	
+			if(memcmp(target_mac, evt->data.evt_le_gap_scan_response.address.addr,6) == 0){
+				//MI_LOG_INFO("Recieve target message. \n"); 
+				//MI_HEXDUMP(evt->data.evt_le_gap_scan_response.data.data, 
+						//evt->data.evt_le_gap_scan_response.data.len); 
+			}	
     	break;
 
     	case gecko_evt_gatt_server_attribute_value_id: {
@@ -597,15 +606,17 @@ mible_status_t mible_gap_scan_start(mible_gap_scan_type_t scan_type,
 		MI_LOG_ERROR("set discovery type error 0x%x \n", ret);
 		return ret;
 	}
-
+	uint8_t gap_type_list[] = {0x2A, 0x2B, 0x16, 0xFF}; 
+	gecko_cmd_mesh_node_set_adv_event_filter(0x8000,sizeof(gap_type_list), gap_type_list); 
 	ret = gecko_cmd_le_gap_start_discovery(1,le_gap_discover_observation)->result; 
+	
 	if( ret != 0){
 		MI_LOG_ERROR("start_discovery error 0x%x \n", ret); 
 		return ret;
 	}
 
     ble_scanning = 1;
-	MI_LOG_DEBUG("scan start return 0");
+	MI_LOG_DEBUG("scan start return 0\n");
     return MI_SUCCESS;
 }
 
@@ -1242,4 +1253,17 @@ void get_time()
  
     strftime(datetime, 50, "%H:%M:%S", tm_now);
 	printf("[%s.%d]", datetime, tv.tv_usec); 
+}
+
+void hexdump(uint8_t *base_addr, uint8_t bytes)
+{
+	get_time();
+	if(base_addr == NULL || bytes == 0){
+		return; 
+	}
+	for(uint8_t i=0;i<bytes;i++){
+		printf("0x%2x ",base_addr[i]);
+	}
+	printf("\n"); 
+  	return; 	
 }
