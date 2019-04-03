@@ -182,6 +182,13 @@ int mible_mesh_gateway_init_stack(void)
     return 0;
 }
 
+int mible_mesh_gateway_deinit_stack(void)
+{
+    // deinit your mesh stack, close thread,free memory, and release firmware bt resource.
+
+    return 0;
+}
+
 int mible_mesh_gateway_init_provisioner(mible_mesh_gateway_info_t *info)
 {
     /**********************************************************************//**

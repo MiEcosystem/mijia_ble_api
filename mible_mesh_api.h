@@ -985,6 +985,13 @@ int mible_mesh_gateway_unregister_event_callback(mible_mesh_event_cb_t mible_mes
 int mible_mesh_gateway_init_stack(void);
 
 /**
+ *@brief    deinit mesh stack.
+ *          report event: MIBLE_MESH_EVENT_STACK_DEINIT_DONE, data: NULL.
+ *@return   0: success, negetive value: failure
+ */
+int mible_mesh_gateway_deinit_stack(void);
+
+/**
  *@brief    async method, init mesh provisioner
  *          load self info, include unicast address, iv, seq_num, init model;
  *          clear local db, related appkey_list, netkey_list, device_key_list,
