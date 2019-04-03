@@ -11,6 +11,7 @@ static mible_mesh_event_cb_t mible_mesh_event_callback_handler;
  *      mible_mesh_iv_t *p_mesh_iv;
  *      mible_mesh_config_status_t *p_config_msg;
  *      mible_mesh_access_message_rx_t *p_generic_msg;
+ *  or  mible_mesh_event_params_t *params
  **********************************************************************/
 static int mible_mesh_event_callback(mible_mesh_event_type_t type, void * data)
 {
@@ -178,6 +179,13 @@ int mible_mesh_gateway_unregister_event_callback(mible_mesh_event_cb_t mible_mes
 int mible_mesh_gateway_init_stack(void)
 {
     // init your mesh stack, thread, memory, prepare for provisioner initilization.
+
+    return 0;
+}
+
+int mible_mesh_gateway_deinit_stack(void)
+{
+    // deinit your mesh stack, close thread,free memory, and release firmware bt resource.
 
     return 0;
 }

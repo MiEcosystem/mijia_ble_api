@@ -879,7 +879,7 @@ typedef int (*mible_mesh_event_cb_t)(mible_mesh_event_type_t type, mible_mesh_ev
 
 /**
  *@brief    Config Composition Data Get, mesh profile 4.3.2.4, Report 4.3.2.5 Config Composition Data Status.
- *          report event: MIBLE_MESH_EVENT_CONFIG_MESSAGE_CB, data: mible_mesh_access_message_rx_t.
+ *          report event: MIBLE_MESH_EVENT_CONFIG_MESSAGE_CB, data: mible_mesh_config_status_t.
  *@param    [in] unicast_address: node address
  *@param    [in] netkey_index: key index for node
  *@param    [in] page: page number of the composition data
@@ -889,7 +889,7 @@ int mible_mesh_node_get_composition_data(uint16_t unicast_address, uint16_t glob
 
 /**
  *@brief    appkey information for node, mesh profile 4.3.2.37-39, Report 4.3.2.40 Config AppKey Status.
- *          report event: MIBLE_MESH_EVENT_CONFIG_MESSAGE_CB, data: mible_mesh_access_message_rx_t.
+ *          report event: MIBLE_MESH_EVENT_CONFIG_MESSAGE_CB, data: mible_mesh_config_status_t.
  *@param    [in] opcode : mesh spec opcode, add/update/delete ...
  *@param    [in] param : appkey parameters corresponding to node
  *@return   0: success, negetive value: failure
@@ -898,7 +898,7 @@ int mible_mesh_node_set_appkey(uint16_t opcode, mible_mesh_appkey_params_t *para
 
 /**
  *@brief    bind appkey information for node, mesh profile 4.3.2.46-47, Report 4.3.2.48 Config Model App Status.
- *          report event: MIBLE_MESH_EVENT_CONFIG_MESSAGE_CB, data: mible_mesh_access_message_rx_t.
+ *          report event: MIBLE_MESH_EVENT_CONFIG_MESSAGE_CB, data: mible_mesh_config_status_t.
  *@param    [in] opcode : mesh spec opcode, bind/unbind
  *@param    [in] param : bind parameters corresponding to node
  *@return   0: success, negetive value: failure
@@ -908,7 +908,7 @@ int mible_mesh_node_bind_appkey(uint16_t opcode, mible_mesh_model_app_params_t *
 /**
  *@brief    set publication information for node, mesh profile 4.3.2.15-17,
  *          Report 4.3.2.18 Config Model Publication Status.
- *          report event: MIBLE_MESH_EVENT_CONFIG_MESSAGE_CB, data: mible_mesh_access_message_rx_t.
+ *          report event: MIBLE_MESH_EVENT_CONFIG_MESSAGE_CB, data: mible_mesh_config_status_t.
  *@param    [in] opcode : mesh spec opcode, add/delete/overwrite ...
  *@param    [in] param : publish parameters corresponding to node
  *@return   0: success, negetive value: failure
@@ -918,7 +918,7 @@ int mible_mesh_node_set_publication(uint16_t opcode, mible_mesh_publication_para
 /**
  *@brief    set subscription information for node, mesh profile 4.3.2.19-25.
  *          Report 4.3.2.26 Config Model Subscription Status.
- *          report event: MIBLE_MESH_EVENT_CONFIG_MESSAGE_CB, data: mible_mesh_access_message_rx_t.
+ *          report event: MIBLE_MESH_EVENT_CONFIG_MESSAGE_CB, data: mible_mesh_config_status_t.
  *@param    [in] opcode : mesh spec opcode, add/delete/overwrite ...
  *@param    [in] param : subscription parameters corresponding to node
  *@return   0: success, negetive value: failure
@@ -927,7 +927,7 @@ int mible_mesh_node_set_subscription(uint16_t opcode, mible_mesh_subscription_pa
 
 /**
  *@brief    reset node, 4.3.2.53 Config Node Reset, Report 4.3.2.54 Config Node Reset Status.
- *          report event: MIBLE_MESH_EVENT_CONFIG_MESSAGE_CB, data: mible_mesh_access_message_rx_t.
+ *          report event: MIBLE_MESH_EVENT_CONFIG_MESSAGE_CB, data: mible_mesh_config_status_t.
  *@param    [in] opcode : mesh spec opcode, reset
  *@param    [in] param : reset parameters corresponding to node
  *@return   0: success, negetive value: failure
@@ -936,7 +936,7 @@ int mible_mesh_node_reset(uint16_t opcode, mible_mesh_reset_params_t *param);
 
 /**
  *@brief    set relay params node, mesh profile 4.3.2.12, Report 4.3.2.14 Config Relay Status.
- *          report event: MIBLE_MESH_EVENT_CONFIG_MESSAGE_CB, data: mible_mesh_access_message_rx_t.
+ *          report event: MIBLE_MESH_EVENT_CONFIG_MESSAGE_CB, data: mible_mesh_config_status_t.
  *@param    [in] opcode : relay
  *@param    [in] param : relay parameters corresponding to node
  *@return   0: success, negetive value: failure
@@ -983,6 +983,13 @@ int mible_mesh_gateway_unregister_event_callback(mible_mesh_event_cb_t mible_mes
  *@return   0: success, negetive value: failure
  */
 int mible_mesh_gateway_init_stack(void);
+
+/**
+ *@brief    deinit mesh stack.
+ *          report event: MIBLE_MESH_EVENT_STACK_DEINIT_DONE, data: NULL.
+ *@return   0: success, negetive value: failure
+ */
+int mible_mesh_gateway_deinit_stack(void);
 
 /**
  *@brief    async method, init mesh provisioner
