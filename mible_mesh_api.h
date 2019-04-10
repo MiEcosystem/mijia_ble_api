@@ -518,7 +518,7 @@ typedef struct {
     uint16_t reserved;  /**< reserved for future */
     uint8_t  did[4];    /**< device id lower 4 bytes */
     uint8_t  mac[MIBLE_ADDR_LEN];   /**< mac address */
-}mible_mesh_uuid_t;
+} __packed mible_mesh_uuid_t;
 
 /**
  * @brief mesh device information.
@@ -1001,6 +1001,16 @@ int mible_mesh_gateway_deinit_stack(void);
  *@return   0: success, negetive value: failure
  */
 int mible_mesh_gateway_init_provisioner(mible_mesh_gateway_info_t *info);
+
+/**
+ *@brief    sync method, acquire reload_flag
+ *          if you are a transciver device, always return flag = 1,
+ *          we will load latest data from application;
+ *          if you automatically reload data from flash or others,
+ *          we will skip create_network, set_appkey, set_model_app, default group sub;
+ *@return    0: do not need to reload, 1: need to reload, negetive value: failure
+ */
+int mible_mesh_gateway_get_reload_flag(void);
 
 /**
  *@brief    sync method, create mesh network for provisioner.
