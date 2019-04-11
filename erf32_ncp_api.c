@@ -1252,7 +1252,7 @@ void get_time()
 	char datetime[50] = {0};
  
     strftime(datetime, 50, "%H:%M:%S", tm_now);
-	printf("[%s.%d]", datetime, tv.tv_usec); 
+	printf("[%s.%d]", datetime, (int)tv.tv_usec); 
 }
 
 void hexdump(uint8_t *base_addr, uint8_t bytes)

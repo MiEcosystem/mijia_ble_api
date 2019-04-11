@@ -7,7 +7,7 @@
 #include "erf32_api.h"
 #include "mible_log.h"
 #include "rtl_platform.h"
-
+#include <string.h>
 
 #define MESH_GENERIC_CLIENT_state_on_off 				0
 #define MESH_GENERIC_CLIENT_state_lightness_actual  	128
@@ -20,6 +20,20 @@
 #define PROV_ADDRESS_KEY	"prov_address"
 #define NETKEY_KEY			"netkey" 	// index[1] + netkey[16]
 #define APPKEY_KEY			"appkey"  	// (index[1] + appkey[16])*n 
+
+#define DEFAULT_TTL         5
+#define RELAY_EN            1
+#define RELAY_STEP          50
+#define RELAY_RETRANS_CNT   2
+#define NETTX_STEP          50
+#define NETTX_CNT           2
+#define PEND_ACK_BASE       (150+NETTX_STEP*NETTX_CNT)
+#define PEND_ACK_STEP       (NETTX_STEP)
+#define WAIT_ACK_BASE       (200+NETTX_STEP*NETTX_CNT)
+#define WAIT_ACK_STEP       (NETTX_STEP)
+#define SEGMENT_DELAY       (NETTX_STEP*NETTX_CNT + 20)
+#define MAX_SAR_RETRY       3
+
 
 static mible_mesh_event_cb_t mible_mesh_event_callback_handler;
 static bool recv_unprop = false; 
@@ -74,7 +88,6 @@ void mible_mesh_stack_event_handler(struct gecko_cmd_packet *evt)
 	switch (BGLIB_MSG_ID(evt->header)) {
 
 		case gecko_evt_mesh_prov_initialized_id:
-
 
 			MI_LOG_WARNING("gecko_evt_mesh_prov_initialized_id. \n"); 
 			if(evt->data.evt_mesh_prov_initialized.networks == 0){
@@ -181,15 +194,25 @@ void mible_mesh_stack_event_handler(struct gecko_cmd_packet *evt)
 			break;
 		case gecko_evt_mesh_config_client_model_sub_status_id:
 
-			MI_LOG_WARNING("receive model sub status event. \n"); 
+			MI_LOG_WARNING("receive model sub status event. handle 0x%x\n", 
+					evt->data.evt_mesh_config_client_model_sub_status.handle); 
 			if(evt->data.evt_mesh_config_client_model_sub_status.handle == 
 					sub_status_record.handle){
 				
 				mible_mesh_event_params_t evt_sub_model_param = {
 					.config_msg = sub_status_record.config_sub_status,
 				};
+				MI_LOG_DEBUG("OPCODE=0x%x, cid=0x%x, model_id=0x%x, dst_addr=0x%x, src_addr=0x%x, status = 0x%x, elem_addr = 0x%x, sub_addr=0x%x\n", sub_status_record.config_sub_status.opcode, sub_status_record.config_sub_status.opcode.company_id,
+						sub_status_record.config_sub_status.model_sub_status.model_id, 
+						sub_status_record.config_sub_status.meta_data.dst_addr,
+						sub_status_record.config_sub_status.meta_data.src_addr,
+						sub_status_record.config_sub_status.model_sub_status.status,
+						sub_status_record.config_sub_status.model_sub_status.elem_addr,
+						sub_status_record.config_sub_status.model_sub_status.address);
+				
 				mible_mesh_event_callback_handler(MIBLE_MESH_EVENT_CONFIG_MESSAGE_CB,
 						&evt_sub_model_param); 
+	
 			}
 			break; 
 		default:
@@ -230,7 +253,7 @@ int mible_mesh_node_bind_appkey(uint16_t opcode, mible_mesh_model_app_params_t *
 		case MIBLE_MESH_MSG_CONFIG_MODEL_APP_BIND:{
 			struct gecko_msg_mesh_config_client_bind_model_rsp_t *bind_ret; 
 			bind_ret = gecko_cmd_mesh_config_client_bind_model(param->global_netkey_index, 
-					param->dst_addr-param->element_addr, param->element_addr, 
+					param->dst_addr, param->element_addr - param->dst_addr, 
 					param->appkey_index, id.company_id, id.model_id);
 			//bind_ret->handle;
 			return bind_ret->result;
@@ -239,7 +262,7 @@ int mible_mesh_node_bind_appkey(uint16_t opcode, mible_mesh_model_app_params_t *
 		case MIBLE_MESH_MSG_CONFIG_MODEL_APP_UNBIND:{
 			struct gecko_msg_mesh_config_client_unbind_model_rsp_t *unbind_ret; 
 			unbind_ret = gecko_cmd_mesh_config_client_bind_model(param->global_netkey_index, 
-					param->dst_addr-param->element_addr, param->element_addr, 
+					param->dst_addr, param->element_addr - param->dst_addr, 
 					param->appkey_index, id.company_id, id.model_id);
 			//unbind_ret->handle;
 			return unbind_ret->result;
@@ -267,22 +290,30 @@ int mible_mesh_node_set_subscription(uint16_t opcode, mible_mesh_subscription_pa
 	mible_mesh_model_id_t id = (mible_mesh_model_id_t)(param->model_id);
 	int ret = 0; 
 
+	sub_status_record.handle = 0; 
 	if(opcode == MIBLE_MESH_MSG_CONFIG_MODEL_SUBSCRIPTION_ADD || 
 			opcode == MIBLE_MESH_MSG_CONFIG_MODEL_SUBSCRIPTION_OVERWRITE){
 
+		MI_LOG_WARNING("[Add subscription]: node 0x%x, model_id 0x%x  sub_addr 0x%x\n", 
+				param->dst_addr, id.model_id, param->sub_addr.value);
+
 		struct gecko_msg_mesh_config_client_set_model_sub_rsp_t *add_ret;
 		add_ret = gecko_cmd_mesh_config_client_set_model_sub(param->global_netkey_index, 
-				param->dst_addr-param->element_addr, param->element_addr, 
+				param->dst_addr, param->element_addr - param->dst_addr, 
 				id.company_id, id.model_id, param->sub_addr.value);
 		
 		sub_status_record.handle = add_ret->handle; 
+		MI_LOG_DEBUG("set sub handle = 0x%x\n", add_ret->handle); 
 		ret = add_ret->result;
 
 	}else if(opcode == MIBLE_MESH_MSG_CONFIG_MODEL_SUBSCRIPTION_DELETE){
 
+		MI_LOG_WARNING("[Dele subscription]: node 0x%x, model_id 0x%x  sub_addr 0x%x\n", 
+				param->dst_addr, id.model_id, param->sub_addr.value);
+
 		struct gecko_msg_mesh_config_client_remove_model_sub_rsp_t *remove_ret;
 		remove_ret = gecko_cmd_mesh_config_client_remove_model_sub(param->global_netkey_index, 
-				param->dst_addr-param->element_addr, param->element_addr, 
+				param->dst_addr, param->element_addr - param->dst_addr, 
 				id.company_id, id.model_id, param->sub_addr.value);
 		sub_status_record.handle = remove_ret->handle; 
 		ret = remove_ret->result;								
@@ -461,8 +492,27 @@ int mible_mesh_gateway_unregister_event_callback(mible_mesh_event_cb_t mible_mes
  */
 int mible_mesh_gateway_init_stack(void)
 {
-    MI_LOG_WARNING("[mible_mesh_gateway_init_stack] \n"); 
-	gecko_cmd_mesh_prov_init();
+	int result = gecko_cmd_mesh_test_set_sar_config(10000,
+                                                    PEND_ACK_BASE,
+                                                    PEND_ACK_STEP,
+                                                    WAIT_ACK_BASE,
+                                                    WAIT_ACK_STEP,
+                                                    MAX_SAR_RETRY)->result;
+	if(result != 0){
+		MI_LOG_ERROR("set sar config error. 0x%x \n",result);
+	}
+    result = gecko_cmd_mesh_test_set_segment_send_delay(SEGMENT_DELAY)->result;
+	if(result != 0){
+		MI_LOG_ERROR("set segment send delay error. 0x%x \n", result); 
+	}
+
+	MI_LOG_WARNING("[mible_mesh_gateway_init_stack] \n"); 
+	struct gecko_msg_mesh_prov_init_rsp_t * init_ret; 
+	init_ret = gecko_cmd_mesh_prov_init();
+	if(init_ret->result != 0){
+		MI_LOG_ERROR("gecko cmd mesh prov init failed. error: 0x%x\n", init_ret->result); 
+	}
+
 	gecko_cmd_mesh_generic_client_init();
 	// init vendor client 
 	uint8_t opcode[6] = {0x01,0x03,0x04,0x05,0x0e,0x0f}; 
@@ -506,10 +556,37 @@ int mible_mesh_gateway_init_provisioner(mible_mesh_gateway_info_t *info)
 		}
 	}
 	// TODO 
+    int result = gecko_cmd_mesh_test_set_nettx(NETTX_CNT, NETTX_STEP/10-1)->result;
+	if(result !=0){
+		MI_LOG_ERROR("set nettx error. 0x%x \n", result); 
+	}	
+	uint8_t var = DEFAULT_TTL;
+    result = gecko_cmd_mesh_test_set_local_config(mesh_node_default_ttl, 
+			0, sizeof(var), &var)->result;
+	//scan param
 	gecko_cmd_le_gap_set_discovery_type(1,1);
-	
+	uint8_t gap_type_list[] = {0x2A, 0x2B, 0x16, 0xFF}; 
+	gecko_cmd_mesh_node_set_adv_event_filter(0x8000,sizeof(gap_type_list), gap_type_list); 
 	mible_mesh_event_callback(MIBLE_MESH_EVENT_PROVISIONER_INIT_DONE, NULL);
 	return 0; 
+}
+
+/**
+ *@brief    sync method, acquire reload_flag
+ *          if you are a transciver device, always return flag = 1,
+ *          we will load latest data from application;
+ *          if you automatically reload data from flash or others,
+ *          we will skip create_network, set_appkey, set_model_app, default group sub;
+ *@return    0: do not need to reload, 1: need to reload, negetive value: failure
+ */
+int mible_mesh_gateway_get_reload_flag(void)
+{
+	if(prov_configured == false){
+		return 1; 
+	}else{
+		return 0;
+	}
+
 }
 
 /**
@@ -740,16 +817,26 @@ int mible_mesh_gateway_set_device_key(mible_mesh_op_t op, mible_mesh_node_info_t
 
 	if(op == MIBLE_MESH_OP_ADD){
 		MI_LOG_WARNING("add device: address 0x%x \n", device->unicast_address); 
-		MI_HEXDUMP(uuid.data, 16); 
+		MI_HEXDUMP(device->uuid, 16); 
+		gecko_cmd_mesh_prov_ddb_delete(uuid);
 		struct gecko_msg_mesh_prov_ddb_add_rsp_t * add_ret;
 		add_ret = gecko_cmd_mesh_prov_ddb_add(uuid, device_key,device->netkey_index, 
 				device->unicast_address, device->elements_num);
-		return add_ret->result;
+		if(add_ret->result != 0){
+			MI_LOG_ERROR("add device error. error: 0x%x \n", add_ret->result); 
+		}
 	}else{
 		MI_LOG_WARNING("delete device: address 0x%x \n", device->unicast_address); 
-		MI_HEXDUMP(uuid.data, 16); 
-		return gecko_cmd_mesh_prov_ddb_delete(uuid)->result;
+		struct gecko_msg_mesh_prov_ddb_delete_rsp_t *del_ret;
+		del_ret = gecko_cmd_mesh_prov_ddb_delete(uuid);
+		MI_HEXDUMP(device->uuid, 16); 
 	}
+	// get list 
+	struct gecko_msg_mesh_prov_ddb_list_devices_rsp_t *dev_list_ret;
+	dev_list_ret = gecko_cmd_mesh_prov_ddb_list_devices();
+	MI_LOG_WARNING("device list count = %d\n", dev_list_ret->count); 
+	return 0;
+
 }
 
 /**
