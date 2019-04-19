@@ -290,6 +290,7 @@ int mible_mesh_node_set_subscription(uint16_t opcode, mible_mesh_subscription_pa
 	mible_mesh_model_id_t id = (mible_mesh_model_id_t)(param->model_id);
 	int ret = 0; 
 
+	cmd_mutex_get();
 	sub_status_record.handle = 0; 
 	if(opcode == MIBLE_MESH_MSG_CONFIG_MODEL_SUBSCRIPTION_ADD || 
 			opcode == MIBLE_MESH_MSG_CONFIG_MODEL_SUBSCRIPTION_OVERWRITE){
@@ -320,6 +321,7 @@ int mible_mesh_node_set_subscription(uint16_t opcode, mible_mesh_subscription_pa
 
 	}else{
 		MI_LOG_ERROR("[mible_mesh_node_set_subscription]%d Method not supported\n", opcode); 
+		cmd_mutex_put();
 		return -1;
 	}
 	sub_status_record.config_sub_status.opcode.opcode =
@@ -335,6 +337,7 @@ int mible_mesh_node_set_subscription(uint16_t opcode, mible_mesh_subscription_pa
 		param->sub_addr.value;  
 	sub_status_record.config_sub_status.model_sub_status.model_id = 
 		param->model_id; 
+	cmd_mutex_put();
 	return ret; 
 }
 
@@ -350,6 +353,7 @@ int mible_mesh_node_reset(uint16_t opcode, mible_mesh_reset_params_t *param)
 	if(param == NULL)
 		return -1; 
 	MI_LOG_WARNING("mesh node reset: 0x%x\n", param->dst_addr);
+	cmd_mutex_get();
 	struct gecko_msg_mesh_config_client_reset_node_rsp_t *reset_ret; 
 	reset_ret = gecko_cmd_mesh_config_client_reset_node(param->global_netkey_index, 
 			param->dst_addr); 
@@ -367,6 +371,7 @@ int mible_mesh_node_reset(uint16_t opcode, mible_mesh_reset_params_t *param)
 		reset_status_record.config_reset_status.meta_data.dst_addr =
 			prov_info.address;
 	}
+	cmd_mutex_put();
 	return reset_ret->result;
 }
 
@@ -383,6 +388,7 @@ int mible_mesh_node_generic_control(mible_mesh_generic_params_t * param)
 	struct gecko_msg_mesh_generic_client_get_rsp_t *get_ret;
 	struct gecko_msg_mesh_generic_client_set_rsp_t *set_ret;
 
+	cmd_mutex_get();
 	switch(param->opcode.opcode){
 		// GENERIC ONOFF 
 		case MIBLE_MESH_MSG_GENERIC_ONOFF_GET:
@@ -390,6 +396,7 @@ int mible_mesh_node_generic_control(mible_mesh_generic_params_t * param)
 			get_ret = gecko_cmd_mesh_generic_client_get(
 					MIBLE_MESH_MODEL_ID_GENERIC_ONOFF_CLIENT, 0, param->dst_addr.value, 
 					param->global_appkey_index, MESH_GENERIC_CLIENT_state_on_off);
+			cmd_mutex_put();
 			return get_ret->result; 
 
 		case MIBLE_MESH_MSG_GENERIC_ONOFF_SET:
@@ -403,6 +410,7 @@ int mible_mesh_node_generic_control(mible_mesh_generic_params_t * param)
 					MIBLE_MESH_MODEL_ID_GENERIC_ONOFF_CLIENT, 0, 
 					param->dst_addr.value, param->global_appkey_index, param->data[1], 
 					0, 0, flags, MESH_GENERIC_CLIENT_request_on_off, 1, param->data);
+			cmd_mutex_put();
 			return set_ret->result; 
 				
 		// LIGHTNESS 
@@ -411,6 +419,7 @@ int mible_mesh_node_generic_control(mible_mesh_generic_params_t * param)
 			get_ret = gecko_cmd_mesh_generic_client_get(
 					MIBLE_MESH_MODEL_ID_LIGHTNESS_CLIENT, 0, param->dst_addr.value, 
 					param->global_appkey_index, MESH_GENERIC_CLIENT_request_lightness_actual);
+			cmd_mutex_put();
 			return get_ret->result; 
 
 		case MIBLE_MESH_MSG_LIGHT_LIGHTNESS_SET:
@@ -425,6 +434,7 @@ int mible_mesh_node_generic_control(mible_mesh_generic_params_t * param)
 					param->dst_addr.value, param->global_appkey_index, param->data[2], 
 					0, 0, flags, MESH_GENERIC_CLIENT_request_lightness_actual, 
 					2, param->data);
+			cmd_mutex_put();
 			return set_ret->result; 
 
 		// LIGHTCTL
@@ -433,6 +443,7 @@ int mible_mesh_node_generic_control(mible_mesh_generic_params_t * param)
 			get_ret = gecko_cmd_mesh_generic_client_get(
 					MIBLE_MESH_MODEL_ID_CTL_CLIENT, 0, param->dst_addr.value, 
 					param->global_appkey_index, MESH_GENERIC_CLIENT_state_ctl_temperature);
+			cmd_mutex_put();
 			return get_ret->result; 
 			
 		case MIBLE_MESH_MSG_LIGHT_CTL_TEMPERATURE_SET: 
@@ -446,11 +457,13 @@ int mible_mesh_node_generic_control(mible_mesh_generic_params_t * param)
 					MIBLE_MESH_MODEL_ID_CTL_CLIENT, 0, param->dst_addr.value, 
 					param->global_appkey_index, param->data[4], 0, 0, flags, 
 					MESH_GENERIC_CLIENT_request_ctl_temperature, 4, param->data);
+			cmd_mutex_put();
 			return set_ret->result; 
 
 		default:
 			break; 
 	} 
+	cmd_mutex_put();
 	return -1;
 }
 
@@ -492,6 +505,7 @@ int mible_mesh_gateway_unregister_event_callback(mible_mesh_event_cb_t mible_mes
  */
 int mible_mesh_gateway_init_stack(void)
 {
+	cmd_mutex_get();
 	int result = gecko_cmd_mesh_test_set_sar_config(10000,
                                                     PEND_ACK_BASE,
                                                     PEND_ACK_STEP,
@@ -522,6 +536,7 @@ int mible_mesh_gateway_init_stack(void)
 		MI_LOG_ERROR("vendor model init error. 0x%x\n", vendor_init_ret->result);
 	}
 
+	cmd_mutex_put();
 	return 0;
 }
 /**
@@ -544,6 +559,7 @@ int mible_mesh_gateway_deinit_stack(void)
  */
 int mible_mesh_gateway_init_provisioner(mible_mesh_gateway_info_t *info)
 {
+	cmd_mutex_get();
 	MI_LOG_WARNING("[mible_mesh_gateway_init_provisioner]\n");
 	if(prov_configured == false){
 		MI_LOG_DEBUG("initialize prov network\n");
@@ -551,7 +567,8 @@ int mible_mesh_gateway_init_provisioner(mible_mesh_gateway_info_t *info)
 		ret = gecko_cmd_mesh_prov_initialize_network(info->unicast_address, 
 				info->iv_index);
 		if(ret->result != 0){
-			MI_LOG_ERROR("prov initialize failed \n"); 
+			MI_LOG_ERROR("prov initialize failed 0x%x \n",ret->result); 
+			cmd_mutex_put();
 			return ret->result;
 		}
 	}
@@ -565,9 +582,9 @@ int mible_mesh_gateway_init_provisioner(mible_mesh_gateway_info_t *info)
 			0, sizeof(var), &var)->result;
 	//scan param
 	gecko_cmd_le_gap_set_discovery_type(1,1);
-	uint8_t gap_type_list[] = {0x2A, 0x2B, 0x16, 0xFF}; 
-	gecko_cmd_mesh_node_set_adv_event_filter(0x8000,sizeof(gap_type_list), gap_type_list); 
+	
 	mible_mesh_event_callback(MIBLE_MESH_EVENT_PROVISIONER_INIT_DONE, NULL);
+	cmd_mutex_put();
 	return 0; 
 }
 
@@ -600,6 +617,7 @@ int mible_mesh_gateway_get_reload_flag(void)
  */
 int mible_mesh_gateway_create_network(uint16_t netkey_index, uint8_t *netkey, uint16_t *stack_netkey_index)
 {
+	cmd_mutex_get();
 	MI_LOG_WARNING("[mible_mesh_gateway_create_network] \n"); 
 	// can only be invoked once.
 	if(prov_configured == false){
@@ -609,12 +627,14 @@ int mible_mesh_gateway_create_network(uint16_t netkey_index, uint8_t *netkey, ui
 		network_ret = gecko_cmd_mesh_prov_create_network(MIBLE_MESH_KEY_LEN, netkey);
 		if(network_ret->result != 0){
 			MI_LOG_ERROR("prov create network failed \n");
+			cmd_mutex_put();
 			return network_ret->result;
 		}
 		prov_info.netkey_id = network_ret->network_id; 
 		*stack_netkey_index = network_ret->network_id; 
 		prov_configured = true; 
 		
+		MI_LOG_INFO("network_id: %d \n", network_ret->network_id); 
 		// save netkey 
 		uint8_t netkey_store[17];
 		netkey_store[0] = network_ret->network_id; 
@@ -633,6 +653,8 @@ int mible_mesh_gateway_create_network(uint16_t netkey_index, uint8_t *netkey, ui
 	gecko_cmd_mesh_test_del_local_key(1,1);
 	gecko_cmd_mesh_test_del_local_key(1,2);
 	gecko_cmd_mesh_test_del_local_key(1,3);
+	
+	cmd_mutex_put();
 	return 0;
 }
 
@@ -644,9 +666,11 @@ int mible_mesh_gateway_create_network(uint16_t netkey_index, uint8_t *netkey, ui
  */
 int mible_mesh_gateway_set_network_transmit_param(uint8_t count, uint8_t interval_steps)
 {
+	cmd_mutex_get();
 	MI_LOG_WARNING("[mible_mesh_gateway_set_network_transmit_param] \n"); 
 	struct gecko_msg_mesh_test_set_nettx_rsp_t *ret; 
 	ret = gecko_cmd_mesh_test_set_nettx(count, interval_steps);
+	cmd_mutex_put();
 	return 0; 
 }
 
@@ -656,9 +680,12 @@ int mible_mesh_gateway_set_network_transmit_param(uint8_t count, uint8_t interva
  */
 int mible_mesh_start_recv_unprovbeacon(void)
 {
+	cmd_mutex_get();
 	MI_LOG_WARNING("[mible_mesh_start_recv_unprovbeacon] \n");
 	recv_unprop = true; 
-	return gecko_cmd_mesh_prov_scan_unprov_beacons()->result;
+	int ret =  gecko_cmd_mesh_prov_scan_unprov_beacons()->result;
+	cmd_mutex_put();
+	return ret;
 }
 
 /**
@@ -740,16 +767,22 @@ int mible_mesh_gateway_set_appkey(mible_mesh_op_t op, uint16_t netkey_index, uin
 		return -1; 
 	aes_key_128 key;
 	memcpy(key.data, appkey, 16); 
+	
+	cmd_mutex_get();
 	if(op == MIBLE_MESH_OP_ADD){
 
 		struct gecko_msg_mesh_prov_create_appkey_rsp_t *add_ret; 
 		add_ret = gecko_cmd_mesh_prov_create_appkey(netkey_index, 16, appkey);
+		if(add_ret->result != 0){
+			MI_LOG_ERROR("create appkey error. 0x%x\n", add_ret->result); 
+		}
 		*stack_appkey_index = add_ret->appkey_index; 
 		MI_LOG_DEBUG("[add appkey]index:%d, netkey_index:%d, result:%d \n", 
 				add_ret->appkey_index, netkey_index, add_ret->result);
 		
 		MI_LOG_DEBUG("[netkey count] %d\n",gecko_cmd_mesh_test_get_key_count(0)->count);
 		MI_LOG_DEBUG("[appkey count] %d\n",gecko_cmd_mesh_test_get_key_count(1)->count);
+		cmd_mutex_put();
 		return add_ret->result; 
 		/*
 		struct gecko_msg_mesh_test_add_local_key_rsp_t *add_ret;
@@ -768,6 +801,7 @@ int mible_mesh_gateway_set_appkey(mible_mesh_op_t op, uint16_t netkey_index, uin
 		*stack_appkey_index = appkey_index;
 		MI_LOG_DEBUG("[dele appkey]index:%d, result:%d \n", 
 				appkey_index,dele_ret->result);
+		cmd_mutex_put();
 		return dele_ret->result; 
 	}
 }
@@ -782,6 +816,7 @@ int mible_mesh_gateway_set_appkey(mible_mesh_op_t op, uint16_t netkey_index, uin
  */
 int mible_mesh_gateway_set_model_app(mible_mesh_op_t op, uint16_t company_id, uint16_t model_id, uint16_t appkey_index)
 {
+	cmd_mutex_get();
 	MI_LOG_WARNING("[mible_mesh_gateway_set_model_app] \n");
 	if(op == MIBLE_MESH_OP_ADD){
 
@@ -789,6 +824,7 @@ int mible_mesh_gateway_set_model_app(mible_mesh_op_t op, uint16_t company_id, ui
 		bind_ret = gecko_cmd_mesh_test_bind_local_model_app(0,
 				appkey_index, company_id, model_id);
 		MI_LOG_DEBUG("[model bind] company_id = %x, model_id = %x, appkey_index = %x, result = %x \n", company_id, model_id, appkey_index, bind_ret->result); 
+		cmd_mutex_put();
 		return bind_ret->result; 
 	}else{
 	
@@ -796,6 +832,7 @@ int mible_mesh_gateway_set_model_app(mible_mesh_op_t op, uint16_t company_id, ui
 		unbind_ret = gecko_cmd_mesh_test_unbind_local_model_app(0,
 				appkey_index, company_id, model_id);
 		MI_LOG_DEBUG("[model unbind] company_id = %x, model_id = %x, appkey_index = %x, result = %x\n ", company_id, model_id, appkey_index, unbind_ret->result); 
+		cmd_mutex_put();
 		return unbind_ret->result; 
 	}
 
@@ -810,6 +847,7 @@ int mible_mesh_gateway_set_model_app(mible_mesh_op_t op, uint16_t company_id, ui
  */
 int mible_mesh_gateway_set_device_key(mible_mesh_op_t op, mible_mesh_node_info_t *device)
 {
+	cmd_mutex_get();
 	uuid_128 uuid; 
 	memcpy(uuid.data, device->uuid, 16);
 	aes_key_128 device_key; 
@@ -835,6 +873,7 @@ int mible_mesh_gateway_set_device_key(mible_mesh_op_t op, mible_mesh_node_info_t
 	struct gecko_msg_mesh_prov_ddb_list_devices_rsp_t *dev_list_ret;
 	dev_list_ret = gecko_cmd_mesh_prov_ddb_list_devices();
 	MI_LOG_WARNING("device list count = %d\n", dev_list_ret->count); 
+	cmd_mutex_put();
 	return 0;
 
 }
@@ -848,20 +887,26 @@ int mible_mesh_gateway_set_device_key(mible_mesh_op_t op, mible_mesh_node_info_t
 
 int mible_mesh_gateway_set_sub_address(mible_mesh_op_t op, uint16_t company_id, uint16_t model_id, mible_mesh_address_t *sub_addr)
 {
+	cmd_mutex_get();
 	if(op == MIBLE_MESH_OP_ADD){
 		struct gecko_msg_mesh_test_add_local_model_sub_rsp_t *add_ret; 
 		add_ret = gecko_cmd_mesh_test_add_local_model_sub(0, company_id,
 				model_id, sub_addr->value);
 		if(add_ret->result != 0){
 			MI_LOG_ERROR("model sub address error. 0x%x\n", add_ret->result); 
+			cmd_mutex_put();
 	   		return add_ret->result; 	
 		}else{
 			MI_LOG_WARNING("model sub address: company_id = 0x%x, modle_id = 0x%x, sub_addr = 0x%x\n", company_id, model_id, sub_addr->value); 
+			
+			cmd_mutex_put();
+			return 0;
 		}
 	}else{
 		struct gecko_msg_mesh_test_del_local_model_sub_rsp_t *del_ret;
 	   	del_ret = gecko_cmd_mesh_test_del_local_model_sub(0, company_id, 
 				model_id, sub_addr->value);
+		cmd_mutex_put();
 		return del_ret->result;
 	}
 }

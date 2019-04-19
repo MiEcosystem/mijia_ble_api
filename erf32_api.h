@@ -44,5 +44,9 @@ extern uint8_t ble_scanning;
 void get_time();
 void hexdump(uint8_t *base_addr, uint8_t bytes);
 void mesh_init();
+
+void cmd_mutex_init();
+void cmd_mutex_get();
+void cmd_mutex_put();
 #endif
 

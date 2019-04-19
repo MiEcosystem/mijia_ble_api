@@ -19,6 +19,8 @@
 #include "gecko_bglib.h"
 #include "erf32_api.h"
 #include "mible_log.h"
+#include "semaphore.h"
+#include "arch_os.h"
 
 #ifndef MIBLE_MAX_USERS
 #define MIBLE_MAX_USERS 4
@@ -35,7 +37,7 @@ static uint8_t connection_handle = DISCONNECTION;
 static uint8_t wait_discover_char = 0; // 1 
 static uint8_t char_num = 0; 
 static mible_uuid_t discover_srv_uuid = {0}; 
-
+static arch_os_mutex_handle_t  stack_cmd_mutex; 
 
 typedef struct {
 	uint16_t handle;
@@ -222,7 +224,6 @@ void mible_gap_event_callback(mible_gap_evt_t evt, mible_gap_evt_param_t* param)
         }
     }
 }
-
 /**
  *@brief    This function is MIBLE GATTS related event callback function.
  *@param    [in] evt : GATTS EVENT
@@ -402,7 +403,8 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt){
         	gatts_evt_param.write.len = evt->data.evt_gatt_server_attribute_value.value.len;
         	gatts_evt_param.write.offset = evt->data.evt_gatt_server_attribute_value.offset;
         	gatts_evt_param.write.value_handle = char_handle;
-
+			
+			MI_HEXDUMP(gatts_evt_param.write.data, gatts_evt_param.write.len); 
         	for(uint8_t i=0; i<CHAR_TABLE_NUM; i++){
         		if(m_char_table.item[i].handle == char_handle){
         			if(m_char_table.item[i].wr_author == true){
@@ -475,6 +477,7 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt){
         	gatts_evt_param.write.offset = evt->data.evt_gatt_server_attribute_value.offset;
         	gatts_evt_param.write.value_handle = char_handle;
 
+			MI_HEXDUMP(gatts_evt_param.write.data, gatts_evt_param.write.len); 
         	for(uint8_t i=0; i<CHAR_TABLE_NUM; i++){
         		if(m_char_table.item[i].handle == char_handle){
         			if(m_char_table.item[i].wr_author == true){
@@ -498,25 +501,6 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt){
         	}
     	}
     	break;
-
-    	case gecko_evt_gatt_server_characteristic_status_id:
-			
-        	if (evt->data.evt_gatt_server_characteristic_status.status_flags
-                == gatt_server_confirmation) {
-            	/* Second parameter doesn't have any meaning */
-            	gatts_evt_param.conn_handle = evt->data.evt_gatt_server_characteristic_status.connection;
-            	gatts_evt_param.write.value_handle = evt->data.evt_gatt_server_characteristic_status.characteristic;
-            	mible_gatts_event_callback(MIBLE_GATTS_EVT_IND_CONFIRM, &gatts_evt_param);
-        	}
-    	break;	
-		case gecko_evt_gatt_characteristic_id:  
-		break;
-		case gecko_evt_gatt_service_id:
-		break;
-		case gecko_evt_gatt_procedure_completed_id:
-		break;
-		case gecko_evt_gatt_characteristic_value_id:
-		break; 
     	default:
       		break;
   	}
@@ -536,7 +520,10 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt){
  * */
 mible_status_t mible_gap_address_get(mible_addr_t mac)
 {
+	cmd_mutex_get();
  	struct gecko_msg_system_get_bt_address_rsp_t *ret = gecko_cmd_system_get_bt_address();
+	cmd_mutex_put();
+
     memcpy(mac, ret->address.addr, 6);
     return MI_SUCCESS;
 }
@@ -552,8 +539,43 @@ mible_status_t mible_gap_address_set(mible_addr_t mac)
 {
 	bd_addr bt_addr; 
 	memcpy(bt_addr.addr,(uint8_t *)mac,6);  
+	cmd_mutex_get();
 	struct gecko_msg_system_set_bt_address_rsp_t *ret = gecko_cmd_system_set_bt_address(bt_addr);
+	cmd_mutex_put();
 	return ret->result;
+}
+/**
+ * @brief   Disconnect from peer
+ * @param   [in] conn_handle: the connection handle
+ * @return  MI_SUCCESS             Successfully disconnected.
+ *          MI_ERR_INVALID_STATE   Not in connnection.
+ *          MIBLE_ERR_INVALID_CONN_HANDLE
+ * @note    This function can be used by both central role and periphral
+ * role.
+ * */
+mible_status_t mible_gap_disconnect(uint16_t conn_handle)
+{
+	cmd_mutex_get();
+	struct gecko_msg_le_connection_close_rsp_t *ret;
+    if (connection_handle == DISCONNECTION) {
+		cmd_mutex_put();
+        return MI_ERR_INVALID_STATE;
+    }
+
+    ret = gecko_cmd_le_connection_close(conn_handle);
+    if (ret->result == bg_err_success) {
+		cmd_mutex_put();
+        return MI_SUCCESS;
+    } else if (ret->result == bg_err_invalid_conn_handle) {
+		cmd_mutex_put();
+        return MIBLE_ERR_INVALID_CONN_HANDLE;
+    } else if (ret->result == bg_err_not_connected) {
+		cmd_mutex_put();
+        return MI_ERR_INVALID_STATE;
+    } else {
+		cmd_mutex_put();
+        return MIBLE_ERR_UNKNOWN;
+    }
 }
 
 /**
@@ -578,6 +600,7 @@ mible_status_t mible_gap_scan_start(mible_gap_scan_type_t scan_type,
     uint8_t active;
 	int ret = 0; 
 
+	cmd_mutex_get();
     if (ble_scanning) {
 		gecko_cmd_le_gap_end_procedure();
     }
@@ -587,6 +610,7 @@ mible_status_t mible_gap_scan_start(mible_gap_scan_type_t scan_type,
     } else if (scan_type == MIBLE_SCAN_TYPE_ACTIVE) {
         active = 1;
     } else {
+		cmd_mutex_put();
         return MI_ERR_INVALID_PARAM;
     }
 
@@ -598,12 +622,14 @@ mible_status_t mible_gap_scan_start(mible_gap_scan_type_t scan_type,
 	ret = gecko_cmd_le_gap_set_discovery_timing(1, scan_interval, scan_window)->result;
 	if(ret != 0){
 		MI_LOG_ERROR("set discovery timing error 0x%x \n", ret); 
+		cmd_mutex_put();
 		return ret;
 	}
 
 	ret = gecko_cmd_le_gap_set_discovery_type(1,active)->result;  
 	if(ret != 0){
 		MI_LOG_ERROR("set discovery type error 0x%x \n", ret);
+		cmd_mutex_put();
 		return ret;
 	}
 	uint8_t gap_type_list[] = {0x2A, 0x2B, 0x16, 0xFF}; 
@@ -612,9 +638,11 @@ mible_status_t mible_gap_scan_start(mible_gap_scan_type_t scan_type,
 	
 	if( ret != 0){
 		MI_LOG_ERROR("start_discovery error 0x%x \n", ret); 
+		cmd_mutex_put();
 		return ret;
 	}
 
+	cmd_mutex_put();
     ble_scanning = 1;
 	MI_LOG_DEBUG("scan start return 0\n");
     return MI_SUCCESS;
@@ -631,7 +659,9 @@ mible_status_t mible_gap_scan_stop(void)
 	if (!ble_scanning) {
         return MI_ERR_INVALID_STATE;
     }
+	cmd_mutex_get();
     gecko_cmd_le_gap_end_procedure();
+	cmd_mutex_put();
     ble_scanning = 0;
     return MI_SUCCESS;
 }
@@ -660,6 +690,7 @@ static mible_adv_data_t last_scan_rsp;
  * */
 mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_param)
 {
+	MI_LOG_DEBUG(" start advatising \n");  
 	uint16_t result;
     uint8_t channel_map = 0, connect = 0;
 
@@ -678,14 +709,17 @@ mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_param)
         return MI_ERR_INVALID_STATE;
     }
 
+	cmd_mutex_get();
     result = gecko_cmd_le_gap_set_advertise_timing(ADV_HANDLE, p_param->adv_interval_min,p_param->adv_interval_max, 0, 0)->result;
     /*MI_ERR_CHECK(result);*/
     if (result == bg_err_invalid_param) {
+		cmd_mutex_put();
         return MI_ERR_INVALID_PARAM;
     }
 
     result = gecko_cmd_le_gap_set_advertise_channel_map(ADV_HANDLE, channel_map)->result;
     if (result == bg_err_invalid_param) {
+		cmd_mutex_put();
         return MI_ERR_INVALID_PARAM;
     }
 
@@ -696,6 +730,7 @@ mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_param)
     } else if (p_param->adv_type == MIBLE_ADV_TYPE_NON_CONNECTABLE_UNDIRECTED) {
         connect = le_gap_non_connectable;
     } else {
+		cmd_mutex_put();
         return MI_ERR_INVALID_PARAM;
     }
 
@@ -703,6 +738,7 @@ mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_param)
         result = gecko_cmd_le_gap_bt5_set_adv_data(ADV_HANDLE, 0,
                 last_adv_data.len, last_adv_data.data)->result;
         if (result != bg_err_success){
+			cmd_mutex_put();
             return MI_ERR_BUSY;
 		}
     }
@@ -710,6 +746,7 @@ mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_param)
         result = gecko_cmd_le_gap_bt5_set_adv_data(ADV_HANDLE, 1,
                 last_scan_rsp.len, last_scan_rsp.data)->result;
         if (result != bg_err_success){
+			cmd_mutex_put();
             return MI_ERR_BUSY;
 		}
     }
@@ -720,10 +757,13 @@ mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_param)
     /*MI_ERR_CHECK(result);*/
     if (result == bg_err_success) {
         ble_advertising = 1;
+		cmd_mutex_put();
         return MI_SUCCESS;
     } else {
+		cmd_mutex_put();
         return MI_ERR_BUSY;
     }
+	cmd_mutex_put();
     return MI_SUCCESS;
 }
 
@@ -742,10 +782,12 @@ mible_status_t mible_gap_adv_data_set(uint8_t const * p_data,
 {
 	struct gecko_msg_le_gap_bt5_set_adv_data_rsp_t *ret;
 
+	cmd_mutex_get();
     if (p_data != NULL && dlen <= 31) {
         /* 0 - advertisement, 1 - scan response, set advertisement data here */
         ret = gecko_cmd_le_gap_bt5_set_adv_data(ADV_HANDLE, 0, dlen, p_data);
         if (ret->result == bg_err_invalid_param) {
+			cmd_mutex_put();
             return MI_ERR_INVALID_PARAM;
         }
         memcpy(last_adv_data.data, p_data, dlen);
@@ -756,12 +798,14 @@ mible_status_t mible_gap_adv_data_set(uint8_t const * p_data,
         /* 0 - advertisement, 1 - scan response, set scan response data here */
         ret = gecko_cmd_le_gap_bt5_set_adv_data(ADV_HANDLE, 1, srdlen, p_sr_data);
         if (ret->result == bg_err_invalid_param) {
+			cmd_mutex_put();
             return MI_ERR_INVALID_PARAM;
         }
         memcpy(last_scan_rsp.data, p_sr_data, srdlen);
         last_scan_rsp.len = srdlen;
     }
 
+	cmd_mutex_put();
     return MI_SUCCESS;
 }
 
@@ -773,84 +817,24 @@ mible_status_t mible_gap_adv_data_set(uint8_t const * p_data,
  * */
 mible_status_t mible_gap_adv_stop(void)
 {
+	cmd_mutex_get();
 	struct gecko_msg_le_gap_stop_advertising_rsp_t *ret;
     if (!ble_advertising) {
+		cmd_mutex_put();
         return MI_ERR_INVALID_STATE;
     }
 
     ret = gecko_cmd_le_gap_stop_advertising(ADV_HANDLE);
     /*MI_ERR_CHECK(ret->result);*/
     if (ret->result == bg_err_success) {
+		cmd_mutex_put();
         return MI_SUCCESS;
     } else {
+		cmd_mutex_put();
         return MIBLE_ERR_UNKNOWN;
     }
+	cmd_mutex_put();
     return MI_SUCCESS;
-}
-
-/**
- * @brief   Create a Direct connection
- * @param   [in] scan_param : scanning parameters, see TYPE
- * mible_gap_scan_param_t for details.
- *          [in] conn_param : connection parameters, see TYPE
- * mible_gap_connect_t for details.
- * @return  MI_SUCCESS             Successfully initiated connection procedure.
- *          MI_ERR_INVALID_STATE   Initiated connection procedure in connected state.
- *          MI_ERR_INVALID_PARAM   Invalid parameter(s) supplied.
- *          MI_ERR_BUSY            The stack is busy, process pending events and retry.
- *          MI_ERR_RESOURCES       Stop one or more currently active roles
- * (Central, Peripheral or Observer) and try again
- *          MIBLE_ERR_GAP_INVALID_BLE_ADDR    Invalid Bluetooth address
- * supplied.
- * @note    Own and peer address are both public.
- *          The connection result is given by MIBLE_GAP_EVT_CONNECTED
- * event
- * */
-mible_status_t mible_gap_connect(mible_device_param_t *device, mible_gap_conn_param_t *p_conn_param)
-{
-	if(device == NULL || p_conn_param == NULL)
-		return MI_ERR_INVALID_PARAM;
-	// set conn params 
- 	struct gecko_msg_le_gap_set_conn_parameters_rsp_t *set_conn_rsp = 
-		gecko_cmd_le_gap_set_conn_parameters(p_conn_param->min_conn_interval,
-			p_conn_param->max_conn_interval, p_conn_param->slave_latency, 
-			p_conn_param->conn_sup_timeout);
- 	if(set_conn_rsp->result != 0){
-		return set_conn_rsp->result; 
-	}	
-	bd_addr bt_addr;
-	memcpy(bt_addr.addr,device->addr,6); 
-	struct gecko_msg_le_gap_connect_rsp_t *conn_rsp = 
-		gecko_cmd_le_gap_connect(bt_addr, device->type, 1);
-	return conn_rsp->result;
-}
-
-/**
- * @brief   Disconnect from peer
- * @param   [in] conn_handle: the connection handle
- * @return  MI_SUCCESS             Successfully disconnected.
- *          MI_ERR_INVALID_STATE   Not in connnection.
- *          MIBLE_ERR_INVALID_CONN_HANDLE
- * @note    This function can be used by both central role and periphral
- * role.
- * */
-mible_status_t mible_gap_disconnect(uint16_t conn_handle)
-{
-	struct gecko_msg_le_connection_close_rsp_t *ret;
-    if (connection_handle == DISCONNECTION) {
-        return MI_ERR_INVALID_STATE;
-    }
-
-    ret = gecko_cmd_le_connection_close(conn_handle);
-    if (ret->result == bg_err_success) {
-        return MI_SUCCESS;
-    } else if (ret->result == bg_err_invalid_conn_handle) {
-        return MIBLE_ERR_INVALID_CONN_HANDLE;
-    } else if (ret->result == bg_err_not_connected) {
-        return MI_ERR_INVALID_STATE;
-    } else {
-        return MIBLE_ERR_UNKNOWN;
-    }
 }
 
 /**
@@ -876,18 +860,25 @@ mible_status_t mible_gap_update_conn_params(uint16_t conn_handle,
         return MI_ERR_INVALID_STATE;
     }
 
+	cmd_mutex_get();
     ret = gecko_cmd_le_connection_set_parameters(conn_handle,
             conn_params.min_conn_interval, conn_params.max_conn_interval,
             conn_params.slave_latency, conn_params.conn_sup_timeout);
     if (ret->result == bg_err_success) {
+		cmd_mutex_put();
         return MI_SUCCESS;
     } else if (ret->result == bg_err_invalid_conn_handle) {
+		cmd_mutex_put();
         return MIBLE_ERR_INVALID_CONN_HANDLE;
     } else if (ret->result == bg_err_invalid_param) {
+		cmd_mutex_put();
         return MI_ERR_INVALID_PARAM;
     } else if (ret->result == bg_err_wrong_state) {
+		cmd_mutex_put();
         return MI_ERR_INVALID_STATE;
     }
+	
+	cmd_mutex_put();
     return MI_SUCCESS;
 }
 
@@ -912,6 +903,7 @@ mible_status_t mible_gatts_service_init(mible_gatts_db_t *p_server_db)
 
     mible_gatts_char_db_t * p_char_db = p_server_db->p_srv_db->p_char_db;
 
+	cmd_mutex_get();
     for(int i = 0;
             i < p_server_db->p_srv_db->char_num && i < CHAR_TABLE_NUM;
             i++, p_char_db++) 
@@ -924,11 +916,16 @@ mible_status_t mible_gatts_service_init(mible_gatts_db_t *p_server_db)
 		memcpy(data+1,&(p_server_db->p_srv_db->srv_uuid.uuid16),2);
 		memcpy(data+3,&(p_char_db->char_uuid.uuid16),2);
 		struct gecko_msg_user_message_to_target_rsp_t *rsp;
+		
+		MI_LOG_DEBUG("user cmd: uuid = 0x%x\n", p_char_db->char_uuid.uuid16);
 		rsp = gecko_cmd_user_message_to_target(5, data);  
         
+		MI_LOG_DEBUG("user cmd: uuid = 0x%x\n", p_char_db->char_uuid.uuid16);
+
 		memcpy(&p_char_db->char_value_handle,rsp->data.data,2);
 		printf("uuid = 0x%x, handle = %d \n", 
 				p_char_db->char_uuid.uuid16, p_char_db->char_value_handle);
+
 
         if (rsp->result == bg_err_success) {
             memcpy(&p_char_db->char_value_handle,rsp->data.data,2);
@@ -948,10 +945,13 @@ mible_status_t mible_gatts_service_init(mible_gatts_db_t *p_server_db)
 
     param.srv_init_cmp.p_gatts_db = p_server_db;
     param.srv_init_cmp.status = ret;
+	MI_LOG_DEBUG("mible service init succ.\n"); 
     mible_arch_event_callback(MIBLE_ARCH_EVT_GATTS_SRV_INIT_CMP, &param);
+	cmd_mutex_put();
 	return 0;
 
 exception:
+	cmd_mutex_put();
     return ret;
 }
 
@@ -1070,172 +1070,12 @@ mible_status_t mible_gatts_notify_or_indicate(uint16_t conn_handle,
         return MI_ERR_INVALID_STATE;
     }
 
+	cmd_mutex_get();
     ret = gecko_cmd_gatt_server_send_characteristic_notification(conn_handle,
             char_value_handle, len, p_value);
 
-    if (ret->result == bg_err_wrong_state) {
-        return MI_ERR_INVALID_STATE;
-    } else if (ret->result == bg_err_success) {
-        return MI_SUCCESS;
-    } else {
-        return MIBLE_ERR_UNKNOWN;
-    }
-    return MI_SUCCESS;
-    return MI_SUCCESS;
-}
-
-/**
- * @brief   Respond to a Read/Write user authorization request.
- * @param   [in] conn_handle: conn handle
- *          [in] status:  1: permit to change value ; 0: reject to change value
- *          [in] char_value_handle: characteristic handle
- *          [in] offset: the offset from which the attribute value has to
- * be updated
- *          [in] p_value: Pointer to new value used to update the attribute value.
- *          [in] len: data length
- *          [in] type : read response = 1; write response = 2;
- *
- * @return  MI_SUCCESS             Successfully queued a response to the peer, and in the case of a write operation, GATT updated.
- *          MI_ERR_INVALID_ADDR    Invalid pointer supplied.
- *          MI_ERR_INVALID_PARAM   Invalid parameter (offset) supplied.
- *          MI_ERR_INVALID_STATE   Invalid Connection State or no authorization request pending.
- *          MI_ERR_INVALID_LENGTH  Invalid length supplied.
- *          MI_ERR_BUSY            Procedure already in progress.
- *          MIBLE_ERR_ATT_INVALID_HANDLE     Attribute not found.
- * @note    This call should only be used as a response to a MIBLE_GATTS_EVT_READ/WRITE_PERMIT_REQ
- * event issued to the application.
- * */
-__WEAK mible_status_t mible_gatts_rw_auth_reply(uint16_t conn_handle,
-        uint8_t status, uint16_t char_value_handle, uint8_t offset,
-        uint8_t* p_value, uint8_t len, uint8_t type)
-{
-    return MI_SUCCESS;
-}
-
-/**
- *        GATT Client APIs
- */
-
-/**
- * @brief   Discover service by service UUID.
- * @param   [in] conn_handle: connect handle
- *          [in] srv_uuid: service uuid
- * @return  MI_SUCCESS             Successfully started or resumed the Primary
- *Service Discovery procedure.
- *          MI_ERR_INVALID_ADDR    Invalid pointer supplied.
- *          MI_ERR_INVALID_STATE   Invalid Connection State.
- *          MI_ERR_BUSY            Procedure already in progress.
- *          MIBLE_ERR_INVALID_CONN_HANDLE  Invaild connection handle.
- * @note    The response is given through MIBLE_GATTC_EVT_DISCOVERY_RSP event
- * */
-mible_status_t mible_gattc_service_discovery(uint16_t conn_handle, mible_uuid_t *srv_uuid)
-{
-	struct gecko_msg_gatt_discover_primary_services_by_uuid_rsp_t *ret; 
-	memcpy((uint8_t *)&discover_srv_uuid, (uint8_t *)srv_uuid, sizeof(mible_uuid_t));
-	if(srv_uuid->type == 0)
-		ret = gecko_cmd_gatt_discover_primary_services_by_uuid(
-				conn_handle, 2, (const uint8_t *)&srv_uuid->uuid16); 	
-	else
-		ret = gecko_cmd_gatt_discover_primary_services_by_uuid(
-				conn_handle, 16 , (const uint8_t *)&srv_uuid->uuid128);
-	return ret->result;
-}
-/**
- * @brief   set peer device notification and indication enable or disable.
- * @param   [in] conn_handle: connect handle
- *          [in] char_handle: characteristic handle
- *			[in] desc_handle: cccd handle
- *			[in] value: cccd value
- * @return  MI_SUCCESS             Successfully started or resumed the Primary
- *Service Discovery procedure.
- *          MI_ERR_INVALID_ADDR    Invalid pointer supplied.
- *          MI_ERR_INVALID_STATE   Invalid Connection State.
- *          MI_ERR_BUSY            Procedure already in progress.
- *          MIBLE_ERR_INVALID_CONN_HANDLE  Invaild connection handle.
- * @note    write peer with response, the response is given through MIBLE_GATTC_EVT_WRITE_RSP event
- * */
-mible_status_t mible_gattc_set_cccd(uint16_t conn_handle, uint16_t char_handle,
-       uint16_t desc_handle, uint16_t value)
-{ 
-	struct gecko_msg_gatt_set_characteristic_notification_rsp_t *ret; 
-	ret = gecko_cmd_gatt_set_characteristic_notification(
-			conn_handle, char_handle, value);
-	return ret->result;
-}
-
-
-
-/**
- * @brief   Read characteristic value by handle
- * @param   [in] conn_handle: connnection handle
- *          [in] char_handle: characteristic handle 
- * @return  MI_SUCCESS             Successfully started or resumed the Read
- * using Characteristic UUID procedure.
- *          MI_ERR_INVALID_STATE   Invalid Connection State.
- *          MI_ERR_BUSY            Procedure already in progress.
- *          MIBLE_ERR_INVALID_CONN_HANDLE   Invaild connection handle.
- * @note    The response is given through MIBLE_GATTC_EVT_READ_RSP event
- * */
-mible_status_t mible_gattc_read_value(uint16_t conn_handle, uint16_t char_handle)
-{
-	struct gecko_msg_gatt_read_characteristic_value_rsp_t *ret;
-	ret = gecko_cmd_gatt_read_characteristic_value(conn_handle, char_handle);
+	cmd_mutex_put();
     return ret->result;
-}
-
-/**
- * @brief   Write value by handle with response
- * @param   [in] conn_handle: connection handle
- *          [in] char_handle: handle to the attribute to be written.
- *          [in] p_value: pointer to data
- *          [in] len: data length
- * @return  MI_SUCCESS             Successfully started the Write with response
- * procedure.
- *          MI_ERR_INVALID_ADDR    Invalid pointer supplied.
- *          MI_ERR_INVALID_STATE   Invalid Connection State.
- *          MI_ERR_INVALID_LENGTH   Invalid length supplied.
- *          MI_ERR_BUSY            Procedure already in progress.
- *          MIBLE_ERR_INVALID_CONN_HANDLE   Invaild connection handle.
- * @note    The response is given through MIBLE_GATTC_EVT_WRITE_RESP event
- *
- * */
-mible_status_t mible_gattc_write_value(uint16_t conn_handle, uint16_t char_handle,
-        uint8_t* p_value, uint8_t len)
-{
-	struct gecko_msg_gatt_write_characteristic_value_rsp_t *ret; 
-	ret = gecko_cmd_gatt_write_characteristic_value(conn_handle, char_handle, 
-			len, p_value);
-    return ret->result;
-}
-
-/**
- * @brief   Write value by handle without response
- * @param   [in] conn_handle: connection handle
- *          [in] char_handle: handle to the attribute to be written.
- *          [in] p_value: pointer to data
- *          [in] len: data length
- * @return  MI_SUCCESS             Successfully started the Write Cmd procedure.
- *          MI_ERR_INVALID_ADDR    Invalid pointer supplied.
- *          MI_ERR_INVALID_STATE   Invalid Connection State.
- *          MI_ERR_INVALID_LENGTH   Invalid length supplied.
- *          MI_ERR_BUSY            Procedure already in progress.
- *          MIBLE_ERR_INVALID_CONN_HANDLE  Invaild connection handle.
- * @note    no response
- * */
-mible_status_t mible_gattc_write_without_response(uint16_t conn_handle, uint16_t char_handle,
-        uint8_t* p_value, uint8_t len)
-{
-	struct gecko_msg_gatt_write_characteristic_value_without_response_rsp_t *ret;
-	ret = gecko_cmd_gatt_write_characteristic_value_without_response(
-			conn_handle, char_handle, len, p_value);
-    return ret->result;
-}
-
-mible_status_t mible_gattc_confirm_indication(uint16_t conn_handle, uint16_t char_handle)
-{
-	struct gecko_msg_gatt_send_characteristic_confirmation_rsp_t *ret;
-	ret = gecko_cmd_gatt_send_characteristic_confirmation(conn_handle);
-	return ret->result;
 }
 #include <time.h>
 #include <sys/time.h>
@@ -1266,4 +1106,17 @@ void hexdump(uint8_t *base_addr, uint8_t bytes)
 	}
 	printf("\n"); 
   	return; 	
+}
+void cmd_mutex_init()
+{
+	arch_os_mutex_create(&stack_cmd_mutex);
+}
+void cmd_mutex_get()
+{
+	arch_os_mutex_get(stack_cmd_mutex, ARCH_OS_WAIT_FOREVER);
+}
+
+void cmd_mutex_put()
+{
+	arch_os_mutex_put(stack_cmd_mutex);
 }
