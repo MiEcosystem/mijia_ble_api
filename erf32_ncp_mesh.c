@@ -130,7 +130,9 @@ void mible_mesh_stack_event_handler(struct gecko_cmd_packet *evt)
 			break;
 
 		case gecko_evt_mesh_generic_client_server_status_id:{
-			MI_LOG_DEBUG("receive evt mesh staus\n");
+			MI_LOG_DEBUG("receive evt mesh status\n");
+			memset(&generic_status, 0, sizeof(mible_mesh_access_message_rx_t)); 
+
 			switch(evt->data.evt_mesh_generic_client_server_status.type){
 				case MESH_GENERIC_CLIENT_state_on_off:
 
@@ -174,9 +176,27 @@ void mible_mesh_stack_event_handler(struct gecko_cmd_packet *evt)
 		}
 			break; 
 
-		case gecko_evt_mesh_vendor_model_receive_id:
+		case gecko_evt_mesh_vendor_model_receive_id:{
 
-			MI_LOG_ERROR("vendor model received. \n"); 
+			MI_LOG_INFO("vendor model received. \n"); 
+			if(evt->data.evt_mesh_vendor_model_receive.opcode != 
+					(MIBLE_MESH_MIOT_SPEC_STATUS & 0x3F)){
+				MI_LOG_WARNING("unknown vendor model message.\n"); 
+			}
+			memset(&generic_status, 0, sizeof(mible_mesh_access_message_rx_t)); 
+			generic_status.opcode.opcode = evt->data.evt_mesh_vendor_model_receive.opcode;
+			generic_status.opcode.company_id = MIBLE_MESH_COMPANY_ID_XIAOMI;
+			generic_status.meta_data.dst_addr = evt->data.evt_mesh_vendor_model_receive.destination_address;
+			generic_status.meta_data.src_addr = evt->data.evt_mesh_vendor_model_receive.source_address; 
+			generic_status.buf = evt->data.evt_mesh_vendor_model_receive.payload.data; 
+			generic_status.buf_len = evt->data.evt_mesh_vendor_model_receive.payload.len; 
+			mible_mesh_event_params_t evt_vendor_param = {
+				.generic_msg = generic_status,
+			};
+			MI_HEXDUMP(generic_status.buf, generic_status.buf_len); 
+			mible_mesh_event_callback_handler(MIBLE_MESH_EVENT_GENERIC_MESSAGE_CB, 
+					&evt_vendor_param); 
+		}
 			break; 
 		
 		case gecko_evt_mesh_config_client_reset_status_id:
@@ -385,19 +405,17 @@ int mible_mesh_node_reset(uint16_t opcode, mible_mesh_reset_params_t *param)
 int mible_mesh_node_generic_control(mible_mesh_generic_params_t * param)
 {
 	uint8_t flags = 0; 
-	struct gecko_msg_mesh_generic_client_get_rsp_t *get_ret;
-	struct gecko_msg_mesh_generic_client_set_rsp_t *set_ret;
-
+	int ret = 0;
 	cmd_mutex_get();
 	switch(param->opcode.opcode){
 		// GENERIC ONOFF 
 		case MIBLE_MESH_MSG_GENERIC_ONOFF_GET:
 
-			get_ret = gecko_cmd_mesh_generic_client_get(
+			ret = gecko_cmd_mesh_generic_client_get(
 					MIBLE_MESH_MODEL_ID_GENERIC_ONOFF_CLIENT, 0, param->dst_addr.value, 
-					param->global_appkey_index, MESH_GENERIC_CLIENT_state_on_off);
+					param->global_appkey_index, MESH_GENERIC_CLIENT_state_on_off)->result;
 			cmd_mutex_put();
-			return get_ret->result; 
+			return ret; 
 
 		case MIBLE_MESH_MSG_GENERIC_ONOFF_SET:
 
@@ -406,21 +424,21 @@ int mible_mesh_node_generic_control(mible_mesh_generic_params_t * param)
 		case MIBLE_MESH_MSG_GENERIC_ONOFF_SET_UNACKNOWLEDGED:
 
 			flags = 0; 
-			set_ret = gecko_cmd_mesh_generic_client_set(
+			ret = gecko_cmd_mesh_generic_client_set(
 					MIBLE_MESH_MODEL_ID_GENERIC_ONOFF_CLIENT, 0, 
 					param->dst_addr.value, param->global_appkey_index, param->data[1], 
-					0, 0, flags, MESH_GENERIC_CLIENT_request_on_off, 1, param->data);
+					0, 0, flags, MESH_GENERIC_CLIENT_request_on_off, 1, param->data)->result;
 			cmd_mutex_put();
-			return set_ret->result; 
+			return ret; 
 				
 		// LIGHTNESS 
 		case MIBLE_MESH_MSG_LIGHT_LIGHTNESS_GET:
 			
-			get_ret = gecko_cmd_mesh_generic_client_get(
+			ret = gecko_cmd_mesh_generic_client_get(
 					MIBLE_MESH_MODEL_ID_LIGHTNESS_CLIENT, 0, param->dst_addr.value, 
-					param->global_appkey_index, MESH_GENERIC_CLIENT_request_lightness_actual);
+					param->global_appkey_index, MESH_GENERIC_CLIENT_request_lightness_actual)->result;
 			cmd_mutex_put();
-			return get_ret->result; 
+			return ret; 
 
 		case MIBLE_MESH_MSG_LIGHT_LIGHTNESS_SET:
 
@@ -429,22 +447,22 @@ int mible_mesh_node_generic_control(mible_mesh_generic_params_t * param)
 		case MIBLE_MESH_MSG_LIGHT_LIGHTNESS_SET_UNACKNOWLEDGED:
 
 			flags = 0; 
-			set_ret = gecko_cmd_mesh_generic_client_set(
+			ret = gecko_cmd_mesh_generic_client_set(
 					MIBLE_MESH_MODEL_ID_LIGHTNESS_CLIENT, 0, 
 					param->dst_addr.value, param->global_appkey_index, param->data[2], 
 					0, 0, flags, MESH_GENERIC_CLIENT_request_lightness_actual, 
-					2, param->data);
+					2, param->data)->result;
 			cmd_mutex_put();
-			return set_ret->result; 
+			return ret; 
 
 		// LIGHTCTL
 		case MIBLE_MESH_MSG_LIGHT_CTL_TEMPERATURE_GET:
 		
-			get_ret = gecko_cmd_mesh_generic_client_get(
+			ret = gecko_cmd_mesh_generic_client_get(
 					MIBLE_MESH_MODEL_ID_CTL_CLIENT, 0, param->dst_addr.value, 
-					param->global_appkey_index, MESH_GENERIC_CLIENT_state_ctl_temperature);
+					param->global_appkey_index, MESH_GENERIC_CLIENT_state_ctl_temperature)->result;
 			cmd_mutex_put();
-			return get_ret->result; 
+			return ret; 
 			
 		case MIBLE_MESH_MSG_LIGHT_CTL_TEMPERATURE_SET: 
 			
@@ -453,13 +471,34 @@ int mible_mesh_node_generic_control(mible_mesh_generic_params_t * param)
 		case MIBLE_MESH_MSG_LIGHT_CTL_TEMPERATURE_SET_UNACKNOWLEDGED:
 
 			flags = 0; 
-			set_ret = gecko_cmd_mesh_generic_client_set(
+			ret = gecko_cmd_mesh_generic_client_set(
 					MIBLE_MESH_MODEL_ID_CTL_CLIENT, 0, param->dst_addr.value, 
 					param->global_appkey_index, param->data[4], 0, 0, flags, 
-					MESH_GENERIC_CLIENT_request_ctl_temperature, 4, param->data);
+					MESH_GENERIC_CLIENT_request_ctl_temperature, 4, param->data)->result;
 			cmd_mutex_put();
-			return set_ret->result; 
+			return ret; 
+		// Vendor model
+		case MIBLE_MESH_MIOT_SPEC_GET:
+			
+		case MIBLE_MESH_MIOT_SPEC_SET:
 
+			MI_LOG_DEBUG("VVVVVVVVVVVendor model message send.\n"); 
+			MI_HEXDUMP(param->data, param->data_len); 
+
+			MI_LOG_DEBUG("vendor_id=0x%x, model_id=0x%x, dest_addr=0x%x, appkey_index=%d, opcode=%d\n",
+					MIBLE_MESH_COMPANY_ID_XIAOMI, MIBLE_MESH_MIOT_SPEC_CLIENT_MODEL, 
+					param->dst_addr.value, param->global_appkey_index, param->opcode.opcode&0x3F); 
+
+			ret = gecko_cmd_mesh_vendor_model_send(0, MIBLE_MESH_COMPANY_ID_XIAOMI, 
+					MIBLE_MESH_MIOT_SPEC_CLIENT_MODEL, param->dst_addr.value, 
+					0, param->global_appkey_index, 0, param->opcode.opcode&0x3F,
+					1, param->data_len, param->data)->result;
+			if(ret != 0){
+				MI_LOG_ERROR("Send vendor model message fail. 0x%x\n", ret); 
+			}
+			cmd_mutex_put();
+			return ret; 
+		
 		default:
 			break; 
 	} 

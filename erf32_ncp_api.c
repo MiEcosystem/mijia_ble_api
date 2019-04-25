@@ -358,7 +358,7 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt){
         	mible_gap_event_callback(MIBLE_GAP_EVT_CONN_PARAM_UPDATED, &gap_evt_param);
     	break;
 
-    	case gecko_evt_le_gap_scan_response_id:
+    	case gecko_evt_le_gap_scan_response_id:{
         /* Invalid the connection handle since no connection yet*/
 			if( evt->data.evt_le_gap_scan_response.data.len == 0 || 
 					evt->data.evt_le_gap_scan_response.data.len >31)
@@ -388,6 +388,7 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt){
 				//MI_HEXDUMP(evt->data.evt_le_gap_scan_response.data.data, 
 						//evt->data.evt_le_gap_scan_response.data.len); 
 			}	
+		}
     	break;
 
     	case gecko_evt_gatt_server_attribute_value_id: {
