@@ -235,6 +235,17 @@ void mible_mesh_stack_event_handler(struct gecko_cmd_packet *evt)
 	
 			}
 			break; 
+		case gecko_evt_mesh_friend_friendship_established_id:
+
+			MI_LOG_DEBUG("FFFFFFriendship established. lpn address: 0x%x\n",
+				evt->data.evt_mesh_friend_friendship_established.lpn_address); 
+			break; 
+
+		case gecko_evt_mesh_friend_friendship_terminated_id:
+
+			MI_LOG_ERROR("FFFFFFriendship terminated. reason: 0x%x\n",
+				evt->data.evt_mesh_friend_friendship_terminated.reason); 
+			break;
 		default:
 			break; 
 	}
@@ -621,9 +632,15 @@ int mible_mesh_gateway_init_provisioner(mible_mesh_gateway_info_t *info)
 			0, sizeof(var), &var)->result;
 	//scan param
 	gecko_cmd_le_gap_set_discovery_type(1,1);
-	
-	mible_mesh_event_callback(MIBLE_MESH_EVENT_PROVISIONER_INIT_DONE, NULL);
+
+	// init friend feature
+	MI_LOG_DEBUG("Init friend feature \n"); 
+	if(gecko_cmd_mesh_friend_init()->result != 0){
+		MI_LOG_ERROR("Init friend feature error. \n"); 
+	}
+
 	cmd_mutex_put();
+	mible_mesh_event_callback(MIBLE_MESH_EVENT_PROVISIONER_INIT_DONE, NULL);
 	return 0; 
 }
 
