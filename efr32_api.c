@@ -358,7 +358,6 @@ mible_status_t mible_gap_scan_start(mible_gap_scan_type_t scan_type,
         mible_gap_scan_param_t scan_param)
 {
     uint16 scan_interval, scan_window;
-    uint8_t active;
     uint16_t result;
 
     if (scanning) {
