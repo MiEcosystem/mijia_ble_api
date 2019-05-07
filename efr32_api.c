@@ -21,8 +21,13 @@
 #define CHAR_TABLE_NUM                  10
 #define CHAR_DATA_LEN_MAX               20
 
-// connection handle
-uint8_t m_conn_handle = DISCONNECTION;
+// connection context
+static struct {
+    uint16_t conn_handle;
+    mible_gap_connect_t connect;
+} m_conn_ctx = {
+    .conn_handle = DISCONNECTION
+};
 
 // scanning? advertising? .. It could be optimized to use bit mask
 uint8_t scanning = 0;
@@ -104,25 +109,18 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt)
 
     switch (BGLIB_MSG_ID(evt->header)) {
     case gecko_evt_le_connection_opened_id:
-        m_conn_handle = evt->data.evt_le_connection_opened.connection;
-        gap_evt_param.conn_handle = evt->data.evt_le_connection_opened.connection;
-        memcpy(gap_evt_param.connect.peer_addr,
-                evt->data.evt_le_connection_opened.address.addr, 6);
-        gap_evt_param.connect.role =
-                (mible_gap_role_t) evt->data.evt_le_connection_opened.master;
-        if ((evt->data.evt_le_connection_opened.address_type == le_gap_address_type_public)
-                || (evt->data.evt_le_connection_opened.address_type
-                        == le_gap_address_type_public_identity)) {
-            gap_evt_param.connect.type = MIBLE_ADDRESS_TYPE_PUBLIC;
+        m_conn_ctx.connect.role = (mible_gap_role_t) evt->data.evt_le_connection_opened.master;
+        if ((evt->data.evt_le_connection_opened.address_type == le_gap_address_type_public) ||
+            (evt->data.evt_le_connection_opened.address_type == le_gap_address_type_public_identity)) {
+            m_conn_ctx.connect.type = MIBLE_ADDRESS_TYPE_PUBLIC;
         } else {
-            gap_evt_param.connect.type = MIBLE_ADDRESS_TYPE_RANDOM;
+            m_conn_ctx.connect.type = MIBLE_ADDRESS_TYPE_RANDOM;
         }
-
-        mible_gap_event_callback(MIBLE_GAP_EVT_CONNECTED, &gap_evt_param);
+        memcpy(m_conn_ctx.connect.peer_addr, evt->data.evt_le_connection_opened.address.addr, 6);
     break;
 
     case gecko_evt_le_connection_closed_id:
-        m_conn_handle = DISCONNECTION;
+        m_conn_ctx.conn_handle = DISCONNECTION;
         gap_evt_param.conn_handle = evt->data.evt_le_connection_closed.connection;
         if (evt->data.evt_le_connection_closed.reason == bg_err_bt_connection_timeout) {
             gap_evt_param.disconnect.reason = CONNECTION_TIMEOUT;
@@ -159,16 +157,32 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt)
     case gecko_evt_le_connection_parameters_id:
         gap_evt_param.conn_handle =
                 evt->data.evt_le_connection_parameters.connection;
-        gap_evt_param.update_conn.conn_param.min_conn_interval =
-                evt->data.evt_le_connection_parameters.interval;
-        gap_evt_param.update_conn.conn_param.max_conn_interval =
-                evt->data.evt_le_connection_parameters.interval;
-        gap_evt_param.update_conn.conn_param.slave_latency =
-                evt->data.evt_le_connection_parameters.latency;
-        gap_evt_param.update_conn.conn_param.conn_sup_timeout =
-                evt->data.evt_le_connection_parameters.timeout;
 
-        mible_gap_event_callback(MIBLE_GAP_EVT_CONN_PARAM_UPDATED, &gap_evt_param);
+        if (m_conn_ctx.conn_handle != DISCONNECTION ) {
+            gap_evt_param.update_conn.conn_param.min_conn_interval =
+                    evt->data.evt_le_connection_parameters.interval;
+            gap_evt_param.update_conn.conn_param.max_conn_interval =
+                    evt->data.evt_le_connection_parameters.interval;
+            gap_evt_param.update_conn.conn_param.slave_latency =
+                    evt->data.evt_le_connection_parameters.latency;
+            gap_evt_param.update_conn.conn_param.conn_sup_timeout =
+                    evt->data.evt_le_connection_parameters.timeout;
+
+            mible_gap_event_callback(MIBLE_GAP_EVT_CONN_PARAM_UPDATED, &gap_evt_param);
+        } else {
+            m_conn_ctx.conn_handle = gap_evt_param.conn_handle;
+            gap_evt_param.connect = m_conn_ctx.connect;
+            gap_evt_param.connect.conn_param.min_conn_interval =
+                    evt->data.evt_le_connection_parameters.interval;
+            gap_evt_param.connect.conn_param.max_conn_interval =
+                    evt->data.evt_le_connection_parameters.interval;
+            gap_evt_param.connect.conn_param.slave_latency =
+                    evt->data.evt_le_connection_parameters.latency;
+            gap_evt_param.connect.conn_param.conn_sup_timeout =
+                    evt->data.evt_le_connection_parameters.timeout;
+
+            mible_gap_event_callback(MIBLE_GAP_EVT_CONNECTED, &gap_evt_param);
+        }
     break;
 
     case gecko_evt_gatt_server_attribute_value_id: {
@@ -445,7 +459,7 @@ mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_param)
         channel_map |= 0x04;
     }
 
-    if ((m_conn_handle != DISCONNECTION)
+    if ((m_conn_ctx.conn_handle != DISCONNECTION)
             && (p_param->adv_type == MIBLE_ADV_TYPE_CONNECTABLE_UNDIRECTED)) {
         return MI_ERR_INVALID_STATE;
     }
@@ -594,7 +608,7 @@ mible_status_t mible_gap_connect(mible_gap_scan_param_t scan_param,
 mible_status_t mible_gap_disconnect(uint16_t conn_handle)
 {
     struct gecko_msg_le_connection_close_rsp_t *ret;
-    if (m_conn_handle == DISCONNECTION) {
+    if (m_conn_ctx.conn_handle == DISCONNECTION) {
         return MI_ERR_INVALID_STATE;
     }
 
@@ -629,7 +643,7 @@ mible_status_t mible_gap_update_conn_params(uint16_t conn_handle,
         mible_gap_conn_param_t conn_params)
 {
     struct gecko_msg_le_connection_set_parameters_rsp_t *ret;
-    if (m_conn_handle == DISCONNECTION) {
+    if (m_conn_ctx.conn_handle == DISCONNECTION) {
         return MI_ERR_INVALID_STATE;
     }
 
