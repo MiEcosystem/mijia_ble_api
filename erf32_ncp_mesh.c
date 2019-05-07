@@ -7,6 +7,7 @@
 #include "erf32_api.h"
 #include "mible_log.h"
 #include "rtl_platform.h"
+#include "arch_os.h"
 #include <string.h>
 
 #define MESH_GENERIC_CLIENT_state_on_off 				0
@@ -27,7 +28,7 @@
 #define RELAY_RETRANS_CNT   2
 #define NETTX_STEP          50
 #define NETTX_CNT           2
-#define PEND_ACK_BASE       (150+NETTX_STEP*NETTX_CNT)
+#define PEND_ACK_BASE       150 //(150+NETTX_STEP*NETTX_CNT)
 #define PEND_ACK_STEP       (NETTX_STEP)
 #define WAIT_ACK_BASE       (200+NETTX_STEP*NETTX_CNT)
 #define WAIT_ACK_STEP       (NETTX_STEP)
@@ -130,9 +131,8 @@ void mible_mesh_stack_event_handler(struct gecko_cmd_packet *evt)
 			break;
 
 		case gecko_evt_mesh_generic_client_server_status_id:{
-			MI_LOG_DEBUG("receive evt mesh status\n");
+			
 			memset(&generic_status, 0, sizeof(mible_mesh_access_message_rx_t)); 
-
 			switch(evt->data.evt_mesh_generic_client_server_status.type){
 				case MESH_GENERIC_CLIENT_state_on_off:
 
@@ -214,8 +214,10 @@ void mible_mesh_stack_event_handler(struct gecko_cmd_packet *evt)
 			break;
 		case gecko_evt_mesh_config_client_model_sub_status_id:
 
-			MI_LOG_WARNING("receive model sub status event. handle 0x%x\n", 
-					evt->data.evt_mesh_config_client_model_sub_status.handle); 
+			MI_LOG_WARNING("receive model sub status event. handle 0x%x, 0x%x\n", 
+					evt->data.evt_mesh_config_client_model_sub_status.handle, 
+					evt->data.evt_mesh_config_client_model_sub_status.result);
+		   	
 			if(evt->data.evt_mesh_config_client_model_sub_status.handle == 
 					sub_status_record.handle){
 				
@@ -230,7 +232,8 @@ void mible_mesh_stack_event_handler(struct gecko_cmd_packet *evt)
 						sub_status_record.config_sub_status.model_sub_status.elem_addr,
 						sub_status_record.config_sub_status.model_sub_status.address);
 				
-				mible_mesh_event_callback_handler(MIBLE_MESH_EVENT_CONFIG_MESSAGE_CB,
+						arch_os_ms_sleep(100); 					
+						mible_mesh_event_callback_handler(MIBLE_MESH_EVENT_CONFIG_MESSAGE_CB,
 						&evt_sub_model_param); 
 	
 			}
@@ -657,6 +660,7 @@ int mible_mesh_gateway_get_reload_flag(void)
 	if(prov_configured == false){
 		return 1; 
 	}else{
+		MI_LOG_INFO("DO NOT NEED TO BE INIT.\n"); 
 		return 0;
 	}
 
