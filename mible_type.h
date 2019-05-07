@@ -75,7 +75,7 @@ typedef struct {
     mible_addr_t peer_addr;
     mible_addr_type_t addr_type;
     mible_gap_adv_data_type_t adv_type;
-    int8_t rssi;
+    uint8_t rssi;
     uint8_t data[31];
     uint8_t data_len;
 } mible_gap_adv_report_t;

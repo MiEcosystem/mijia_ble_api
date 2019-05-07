@@ -17,6 +17,8 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include "platform_diagnose.h"
+#include "platform_os.h"
 
 #ifndef NULL
 #define NULL 0
@@ -110,11 +112,18 @@
     }
 #endif
 
-#define CRITICAL_SECTION_ENTER()
-#define CRITICAL_SECTION_EXIT()
+#define CRITICAL_SECTION_ENTER()    plt_critical_enter()
+#define CRITICAL_SECTION_EXIT()     plt_critical_exit(0)
 
+#define MI_LOG_ENABLED
+
+#ifdef MI_LOG_ENABLED
+#define MI_PRINTF(...)                   LOG_PRINT(MM_ID, LEVEL_ERROR, __VA_ARGS__)
+#define MI_HEXDUMP(base_addr, bytes)     LOG_DUMP(MM_ID, LEVEL_ERROR, base_addr, bytes)
+#else
 #define MI_PRINTF(...)
 #define MI_HEXDUMP(base_addr, bytes)
+#endif
 
 #define TRACE_INIT(pin)
 #define TRACE_ENTER(pin)

@@ -1,5 +1,5 @@
-#ifndef MIBLE_API_H__
-#define MIBLE_API_H__
+#ifndef MIBLE_ARCH_H__
+#define MIBLE_ARCH_H__
 
 // Copyright [2017] [Beijing Xiaomi Mobile Software Co., Ltd]
 //
