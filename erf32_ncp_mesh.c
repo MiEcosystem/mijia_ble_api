@@ -28,7 +28,7 @@
 #define RELAY_RETRANS_CNT   2
 #define NETTX_STEP          50
 #define NETTX_CNT           2
-#define PEND_ACK_BASE       150 //(150+NETTX_STEP*NETTX_CNT)
+#define PEND_ACK_BASE       100 //(150+NETTX_STEP*NETTX_CNT)
 #define PEND_ACK_STEP       (NETTX_STEP)
 #define WAIT_ACK_BASE       (200+NETTX_STEP*NETTX_CNT)
 #define WAIT_ACK_STEP       (NETTX_STEP)
@@ -214,10 +214,16 @@ void mible_mesh_stack_event_handler(struct gecko_cmd_packet *evt)
 			break;
 		case gecko_evt_mesh_config_client_model_sub_status_id:
 
-			MI_LOG_WARNING("receive model sub status event. handle 0x%x, 0x%x\n", 
+			if(evt->data.evt_mesh_config_client_model_sub_status.result != 0){
+			
+				MI_LOG_ERROR("receive model sub status event. handle 0x%x, 0x%x\n", 
 					evt->data.evt_mesh_config_client_model_sub_status.handle, 
 					evt->data.evt_mesh_config_client_model_sub_status.result);
-		   	
+			}else{ 
+				MI_LOG_WARNING("receive model sub status event. handle 0x%x, 0x%x\n", 
+					evt->data.evt_mesh_config_client_model_sub_status.handle, 
+					evt->data.evt_mesh_config_client_model_sub_status.result);
+			}
 			if(evt->data.evt_mesh_config_client_model_sub_status.handle == 
 					sub_status_record.handle){
 				
@@ -434,6 +440,12 @@ int mible_mesh_node_generic_control(mible_mesh_generic_params_t * param)
 		case MIBLE_MESH_MSG_GENERIC_ONOFF_SET:
 
 			flags = 1; 
+			ret = gecko_cmd_mesh_generic_client_set(
+					MIBLE_MESH_MODEL_ID_GENERIC_ONOFF_CLIENT, 0, 
+					param->dst_addr.value, param->global_appkey_index, param->data[1], 
+					0, 0, flags, MESH_GENERIC_CLIENT_request_on_off, 1, param->data)->result;
+			cmd_mutex_put();
+			return ret; 
 
 		case MIBLE_MESH_MSG_GENERIC_ONOFF_SET_UNACKNOWLEDGED:
 
@@ -457,7 +469,13 @@ int mible_mesh_node_generic_control(mible_mesh_generic_params_t * param)
 		case MIBLE_MESH_MSG_LIGHT_LIGHTNESS_SET:
 
 			flags = 1; 
-	
+			ret = gecko_cmd_mesh_generic_client_set(
+					MIBLE_MESH_MODEL_ID_LIGHTNESS_CLIENT, 0, 
+					param->dst_addr.value, param->global_appkey_index, param->data[2], 
+					0, 0, flags, MESH_GENERIC_CLIENT_request_lightness_actual, 
+					2, param->data)->result;
+			cmd_mutex_put();
+			return ret; 
 		case MIBLE_MESH_MSG_LIGHT_LIGHTNESS_SET_UNACKNOWLEDGED:
 
 			flags = 0; 
@@ -481,7 +499,12 @@ int mible_mesh_node_generic_control(mible_mesh_generic_params_t * param)
 		case MIBLE_MESH_MSG_LIGHT_CTL_TEMPERATURE_SET: 
 			
 			flags = 1; 
-			   
+			ret = gecko_cmd_mesh_generic_client_set(
+					MIBLE_MESH_MODEL_ID_CTL_CLIENT, 0, param->dst_addr.value, 
+					param->global_appkey_index, param->data[4], 0, 0, flags, 
+					MESH_GENERIC_CLIENT_request_ctl_temperature, 4, param->data)->result;
+			cmd_mutex_put();
+			return ret; 		   
 		case MIBLE_MESH_MSG_LIGHT_CTL_TEMPERATURE_SET_UNACKNOWLEDGED:
 
 			flags = 0; 

@@ -9,10 +9,10 @@
 #include "mible_mesh_api.h"
 
 /* Connection handle value in disconnection state */
-#define DISCONNECTION                           0xFF
-#define INVALID_CONNECTION_HANDLE               0xFFFF
-#define USER_CMD_SERVICE_INIT					200
-#define USER_CMD_VERSION						201
+#define DISCONNECTION 							0xFF
+#define INVALID_CONNECTION_HANDLE 				0xFFFF
+#define USER_CMD_SERVICE_INIT 					200
+#define USER_CMD_VERSION 						201
 
 /*typedef enum {*/
     //MIBLE_MESH_EVENT_STACK_INIT_DONE=0,     [>*< NULL <]
