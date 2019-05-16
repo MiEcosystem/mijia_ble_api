@@ -217,6 +217,59 @@ extern "C" {
 #define MIBLE_MESH_MSG_LIGHT_HSL_RANGE_SET                               0x8281
 #define MIBLE_MESH_MSG_LIGHT_HSL_RANGE_SET_UNACKNOWLEDGED                0x8282
 
+/*XYL Model Opcodes Definition*/
+#define MIBLE_MESH_MSG_LIGHT_XYL_GET                         0x8283
+#define MIBLE_MESH_MSG_LIGHT_XYL_SET                         0x8284
+#define MIBLE_MESH_MSG_LIGHT_XYL_SET_UNACK                   0x8285
+#define MIBLE_MESH_MSG_LIGHT_XYL_STATUS                      0x8286
+#define MIBLE_MESH_MSG_LIGHT_XYL_TARGET_GET                  0x8287
+#define MIBLE_MESH_MSG_LIGHT_XYL_TARGET_STATUS               0x8288
+#define MIBLE_MESH_MSG_LIGHT_XYL_DEFAULT_GET                 0x8289
+#define MIBLE_MESH_MSG_LIGHT_XYL_DEFAULT_STATUS              0x828A
+#define MIBLE_MESH_MSG_LIGHT_XYL_RANGE_GET                   0x828B
+#define MIBLE_MESH_MSG_LIGHT_XYL_RANGE_STATUS                0x828C
+#define MIBLE_MESH_MSG_LIGHT_XYL_DEFAULT_SET                 0x828D
+#define MIBLE_MESH_MSG_LIGHT_XYL_DEFAULT_SET_UNACK           0x828E
+#define MIBLE_MESH_MSG_LIGHT_XYL_RANGE_SET                   0x828F
+#define MIBLE_MESH_MSG_LIGHT_XYL_RANGE_SET_UNACK             0x8290
+
+/*LC Model Opcodes Definition*/
+#define MIBLE_MESH_MSG_LIGHT_LC_MODE_GET                     0x8291
+#define MIBLE_MESH_MSG_LIGHT_LC_MODE_SET                     0x8292
+#define MIBLE_MESH_MSG_LIGHT_LC_MODE_SET_UNACK               0x8293
+#define MIBLE_MESH_MSG_LIGHT_LC_MODE_STATUS                  0x8294
+#define MIBLE_MESH_MSG_LIGHT_LC_OM_GET                       0x8295
+#define MIBLE_MESH_MSG_LIGHT_LC_OM_SET                       0x8296
+#define MIBLE_MESH_MSG_LIGHT_LC_OM_SET_UNACK                 0x8297
+#define MIBLE_MESH_MSG_LIGHT_LC_OM_STATUS                    0x8298
+#define MIBLE_MESH_MSG_LIGHT_LC_ONOFF_GET                    0x8299
+#define MIBLE_MESH_MSG_LIGHT_LC_ONOFF_SET                    0x829A
+#define MIBLE_MESH_MSG_LIGHT_LC_ONOFF_SET_UNACK              0x829B
+#define MIBLE_MESH_MSG_LIGHT_LC_ONOFF_STATUS                 0x829C
+#define MIBLE_MESH_MSG_LIGHT_LC_PROPERTY_GET                 0x829D
+#define MIBLE_MESH_MSG_LIGHT_LC_PROPERTY_SET                 0x62
+#define MIBLE_MESH_MSG_LIGHT_LC_PROPERTY_SET_UNACK           0x63
+#define MIBLE_MESH_MSG_LIGHT_LC_PROPERTY_STATUS              0x64
+
+/*Sensor Model Opcodes Definition*/
+#define MIBLE_MESH_MSG_SENSOR_DESCRIPTOR_GET                      0x8230
+#define MIBLE_MESH_MSG_SENSOR_DESCRIPTOR_STATUS                   0x51
+#define MIBLE_MESH_MSG_SENSOR_GET                                 0x8231
+#define MIBLE_MESH_MSG_SENSOR_STATUS                              0x52
+#define MIBLE_MESH_MSG_SENSOR_COLUMN_GET                          0x8232
+#define MIBLE_MESH_MSG_SENSOR_COLUMN_STATUS                       0x53
+#define MIBLE_MESH_MSG_SENSOR_SERIES_GET                          0x8233
+#define MIBLE_MESH_MSG_SENSOR_SERIES_STATUS                       0x54
+#define MIBLE_MESH_MSG_SENSOR_CADENCE_GET                         0x8234
+#define MIBLE_MESH_MSG_SENSOR_CADENCE_SET                         0x55
+#define MIBLE_MESH_MSG_SENSOR_CADENCE_SET_UNACKED                 0x56
+#define MIBLE_MESH_MSG_SENSOR_CADENCE_STATUS                      0x57
+#define MIBLE_MESH_MSG_SENSOR_SETTINGS_GET                        0x8235
+#define MIBLE_MESH_MSG_SENSOR_SETTINGS_STATUS                     0x58
+#define MIBLE_MESH_MSG_SENSOR_SETTING_GET                         0x8236
+#define MIBLE_MESH_MSG_SENSOR_SETTING_SET                         0x59
+#define MIBLE_MESH_MSG_SENSOR_SETTING_SET_UNACKED                 0x5A
+#define MIBLE_MESH_MSG_SENSOR_SETTING_STATUS                      0x5B
 
 /** Mesh vendor models **/
 #define MIBLE_MESH_MIOT_SPEC_SERVER_MODEL                           0000 //0x038f0000
@@ -229,6 +282,13 @@ extern "C" {
 #define MIBLE_MESH_MIOT_SPEC_SET                                    0x00C3 //0xC3038F
 #define MIBLE_MESH_MIOT_SPEC_SET_NOACK                              0x00C4 //0xC4038F
 #define MIBLE_MESH_MIOT_SPEC_STATUS                                 0x00C5 //0xC5038F
+
+#define MIBLE_MESH_MIOT_SPEC_ACTION                                 0x00C6 //0xC6038F
+#define MIBLE_MESH_MIOT_SPEC_ACTION_ACK                             0x00C7 //0xC7038F
+#define MIBLE_MESH_MIOT_SPEC_NOTIFICATION                           0x00C8 //0xC8038F
+
+#define MIBLE_MESH_MIOT_SPEC_INDICATION                             0x00CE //0xCE038F
+#define MIBLE_MESH_MIOT_SPEC_INDICATION_ACK                         0x00CF //0xCF038F
 
 #define MIBLE_MESH_COMPANY_ID_SIG                                   0xFFFF
 #define MIBLE_MESH_COMPANY_ID_XIAOMI                                0x038F
