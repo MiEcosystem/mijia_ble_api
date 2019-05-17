@@ -55,7 +55,8 @@ static mible_status_t blueSt2MiStConvert(tBleStatus sta){
   if(sta == BLE_STATUS_INSUFFICIENT_RESOURCES){
     return MI_ERR_BUSY;
   }
-  if(sta == BLE_STATUS_INVALID_PARAMETER){
+  
+  if(sta == BLE_STATUS_INVALID_PARAMS){
     return MI_ERR_INVALID_PARAM;
   }
   /*test*/
@@ -225,15 +226,15 @@ void hci_disconnection_complete_event(uint8_t Status,
   Osal_MemSet(&param,0,sizeof(param));
   param.conn_handle = Connection_Handle;
   switch(Reason){
-    case ERR_CONNECTION_TIMEOUT:{
+    case BLE_ERROR_CONNECTION_TIMEOUT:{
       param.disconnect.reason = CONNECTION_TIMEOUT;
     }
     break;
-    case ERR_RMT_USR_TERM_CONN:{
+    case BLE_ERROR_TERMINATED_REMOTE_USER:{
       param.disconnect.reason = REMOTE_USER_TERMINATED;
     }
     break;
-    case ERR_LOCAL_HOST_TERM_CONN:{
+    case BLE_ERROR_TERMINATED_LOCAL_HOST:{
       param.disconnect.reason = LOCAL_HOST_TERMINATED;
     }
     break;
@@ -595,7 +596,7 @@ mible_status_t bnReadLocalGattValue(uint16_t srv_handle, uint16_t value_handle,
   printf("the realLen =%d\r\n",realLen);
   printf("the readLen =%d\r\n",readLen);
   *p_len = 0;
-  if(st == ERR_CMD_SUCCESS){
+  if(st == BLE_STATUS_SUCCESS){
     *p_len = (uint8_t )readLen;
   }
   
