@@ -28,7 +28,7 @@
 #define RELAY_RETRANS_CNT   2
 #define NETTX_STEP          50
 #define NETTX_CNT           2
-#define PEND_ACK_BASE       100 //(150+NETTX_STEP*NETTX_CNT)
+#define PEND_ACK_BASE       (150+NETTX_STEP*NETTX_CNT)
 #define PEND_ACK_STEP       (NETTX_STEP)
 #define WAIT_ACK_BASE       (200+NETTX_STEP*NETTX_CNT)
 #define WAIT_ACK_STEP       (NETTX_STEP)
@@ -68,6 +68,7 @@ typedef struct{
 	mible_mesh_config_status_t config_reset_status; 
 }stack_reset_status_t; 
 static stack_reset_status_t reset_status_record={0}; 
+static void local_config_init(void);
 
 
 static mible_mesh_access_message_rx_t generic_status; 
@@ -246,7 +247,7 @@ void mible_mesh_stack_event_handler(struct gecko_cmd_packet *evt)
 			break; 
 		case gecko_evt_mesh_friend_friendship_established_id:
 
-			MI_LOG_DEBUG("FFFFFFriendship established. lpn address: 0x%x\n",
+			MI_LOG_ERROR("FFFFFFriendship established. lpn address: 0x%x\n",
 				evt->data.evt_mesh_friend_friendship_established.lpn_address); 
 			break; 
 
@@ -347,6 +348,9 @@ int mible_mesh_node_set_subscription(uint16_t opcode, mible_mesh_subscription_pa
 		MI_LOG_DEBUG("set sub handle = 0x%x\n", add_ret->handle); 
 		ret = add_ret->result;
 
+		if(ret != 0){
+			MI_LOG_ERROR("gecko_cmd_mesh_config_client_set_model_sub error: 0x%x\n", ret); 
+		}
 	}else if(opcode == MIBLE_MESH_MSG_CONFIG_MODEL_SUBSCRIPTION_DELETE){
 
 		MI_LOG_WARNING("[Dele subscription]: node 0x%x, model_id 0x%x  sub_addr 0x%x\n", 
@@ -359,6 +363,9 @@ int mible_mesh_node_set_subscription(uint16_t opcode, mible_mesh_subscription_pa
 		sub_status_record.handle = remove_ret->handle; 
 		ret = remove_ret->result;								
 
+		if(ret != 0){
+			MI_LOG_ERROR("gecko_cmd_mesh_config_client_remove_model_sub error: 0x%x\n", ret); 
+		}
 	}else{
 		MI_LOG_ERROR("[mible_mesh_node_set_subscription]%d Method not supported\n", opcode); 
 		cmd_mutex_put();
@@ -378,7 +385,8 @@ int mible_mesh_node_set_subscription(uint16_t opcode, mible_mesh_subscription_pa
 	sub_status_record.config_sub_status.model_sub_status.model_id = 
 		param->model_id; 
 	cmd_mutex_put();
-	return ret; 
+	//return ret; 
+	return 0;  // TODO modify common next week 
 }
 
 /**
@@ -606,10 +614,8 @@ int mible_mesh_gateway_init_stack(void)
 	gecko_cmd_mesh_generic_client_init();
 	// init vendor client 
 	uint8_t opcode[6] = {0x01,0x03,0x04,0x05,0x0e,0x0f}; 
-	struct gecko_msg_mesh_vendor_model_init_rsp_t *vendor_init_ret = 
-			gecko_cmd_mesh_vendor_model_init(0, 0x038f, 0x0001, 0, 6, opcode); 
-	if(vendor_init_ret->result != 0){
-		MI_LOG_ERROR("vendor model init error. 0x%x\n", vendor_init_ret->result);
+	if(gecko_cmd_mesh_vendor_model_init(0, 0x038f, 0x0001, 0, 6, opcode)->result!=0){
+		MI_LOG_ERROR("vendor model init error. \n");
 	}
 
 	cmd_mutex_put();
@@ -648,27 +654,50 @@ int mible_mesh_gateway_init_provisioner(mible_mesh_gateway_info_t *info)
 			return ret->result;
 		}
 	}
-	// TODO 
-    int result = gecko_cmd_mesh_test_set_nettx(NETTX_CNT, NETTX_STEP/10-1)->result;
+	cmd_mutex_put();
+	mible_mesh_event_callback(MIBLE_MESH_EVENT_PROVISIONER_INIT_DONE, NULL);
+
+	local_config_init(); 
+	return 0; 
+}
+static void local_config_init(void)
+{
+    
+	cmd_mutex_get();
+	int result = gecko_cmd_mesh_test_set_nettx(NETTX_CNT, NETTX_STEP/10-1)->result;
 	if(result !=0){
 		MI_LOG_ERROR("set nettx error. 0x%x \n", result); 
 	}	
 	uint8_t var = DEFAULT_TTL;
     result = gecko_cmd_mesh_test_set_local_config(mesh_node_default_ttl, 
 			0, sizeof(var), &var)->result;
-	//scan param
-	gecko_cmd_le_gap_set_discovery_type(1,1);
 
 	// init friend feature
 	MI_LOG_DEBUG("Init friend feature \n"); 
 	if(gecko_cmd_mesh_friend_init()->result != 0){
 		MI_LOG_ERROR("Init friend feature error. \n"); 
 	}
-
+	var = 1;
+	result = gecko_cmd_mesh_test_set_local_config(mesh_node_beacon, 0, sizeof(var), &var)->result;
+	if(result != 0){
+		MI_LOG_ERROR("mesh node beacon config error. 0x%x\n", result);
+	}
+	var = 0;
+	result = gecko_cmd_mesh_test_set_local_config(mesh_node_relay, 0, sizeof(var), &var)->result;
+	if(result != 0){
+		MI_LOG_ERROR("mesh node relay config error. 0x%x\n", result);
+	}
+	uint8_t friend = gecko_cmd_mesh_test_get_local_config(mesh_node_friendship, 0)->data.data[0];
+	uint8_t beacon = gecko_cmd_mesh_test_get_local_config(mesh_node_beacon, 0)->data.data[0];
+	uint8_t ttl = gecko_cmd_mesh_test_get_local_config(mesh_node_default_ttl, 0)->data.data[0];
+	uint8_t proxy = gecko_cmd_mesh_test_get_local_config(mesh_node_gatt_proxy, 0)->data.data[0];
+	uint8_t identity = gecko_cmd_mesh_test_get_local_config(mesh_node_identity, 0)->data.data[0];
+	uint8_t relay = gecko_cmd_mesh_test_get_local_config(mesh_node_relay, 0)->data.data[0]; 
+	MI_LOG_INFO("friend: %d  beacon: %d  ttl: %d  proxy: %d  identity: %d relay: %d\n", friend, beacon, ttl, proxy, identity,relay);
 	cmd_mutex_put();
-	mible_mesh_event_callback(MIBLE_MESH_EVENT_PROVISIONER_INIT_DONE, NULL);
-	return 0; 
+
 }
+
 
 /**
  *@brief    sync method, acquire reload_flag

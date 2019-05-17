@@ -627,7 +627,7 @@ mible_status_t mible_gap_scan_start(mible_gap_scan_type_t scan_type,
 		return ret;
 	}
 
-	ret = gecko_cmd_le_gap_set_discovery_type(1,0)->result;  
+	ret = gecko_cmd_le_gap_set_discovery_type(1,active)->result;  
 	//ret = gecko_cmd_le_gap_set_discovery_type(1,active)->result;  
 	if(ret != 0){
 		MI_LOG_ERROR("set discovery type error 0x%x \n", ret);
