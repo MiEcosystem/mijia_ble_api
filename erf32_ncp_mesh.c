@@ -239,7 +239,7 @@ void mible_mesh_stack_event_handler(struct gecko_cmd_packet *evt)
 						sub_status_record.config_sub_status.model_sub_status.elem_addr,
 						sub_status_record.config_sub_status.model_sub_status.address);
 				
-						arch_os_ms_sleep(100); 					
+						arch_os_ms_sleep(200); 					
 						mible_mesh_event_callback_handler(MIBLE_MESH_EVENT_CONFIG_MESSAGE_CB,
 						&evt_sub_model_param); 
 	
