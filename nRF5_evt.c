@@ -42,7 +42,7 @@ static void gap_evt_dispatch(ble_evt_t const *p_ble_evt)
 		break;
 
 	case BLE_GAP_EVT_DISCONNECTED:
-		evt = MIBLE_GAP_EVT_DISCONNET;
+		evt = MIBLE_GAP_EVT_DISCONNECT;
 		conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
 		gap_params.conn_handle = conn_handle;
 		gap_params.disconnect.reason = (mible_gap_disconnect_reason_t)p_ble_evt->evt.gap_evt.params.disconnected.reason;

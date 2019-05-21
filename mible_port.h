@@ -118,6 +118,7 @@
 #include "nrf_log.h"
 #define MI_PRINTF(...)             NRF_LOG_RAW_INFO(__VA_ARGS__)
 #define MI_HEXDUMP(...)            NRF_LOG_RAW_HEXDUMP_INFO(__VA_ARGS__)
+#define MI_LOG_COLORS_ENABLE       1
 #else
 #define MI_PRINTF(...)
 #define MI_HEXDUMP(base_addr, bytes)
