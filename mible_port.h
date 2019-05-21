@@ -114,6 +114,7 @@
 #include "em_device.h"
 #include "em_core.h"
 
+#define MI_LOG_COLORS_ENABLE 1
 
 #define CRITICAL_SECTION_ENTER()		  \
 	{                                     \
