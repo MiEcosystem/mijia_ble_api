@@ -1,6 +1,8 @@
-Mijia BLE API ChangeLog (Sorted per branch, date)
+Mijia BLE API ChangeLog (Sorted per branch: tag, date)
 
-=  release-1.0 : tag mible-api-1.0.x released xxxx-xx-xx
+=  release-1.0 : tag mible-api-1.0.3 released 2019-05-21
+    * modify log macros and default disable colors
+    * correct spell MIBLE_GAP_EVT_DISCONNECT
 
 =  release-1.0 : tag mible-api-1.0.2 released 2018-12-27
 	* modify rssi format
