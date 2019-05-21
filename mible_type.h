@@ -125,7 +125,7 @@ typedef struct {
 
 typedef enum {
     MIBLE_GAP_EVT_CONNECTED = MIBLE_GAP_EVT_BASE, /**< Generated when a connection is established.*/
-    MIBLE_GAP_EVT_DISCONNET, /**< Generated when a connection is terminated.*/
+    MIBLE_GAP_EVT_DISCONNECT, /**< Generated when a connection is terminated.*/
 	MIBLE_GAP_EVT_CONN_PARAM_UPDATED,
 	MIBLE_GAP_EVT_ADV_REPORT,
 } mible_gap_evt_t;
