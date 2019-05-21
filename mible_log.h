@@ -20,15 +20,20 @@
 #include "mible_port.h"
 
 #ifdef MI_LOG_ENABLED
+
 /**
  * Log error   level    :1
  * Log warning level    :2
  * Log info    level    :3
  * Log debug   level    :4
  */
-
+#ifndef MI_LOG_LEVEL
 #define MI_LOG_LEVEL              4
-#define MI_LOG_COLORS_ENABLE      1
+#endif
+
+#ifndef MI_LOG_COLORS_ENABLE
+#define MI_LOG_COLORS_ENABLE      0
+#endif
 
 #include "mible_log_internal.h"
 
@@ -37,13 +42,13 @@
 #define MI_LOG_INFO(...)                        MI_LOG_INTERNAL_INFO( __VA_ARGS__)
 #define MI_LOG_DEBUG(...)                       MI_LOG_INTERNAL_DEBUG( __VA_ARGS__)
 #define MI_LOG_HEXDUMP(...)                     MI_LOG_INTERNAL_HEXDUMP( __VA_ARGS__)
-#else // MI_LOG_ENABLED
+#else // MI_LOG_ENABLED ELSE
 #define MI_LOG_ERROR(...)
 #define MI_LOG_WARNING(...)
 #define MI_LOG_INFO(...)
 #define MI_LOG_DEBUG(...)
 #define MI_LOG_HEXDUMP(...)
-#endif // MI_LOG_ENABLED
+#endif // MI_LOG_ENABLED END
 
 
 #ifdef MI_ASSERT
