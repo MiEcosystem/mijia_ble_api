@@ -1335,12 +1335,12 @@ void I2C0_IRQHandler(void)
         m_iic_handler(&event);
         break;
     case i2cTransferNack:
-        event = IIC_EVT_DATA_NACK;
+        event = IIC_EVT_ADDRESS_NACK;
         m_iic_handler(&event);
         break;
     default:
         MI_LOG_ERROR("iic bus errno %d.\n", xfer_stat);
-        event = IIC_EVT_ADDRESS_NACK;
+        event = IIC_EVT_DATA_NACK;
         m_iic_handler(&event);
         break;
     }
