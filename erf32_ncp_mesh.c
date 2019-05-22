@@ -609,6 +609,7 @@ int mible_mesh_gateway_init_stack(void)
 	init_ret = gecko_cmd_mesh_prov_init();
 	if(init_ret->result != 0){
 		MI_LOG_ERROR("gecko cmd mesh prov init failed. error: 0x%x\n", init_ret->result); 
+		exit(-2);
 	}
 
 	gecko_cmd_mesh_generic_client_init();
