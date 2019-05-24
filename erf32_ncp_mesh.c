@@ -256,6 +256,20 @@ void mible_mesh_stack_event_handler(struct gecko_cmd_packet *evt)
 			MI_LOG_ERROR("FFFFFFriendship terminated. reason: 0x%x\n",
 				evt->data.evt_mesh_friend_friendship_terminated.reason); 
 			break;
+		case gecko_evt_mesh_node_ivrecovery_needed_id:
+
+			MI_LOG_INFO("iv recovery needed.\n"); 
+			gecko_cmd_mesh_node_set_ivrecovery_mode(1);
+			break;
+		case gecko_evt_mesh_node_changed_ivupdate_state_id:{
+			
+			mible_mesh_iv_t current_iv; 
+			current_iv.iv_index = evt->data.evt_mesh_node_changed_ivupdate_state.ivindex;
+			current_iv.flags = evt->data.evt_mesh_node_changed_ivupdate_state.state; 
+			
+			mible_mesh_event_callback(MIBLE_MESH_EVENT_IV_UPDATE, &current_iv);
+		}
+			break;
 		default:
 			break; 
 	}
@@ -695,6 +709,22 @@ static void local_config_init(void)
 	uint8_t identity = gecko_cmd_mesh_test_get_local_config(mesh_node_identity, 0)->data.data[0];
 	uint8_t relay = gecko_cmd_mesh_test_get_local_config(mesh_node_relay, 0)->data.data[0]; 
 	MI_LOG_INFO("friend: %d  beacon: %d  ttl: %d  proxy: %d  identity: %d relay: %d\n", friend, beacon, ttl, proxy, identity,relay);
+	
+	// enable PTA
+	if(gecko_cmd_coex_set_options(0x0100, 0x0100)->result != 0)
+	{
+		MI_LOG_ERROR("Enable coex failed. \n"); 
+	}
+	// Get seq number 
+	struct gecko_msg_mesh_test_get_element_seqnum_rsp_t *seq_ret = gecko_cmd_mesh_test_get_element_seqnum(0);
+	if(seq_ret->result != 0){
+		MI_LOG_ERROR("Get seqnumber failed. 0x%x", seq_ret->result); 
+	}else{
+		MI_LOG_INFO("Current Sequence number is 0x%x \n", seq_ret->seqnum); 
+	}
+	if(seq_ret->seqnum > 0xFEFFFF){
+		gecko_cmd_mesh_node_request_ivupdate();
+	}	 
 	cmd_mutex_put();
 
 }
@@ -821,7 +851,15 @@ int mible_mesh_stop_recv_unprovbeacon(void)
 
 int mible_mesh_gateway_update_iv_info(uint32_t iv_index, uint8_t flags)
 {
-	MI_LOG_ERROR("[mible_mesh_gateway_update_iv_info] Not Supported Yet. \n");
+	MI_LOG_INFO("[mible_mesh_gateway_update_iv_info]  \n");
+	if(gecko_cmd_mesh_test_set_iv_index(iv_index)->result != 0){
+		MI_LOG_ERROR("set iv index error. \n");
+		return -1; 	
+	}
+	if(gecko_cmd_mesh_test_set_ivupdate_state(flags)->result != 0){
+		MI_LOG_ERROR("set ivupdate state error. \n"); 
+		return -2;
+	}
 	return 0;
 }
 
