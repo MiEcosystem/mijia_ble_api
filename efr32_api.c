@@ -954,8 +954,7 @@ mible_status_t mible_gatts_rw_auth_reply(uint16_t conn_handle,
 
     switch(type) {
     case 1:
-    result =
-    gecko_cmd_gatt_server_send_user_read_response(conn_handle,
+    	result = gecko_cmd_gatt_server_send_user_read_response(conn_handle,
                                                   char_value_handle,
                                                   permit ? 0 : bg_err_att_read_not_permitted,
                                                   len,
@@ -963,11 +962,13 @@ mible_status_t mible_gatts_rw_auth_reply(uint16_t conn_handle,
         break;
 
     case 2:
-    result =
-    gecko_cmd_gatt_server_send_user_write_response(conn_handle,
+    	result = gecko_cmd_gatt_server_send_user_write_response(conn_handle,
                                                    char_value_handle,
                                                    permit ? 0 : bg_err_att_write_not_permitted)->result;
         break;
+
+    default:
+    	result = MI_ERR_INVALID_PARAM;
     }
 
     return result == bg_err_success ? MI_SUCCESS : result;
