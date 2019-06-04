@@ -1119,7 +1119,7 @@ mible_status_t mible_record_delete(uint16_t record_id)
  * @return  MI_SUCCESS              The command was accepted.
  *          MI_ERR_INVALID_LENGTH   Size was 0, or higher than the maximum
  *allowed size.
- *          MI_ERR_INVALID_PARAM   Invalid record id supplied.
+ *          MI_ERR_INVALID_PARAM    Invalid record id supplied.
  *          MI_ERR_INVALID_ADDR     Invalid pointer supplied.
  * */
 mible_status_t mible_record_read(uint16_t record_id, uint8_t* p_data,

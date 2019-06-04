@@ -704,6 +704,7 @@ __WEAK mible_status_t mible_record_read(uint16_t record_id, uint8_t* p_data,
  *          MI_ERR_INVALID_LENGTH   Size was 0, or higher than the maximum
  * allowed size.
  *          MI_ERR_INVALID_PARAMS   p_data is not aligned to a 4 byte boundary.
+ *          MI_ERR_BUSY             Try again later.
  * @note    Should use asynchronous mode to implement this function.
  *          The data to be written to flash has to be kept in memory until the
  * operation has terminated, i.e., an event is received.
