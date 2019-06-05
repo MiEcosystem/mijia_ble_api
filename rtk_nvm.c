@@ -18,7 +18,7 @@
 #include "mijia_mesh_config.h"
 #include "ftl.h"
 #include "platform_types.h"
-#include "user_flash.h"
+#include "silent_dfu_flash.h"
 
 #include "patch_header_check.h"
 #include "otp.h"

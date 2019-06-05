@@ -13,9 +13,10 @@
 #include <string.h>
 #include "mible_api.h"
 #include "platform_misc.h"
-#include "aes.h"
 #define MI_LOG_MODULE_NAME "RTK_MISC"
 #include "mible_log.h"
+
+extern bool aes128_ecb_encrypt(uint8_t *input, const uint8_t *key, uint8_t *output);
 
 mible_status_t mible_rand_num_generator(uint8_t *p_buf, uint8_t len)
 {
@@ -53,7 +54,7 @@ mible_status_t mible_aes128_encrypt(const uint8_t *key,
     uint8_t key_tmp[16], plaintext_tmp[16];
     memcpy(key_tmp, key, 16);
     memcpy(plaintext_tmp, plaintext, 16);
-    AES128_ECB_encrypt(plaintext_tmp, key_tmp, ciphertext);
+    aes128_ecb_encrypt(plaintext_tmp, key_tmp, ciphertext);
 
     return MI_SUCCESS;
 }
