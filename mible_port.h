@@ -116,7 +116,7 @@
 #define CRITICAL_SECTION_ENTER()
 #define CRITICAL_SECTION_EXIT()
 
-#define MI_PRINTF(...)	get_time(); printf(__VA_ARGS__)
+#define MI_PRINTF(...)	printf(__VA_ARGS__)
 #define MI_HEXDUMP(base_addr, bytes)	hexdump(base_addr, bytes)
 
 #define TRACE_INIT(pin)

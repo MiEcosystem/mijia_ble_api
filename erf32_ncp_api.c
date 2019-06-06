@@ -1099,7 +1099,7 @@ void get_time()
 
 void hexdump(uint8_t *base_addr, uint8_t bytes)
 {
-	get_time();
+	//get_time();
 	if(base_addr == NULL || bytes == 0){
 		return; 
 	}
