@@ -18,6 +18,11 @@
 #include <stdint.h>
 
 #include "mible_port.h"
+#include "usr_config.h"
+
+#ifdef CFG_DBG_PRINT
+#define MI_LOG_ENABLED  1
+#endif
 
 #ifdef MI_LOG_ENABLED
 /**
@@ -37,6 +42,7 @@
 #define MI_LOG_INFO(...)                        MI_LOG_INTERNAL_INFO( __VA_ARGS__)
 #define MI_LOG_DEBUG(...)                       MI_LOG_INTERNAL_DEBUG( __VA_ARGS__)
 #define MI_LOG_HEXDUMP(...)                     MI_LOG_INTERNAL_HEXDUMP( __VA_ARGS__)
+#define MI_LOG_PRINTF(...)                      MI_LOG_INTERNAL_PRINTF( __VA_ARGS__)
 #else // MI_LOG_ENABLED
 #define MI_LOG_ERROR(...)
 #define MI_LOG_WARNING(...)

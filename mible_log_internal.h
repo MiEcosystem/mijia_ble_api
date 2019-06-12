@@ -91,5 +91,8 @@ do {                                                                            
     }                                                                           \
 } while(0)
 
+#define MI_LOG_INTERNAL_PRINTF(...)                                             \
+    MI_PRINTF(__VA_ARGS__)
+
 #endif // __MIBLE_LOG_INTERNAL__H__
 
