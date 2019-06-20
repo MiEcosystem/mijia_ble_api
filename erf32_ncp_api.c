@@ -602,9 +602,12 @@ mible_status_t mible_gap_scan_start(mible_gap_scan_type_t scan_type,
 	int ret = 0; 
 
 	cmd_mutex_get();
-    if (ble_scanning) {
-		gecko_cmd_le_gap_end_procedure();
-    }
+
+
+	ret = gecko_cmd_le_gap_end_procedure()->result;
+	if(ret != 0){
+		MI_LOG_ERROR("end procedure failed");
+	}
 
     if (scan_type == MIBLE_SCAN_TYPE_PASSIVE) {
         active = 0;
