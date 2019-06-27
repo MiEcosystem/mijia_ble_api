@@ -29,6 +29,7 @@
 #include "app_timer.h"
 #include "app_util_platform.h"
 #if (NRF_SD_BLE_API_VERSION == 6)
+#define USE_LEGACY_API 0
 #include "SDK15.2.0_patch/nrf_drv_twi_patched.h"
 static uint8_t adv_handle = 0xFF;
 static uint8_t is_advertising;
@@ -37,6 +38,7 @@ static uint8_t adv_data_len;
 static uint8_t scan_rsp_data[31];
 static uint8_t scan_rsp_data_len;
 #else
+#define USE_LEGACY_API 1
 #include "SDK12.3.0_patch/nrf_drv_twi_patched.h"
 #endif
 
@@ -1291,7 +1293,11 @@ mible_status_t mible_iic_init(const iic_config_t * p_config, mible_handler_t han
     const nrf_drv_twi_config_t msc_config = {
        .scl                = p_config->scl_pin,
        .sda                = p_config->sda_pin,
+#if USE_LEGACY_API
        .frequency          = p_config->freq == IIC_100K ? NRF_TWI_FREQ_100K : NRF_TWI_FREQ_400K,
+#else
+       .frequency          = p_config->freq == IIC_100K ? NRF_DRV_TWI_FREQ_100K : NRF_DRV_TWI_FREQ_400K,
+#endif
        .interrupt_priority = APP_IRQ_PRIORITY_HIGH,
        .clear_bus_init     = true
     };
