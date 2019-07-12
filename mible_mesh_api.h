@@ -290,6 +290,9 @@ extern "C" {
 #define MIBLE_MESH_MIOT_SPEC_INDICATION                             0x00CE //0xCE038F
 #define MIBLE_MESH_MIOT_SPEC_INDICATION_ACK                         0x00CF //0xCF038F
 
+#define MIBLE_MESH_MIOT_SPEC_VENDOR_CONFIG                          0x00FF //0xFF038F
+#define MIBLE_MESH_MIOT_SPEC_VENDOR_CONFIG_SUB                      0x01
+
 #define MIBLE_MESH_COMPANY_ID_SIG                                   0xFFFF
 #define MIBLE_MESH_COMPANY_ID_XIAOMI                                0x038F
 
