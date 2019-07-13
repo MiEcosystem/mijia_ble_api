@@ -642,21 +642,21 @@ mible_status_t mible_gap_disconnect(uint16_t conn_handle)
 mible_status_t mible_gap_update_conn_params(uint16_t conn_handle,
         mible_gap_conn_param_t conn_params)
 {
-    struct gecko_msg_le_connection_set_parameters_rsp_t *ret;
+    uint16_t ret;
     if (m_conn_ctx.conn_handle == DISCONNECTION) {
         return MI_ERR_INVALID_STATE;
     }
-
-    ret = gecko_cmd_le_connection_set_parameters(conn_handle,
+    ret = gecko_cmd_le_connection_set_timing_parameters(conn_handle,
             conn_params.min_conn_interval, conn_params.max_conn_interval,
-            conn_params.slave_latency, conn_params.conn_sup_timeout);
-    if (ret->result == bg_err_success) {
+            conn_params.slave_latency, conn_params.conn_sup_timeout,
+            (conn_params.min_conn_interval - 1) * 2, (conn_params.max_conn_interval - 1) * 2)->result;
+    if (ret == bg_err_success) {
         return MI_SUCCESS;
-    } else if (ret->result == bg_err_invalid_conn_handle) {
+    } else if (ret == bg_err_invalid_conn_handle) {
         return MIBLE_ERR_INVALID_CONN_HANDLE;
-    } else if (ret->result == bg_err_invalid_param) {
+    } else if (ret == bg_err_invalid_param) {
         return MI_ERR_INVALID_PARAM;
-    } else if (ret->result == bg_err_wrong_state) {
+    } else if (ret == bg_err_wrong_state) {
         return MI_ERR_INVALID_STATE;
     }
     return MI_SUCCESS;
