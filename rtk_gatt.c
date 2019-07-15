@@ -239,20 +239,11 @@ static mible_status_t add_characteristic_value(T_ATTRIB_APPL *pattr,
     }
     else
     {
-        pattr->value_len = pcharacter->char_value_len;
-        if ((0 == pcharacter->char_uuid.type) &&
-            (pcharacter->char_value_len <= 14))
-        {
-            pattr->flags |= ATTRIB_FLAG_VALUE_INCL;
-            if (NULL != pcharacter->p_value)
-            {
-                memcpy(pattr->type_value + 2, pcharacter->p_value, pcharacter->char_value_len);
-            }
-        }
-        else
+        if (pcharacter->char_property == MIBLE_READ)
         {
             /* get data from p_value_context */
             pattr->flags |= ATTRIB_FLAG_VOID;
+            pattr->value_len = pcharacter->char_value_len;
 #if GATT_TABLE_VALUE_ALLOC
             pattr->p_value_context = plt_malloc(pcharacter->char_value_len, RAM_TYPE_DATA_OFF);
             memset(pattr->p_value_context, 0, pcharacter->char_value_len);
@@ -267,6 +258,13 @@ static mible_status_t add_characteristic_value(T_ATTRIB_APPL *pattr,
 #else
             pattr->p_value_context = pcharacter->p_value;
 #endif
+        }
+        else
+        {
+            /* get data from application callback */
+            pattr->flags |= ATTRIB_FLAG_VALUE_APPL;
+            pattr->value_len = 0;
+            pattr->p_value_context = NULL;
         }
     }
 
@@ -287,7 +285,7 @@ static mible_status_t add_characteristic_value(T_ATTRIB_APPL *pattr,
     {
         pattr->permissions |= GATT_PERM_WRITE;
     }
-
+   
     return MI_SUCCESS;
 }
 
