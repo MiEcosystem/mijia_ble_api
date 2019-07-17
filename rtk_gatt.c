@@ -741,7 +741,6 @@ mible_status_t mible_gatts_value_set(uint16_t srv_handle,
     else if (psrv_db->pattrs[attr_idx].flags & ATTRIB_FLAG_VALUE_APPL)
     {
         MI_LOG_DEBUG("gatt server set appl value");
-        mi_server_write_cb(0, psrv_db->service_id, attr_idx, WRITE_WITHOUT_RESPONSE, len, p_value, NULL);
     }
     else
     {

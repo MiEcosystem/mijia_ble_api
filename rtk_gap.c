@@ -23,7 +23,9 @@
 #include "mible_log.h"
 #include "platform_types.h"
 
+#ifndef ENABLE_RTK_MESH
 #define ENABLE_RTK_MESH    1
+#endif
 
 static mible_status_t err_code_convert(T_GAP_CAUSE cause)
 {
