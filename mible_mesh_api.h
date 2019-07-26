@@ -394,15 +394,13 @@ typedef struct {
 
 /**
  * @brief mible mesh init data.
- * flags    Bits Definition
- *          bit0 Key Refresh Flag   0: False 1: True
- *          bit1 IV Update Flag     0: Normal operation 1: IV Update active
+ * flags    IV Update Flag     0: Normal operation 1: IV Update active
  */
 typedef struct{
     uint16_t unicast_address;       /**< gateway unicast address */
     uint16_t group_address;         /**< subscription group address for all initial models */
     uint32_t iv_index;              /**< iv index vaule */
-    uint8_t  flags;                 /**< iv phase and key refresh */
+    uint8_t  flags;                 /**< iv update flags*/
     uint16_t netkey_index;          /**< gloabl netkey index */
     //uint16_t appkey_index;          /**< global netkey index */
     uint8_t  primary_netkey[MIBLE_MESH_KEY_LEN];    /**< netkey */
@@ -420,7 +418,7 @@ typedef struct{
  */
 typedef struct {
     uint32_t iv_index;  /**< mesh network iv index */
-    uint8_t  flags;     /**< iv flag and key refresh */
+    uint8_t  flags;     /**< IV Update Flag     0: Normal operation 1: IV Update active*/
 } mible_mesh_iv_t;
 
 /**
@@ -1109,7 +1107,7 @@ int mible_mesh_stop_recv_unprovbeacon(void);
 /**
  *@brief    update iv index, .
  *@param    [in] iv_index : current IV Index
- *@param    [in] flags : contains the Key Refresh Flag and IV Update Flag
+ *@param    [in] flags : IV Update Flag     0: Normal operation 1: IV Update active
  *@return   0: success, negetive value: failure
  */
 int mible_mesh_gateway_update_iv_info(uint32_t iv_index, uint8_t flags);
