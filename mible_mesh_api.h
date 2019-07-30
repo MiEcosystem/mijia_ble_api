@@ -317,7 +317,7 @@ extern "C" {
 typedef enum {
     MIBLE_MESH_EVENT_STACK_INIT_DONE=0,     /**< NULL */
     MIBLE_MESH_EVENT_PROVISIONER_INIT_DONE, /**< NULL */
-    MIBLE_MESH_EVENT_ADV_PACKAGE,           /**< mible_gap_adv_report_t */
+    MIBLE_MESH_EVENT_ADV_PACKAGE,           /**< Deprecated event */
     MIBLE_MESH_EVENT_UNPROV_DEVICE,         /**< mible_mesh_unprov_beacon_t */
     MIBLE_MESH_EVENT_IV_UPDATE,             /**< mible_mesh_iv_t */
     MIBLE_MESH_EVENT_CONFIG_MESSAGE_CB,     /**< Mesh Profile definition message */
@@ -360,11 +360,16 @@ typedef struct {
 } __packed mible_mesh_model_id_t;
 
 /**
- * @brief mible opcode description.
+ * @brief mible opcode description
+ * you can't omit bit flag 0b0, 0b10, 0b11 for opcode.
+ * Opcode   Format Notes
+ * 0xxxxxxx (excluding 01111111) 1-octet Opcodes
+ * 10xxxxxx xxxxxxxx 2-octet Opcodes
+ * 11xxxxxx zzzzzzzz 3-octet Opcodes
  */
 typedef struct {
     uint16_t company_id;    /**< SIG ID: 0xFFFF */
-    uint16_t opcode;        /**< 1, 2, 3 octets */
+    uint16_t opcode;        /**< operation code, defined mesh profile 3.7.3.1 Operation codes */
 } __packed mible_mesh_opcode_t;
 
 /**
@@ -442,7 +447,7 @@ typedef struct{
     uint16_t appkey_index;
     uint8_t  appkey[MIBLE_MESH_KEY_LEN];
     uint16_t global_netkey_index;       /**< local encrypt netkey index for mesh message */
-    uint16_t global_appkey_index;       /**< local appkey index */
+    uint16_t global_appkey_index;       /**< mesh spec don't need this param, only passed for special mesh stack*/
 }mible_mesh_appkey_params_t;
 
 /**
@@ -539,12 +544,12 @@ typedef struct{
  * @brief mesh message meta data.
  */
 typedef struct {
-    uint16_t src_addr;
-    uint16_t dst_addr;
-    uint16_t appkey_index;
-    uint16_t netkey_index;
-    uint8_t  rssi;
-    uint8_t  ttl;
+    uint16_t src_addr;      /**< [mandatary]  source address */
+    uint16_t dst_addr;      /**< [mandatary]  maybe group address, or provisioner addr */
+    uint16_t appkey_index;  /**< [mandatary]  appkey index for this message */
+    uint16_t netkey_index;  /**< [optional]  if not, default value 0xFFFF */
+    int8_t  rssi;           /**< [optional]  if not, default value -1 */
+    uint8_t  ttl;           /**< [optional]  if not, default value 0 */
 } mible_mesh_message_rx_meta_t;
 
 /**
@@ -616,6 +621,7 @@ typedef struct
     uint16_t version_id;
     uint16_t crpl;
     uint16_t features;
+    uint16_t data_len;
     void *data;
 } mible_mesh_conf_compo_data_status_t;
 
@@ -874,7 +880,7 @@ typedef struct
 
 /**
  * @brief Mesh Model Client event paramater type.
- *
+ * you should implement all status corresponsing to mible_mesh_node_*.
  */
 typedef struct
 {
@@ -913,7 +919,7 @@ typedef struct
 
 
 typedef union {
-    mible_gap_adv_report_t adv_report;
+    mible_gap_adv_report_t adv_report;  /**< Deprecated event */
     mible_mesh_unprov_beacon_t unprov_beacon;
     mible_mesh_iv_t mesh_iv;
     mible_mesh_config_status_t config_msg;
