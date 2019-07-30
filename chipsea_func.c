@@ -532,4 +532,6 @@ void mible_services_init(uint8 taskId)
     userFifoInit(&task_fifo,task_buf,TASK_MAX);
 
 		mible_std_auth_evt_register(std_authen_event_cb);
+		mible_server_info_init(&dev_info, MODE_STANDARD);
+    mible_server_miservice_init();
 }
