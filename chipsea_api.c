@@ -1147,18 +1147,10 @@ mible_status_t mible_aes128_encrypt(const uint8_t* key,
         return MI_ERR_INVALID_LENGTH;
     }
     AES_init_ctx(&ctx, key);
-    if (plen == 16)
-    {
-        AES_ECB_encrypt(&ctx, plaintext);
-        memcpy(ciphertext, plaintext, plen);
-    }
-    else
-    {
-        memcpy((uint8_t *)plainData, plaintext, plen);
-        AES_ECB_encrypt(&ctx, plainData);
-        memcpy(ciphertext, plainData, plen);
-    }
-
+		memcpy((uint8_t *)plainData,plaintext, plen);
+		AES_ECB_encrypt(&ctx, plainData);
+		memcpy(ciphertext,plainData, plen);
+	
     return MI_SUCCESS;
 }
 

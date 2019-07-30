@@ -271,6 +271,7 @@ mible_status_t record_read(uint16_t record_id, uint8_t *p_data, uint8_t len)
             return MI_SUCCESS;
         }
     }
+		
     return MI_ERR_INVALID_PARAM;
 }
 
@@ -285,6 +286,26 @@ mible_status_t record_write(uint16_t record_id, const uint8_t *p_data, uint8_t l
                 return MI_ERR_INVALID_PARAM;
             }
             memcpy(record_db.db[ii].dat, p_data, record_db.db[ii].len);
+            HalFlashErase(RECORD_FLASH_ADD >> 12);
+            HalFlashWrite(RECORD_FLASH_ADD, (uint8_t *)&record_db, sizeof(record_db_t));
+            return MI_SUCCESS;
+        }
+    }
+		// no record_id founded, create first
+		if (len > RECORD_ITEM_SIZE)
+    {
+        MI_LOG_ERROR("%s(%d):record creat error\n", __func__, __LINE__);
+        return MI_ERR_INVALID_PARAM;
+    }
+		// find empty db, write
+    for (int ii = 0; ii < RECORD_ITEM_NUM; ii++)
+    {
+        if (0 == record_db.db[ii].flag)
+        {
+            record_db.db[ii].id = record_id;
+            record_db.db[ii].len = len;
+            record_db.db[ii].flag = 1;
+						memcpy(record_db.db[ii].dat, p_data, record_db.db[ii].len);
             HalFlashErase(RECORD_FLASH_ADD >> 12);
             HalFlashWrite(RECORD_FLASH_ADD, (uint8_t *)&record_db, sizeof(record_db_t));
             return MI_SUCCESS;
@@ -348,7 +369,7 @@ void gap_evt_dispatch(mible_gap_evt_t evt)
             gap_params.connect.role = (gapRole_profileRole == GAP_PROFILE_PERIPHERAL)? MIBLE_GAP_PERIPHERAL : MIBLE_GAP_CENTRAL;
 		}break;
 
-        case MIBLE_GAP_EVT_DISCONNET:{
+        case MIBLE_GAP_EVT_DISCONNECT:{
             uint8_t disconnectReason = 0;
             GAPRole_GetParameter(GAPROLE_DISCONN_REASON,&disconnectReason);
             MI_LOG_INFO("%s(%d):disconnectReason = %d\r\n",__func__,__LINE__,disconnectReason);
@@ -410,7 +431,6 @@ device_info dev_info = {
 mible_status_t mible_get_advertising_data(uint8 *datBuf, uint8 *datLen)
 {
     mibeacon_frame_ctrl_t frame_ctrl = {
-        .time_protocol = 0,
         .is_encrypt = 0,
         .mac_include = 1,
         .cap_include = 1,
@@ -511,7 +531,5 @@ void mible_services_init(uint8 taskId)
     record_db_read();
     userFifoInit(&task_fifo,task_buf,TASK_MAX);
 
-	mible_std_auth_evt_register(std_authen_event_cb);
-    mible_server_info_init(&dev_info, MODE_STANDARD);
-    mible_server_miservice_init();
+		mible_std_auth_evt_register(std_authen_event_cb);
 }
