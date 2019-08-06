@@ -346,7 +346,7 @@ typedef enum {
  * @brief mible mesh address description.
  */
 typedef struct {
-    mible_mesh_address_type_t type;
+    uint16_t type;                  /**< mible_mesh_address_type_t */
     uint16_t value;                 /**< mesh address */
     const uint8_t *virtual_uuid;    /**< virtual uuid value, must be NULL unless address type is #MIBLE_MESH_ADDRESS_TYPE_VIRTUAL */
 } mible_mesh_address_t;

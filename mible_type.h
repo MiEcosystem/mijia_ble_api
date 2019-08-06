@@ -144,7 +144,7 @@ typedef enum {
 } mible_uuid_type_t;
 
 typedef struct {
-    uint32_t type;                                     // MIBLE_UUID_16 = 0 MIBLE_UUID_128 = 1
+    uint32_t type; /**<  MIBLE_UUID_16 = 0 MIBLE_UUID_128 = 1 */
     union {
         uint16_t uuid16;
         uint8_t uuid128[16];
@@ -301,7 +301,7 @@ typedef struct{
 } mible_gattc_service_db_t;
 
 typedef struct{
-    uint32_t status;	//mible_status_t
+    uint32_t status;    /**< mible_status_t */
     mible_gattc_service_db_t *p_gattc_db;
 }mible_gattc_discovery_rsp_t;
 
