@@ -85,6 +85,7 @@ static int release_timer(void* timer_id)
     for (uint8_t i = 0; i < TIMER_MAX_NUM; i++) {
         if (timer_id == &m_timer_pool[i]) {
             m_timer_pool[i].is_avail = 1;
+            m_timer_pool[i].p_ctx    = NULL;
             return i;
         }
     }
@@ -1040,6 +1041,7 @@ mible_status_t mible_timer_start(void* timer_handle, uint32_t time_ms, void* p_c
         return MI_ERR_INVALID_PARAM;
 
     timer_item_t * p_timer = timer_handle;
+    p_timer->p_ctx = p_context;
     int ret = gecko_cmd_hardware_set_soft_timer(
                     MS_2_TIMERTICK(time_ms),
                     p_timer->id,
