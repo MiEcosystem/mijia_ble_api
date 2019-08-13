@@ -217,6 +217,59 @@ extern "C" {
 #define MIBLE_MESH_MSG_LIGHT_HSL_RANGE_SET                               0x8281
 #define MIBLE_MESH_MSG_LIGHT_HSL_RANGE_SET_UNACKNOWLEDGED                0x8282
 
+/*XYL Model Opcodes Definition*/
+#define MIBLE_MESH_MSG_LIGHT_XYL_GET                         0x8283
+#define MIBLE_MESH_MSG_LIGHT_XYL_SET                         0x8284
+#define MIBLE_MESH_MSG_LIGHT_XYL_SET_UNACK                   0x8285
+#define MIBLE_MESH_MSG_LIGHT_XYL_STATUS                      0x8286
+#define MIBLE_MESH_MSG_LIGHT_XYL_TARGET_GET                  0x8287
+#define MIBLE_MESH_MSG_LIGHT_XYL_TARGET_STATUS               0x8288
+#define MIBLE_MESH_MSG_LIGHT_XYL_DEFAULT_GET                 0x8289
+#define MIBLE_MESH_MSG_LIGHT_XYL_DEFAULT_STATUS              0x828A
+#define MIBLE_MESH_MSG_LIGHT_XYL_RANGE_GET                   0x828B
+#define MIBLE_MESH_MSG_LIGHT_XYL_RANGE_STATUS                0x828C
+#define MIBLE_MESH_MSG_LIGHT_XYL_DEFAULT_SET                 0x828D
+#define MIBLE_MESH_MSG_LIGHT_XYL_DEFAULT_SET_UNACK           0x828E
+#define MIBLE_MESH_MSG_LIGHT_XYL_RANGE_SET                   0x828F
+#define MIBLE_MESH_MSG_LIGHT_XYL_RANGE_SET_UNACK             0x8290
+
+/*LC Model Opcodes Definition*/
+#define MIBLE_MESH_MSG_LIGHT_LC_MODE_GET                     0x8291
+#define MIBLE_MESH_MSG_LIGHT_LC_MODE_SET                     0x8292
+#define MIBLE_MESH_MSG_LIGHT_LC_MODE_SET_UNACK               0x8293
+#define MIBLE_MESH_MSG_LIGHT_LC_MODE_STATUS                  0x8294
+#define MIBLE_MESH_MSG_LIGHT_LC_OM_GET                       0x8295
+#define MIBLE_MESH_MSG_LIGHT_LC_OM_SET                       0x8296
+#define MIBLE_MESH_MSG_LIGHT_LC_OM_SET_UNACK                 0x8297
+#define MIBLE_MESH_MSG_LIGHT_LC_OM_STATUS                    0x8298
+#define MIBLE_MESH_MSG_LIGHT_LC_ONOFF_GET                    0x8299
+#define MIBLE_MESH_MSG_LIGHT_LC_ONOFF_SET                    0x829A
+#define MIBLE_MESH_MSG_LIGHT_LC_ONOFF_SET_UNACK              0x829B
+#define MIBLE_MESH_MSG_LIGHT_LC_ONOFF_STATUS                 0x829C
+#define MIBLE_MESH_MSG_LIGHT_LC_PROPERTY_GET                 0x829D
+#define MIBLE_MESH_MSG_LIGHT_LC_PROPERTY_SET                 0x62
+#define MIBLE_MESH_MSG_LIGHT_LC_PROPERTY_SET_UNACK           0x63
+#define MIBLE_MESH_MSG_LIGHT_LC_PROPERTY_STATUS              0x64
+
+/*Sensor Model Opcodes Definition*/
+#define MIBLE_MESH_MSG_SENSOR_DESCRIPTOR_GET                      0x8230
+#define MIBLE_MESH_MSG_SENSOR_DESCRIPTOR_STATUS                   0x51
+#define MIBLE_MESH_MSG_SENSOR_GET                                 0x8231
+#define MIBLE_MESH_MSG_SENSOR_STATUS                              0x52
+#define MIBLE_MESH_MSG_SENSOR_COLUMN_GET                          0x8232
+#define MIBLE_MESH_MSG_SENSOR_COLUMN_STATUS                       0x53
+#define MIBLE_MESH_MSG_SENSOR_SERIES_GET                          0x8233
+#define MIBLE_MESH_MSG_SENSOR_SERIES_STATUS                       0x54
+#define MIBLE_MESH_MSG_SENSOR_CADENCE_GET                         0x8234
+#define MIBLE_MESH_MSG_SENSOR_CADENCE_SET                         0x55
+#define MIBLE_MESH_MSG_SENSOR_CADENCE_SET_UNACKED                 0x56
+#define MIBLE_MESH_MSG_SENSOR_CADENCE_STATUS                      0x57
+#define MIBLE_MESH_MSG_SENSOR_SETTINGS_GET                        0x8235
+#define MIBLE_MESH_MSG_SENSOR_SETTINGS_STATUS                     0x58
+#define MIBLE_MESH_MSG_SENSOR_SETTING_GET                         0x8236
+#define MIBLE_MESH_MSG_SENSOR_SETTING_SET                         0x59
+#define MIBLE_MESH_MSG_SENSOR_SETTING_SET_UNACKED                 0x5A
+#define MIBLE_MESH_MSG_SENSOR_SETTING_STATUS                      0x5B
 
 /** Mesh vendor models **/
 #define MIBLE_MESH_MIOT_SPEC_SERVER_MODEL                           0000 //0x038f0000
@@ -229,6 +282,16 @@ extern "C" {
 #define MIBLE_MESH_MIOT_SPEC_SET                                    0x00C3 //0xC3038F
 #define MIBLE_MESH_MIOT_SPEC_SET_NOACK                              0x00C4 //0xC4038F
 #define MIBLE_MESH_MIOT_SPEC_STATUS                                 0x00C5 //0xC5038F
+
+#define MIBLE_MESH_MIOT_SPEC_ACTION                                 0x00C6 //0xC6038F
+#define MIBLE_MESH_MIOT_SPEC_ACTION_ACK                             0x00C7 //0xC7038F
+#define MIBLE_MESH_MIOT_SPEC_NOTIFICATION                           0x00C8 //0xC8038F
+
+#define MIBLE_MESH_MIOT_SPEC_INDICATION                             0x00CE //0xCE038F
+#define MIBLE_MESH_MIOT_SPEC_INDICATION_ACK                         0x00CF //0xCF038F
+
+#define MIBLE_MESH_MIOT_SPEC_VENDOR_CONFIG                          0x00FF //0xFF038F
+#define MIBLE_MESH_MIOT_SPEC_VENDOR_CONFIG_SUB                      0x01
 
 #define MIBLE_MESH_COMPANY_ID_SIG                                   0xFFFF
 #define MIBLE_MESH_COMPANY_ID_XIAOMI                                0x038F
@@ -254,7 +317,7 @@ extern "C" {
 typedef enum {
     MIBLE_MESH_EVENT_STACK_INIT_DONE=0,     /**< NULL */
     MIBLE_MESH_EVENT_PROVISIONER_INIT_DONE, /**< NULL */
-    MIBLE_MESH_EVENT_ADV_PACKAGE,           /**< mible_gap_adv_report_t */
+    MIBLE_MESH_EVENT_ADV_PACKAGE,           /**< Deprecated event */
     MIBLE_MESH_EVENT_UNPROV_DEVICE,         /**< mible_mesh_unprov_beacon_t */
     MIBLE_MESH_EVENT_IV_UPDATE,             /**< mible_mesh_iv_t */
     MIBLE_MESH_EVENT_CONFIG_MESSAGE_CB,     /**< Mesh Profile definition message */
@@ -283,7 +346,7 @@ typedef enum {
  * @brief mible mesh address description.
  */
 typedef struct {
-    mible_mesh_address_type_t type;
+    uint16_t type;                  /**< mible_mesh_address_type_t */
     uint16_t value;                 /**< mesh address */
     const uint8_t *virtual_uuid;    /**< virtual uuid value, must be NULL unless address type is #MIBLE_MESH_ADDRESS_TYPE_VIRTUAL */
 } mible_mesh_address_t;
@@ -297,11 +360,16 @@ typedef struct {
 } __packed mible_mesh_model_id_t;
 
 /**
- * @brief mible opcode description.
+ * @brief mible opcode description
+ * you can't omit bit flag 0b0, 0b10, 0b11 for opcode.
+ * Opcode   Format Notes
+ * 0xxxxxxx (excluding 01111111) 1-octet Opcodes
+ * 10xxxxxx xxxxxxxx 2-octet Opcodes
+ * 11xxxxxx zzzzzzzz 3-octet Opcodes
  */
 typedef struct {
     uint16_t company_id;    /**< SIG ID: 0xFFFF */
-    uint16_t opcode;        /**< 1, 2, 3 octets */
+    uint16_t opcode;        /**< operation code, defined mesh profile 3.7.3.1 Operation codes */
 } __packed mible_mesh_opcode_t;
 
 /**
@@ -331,15 +399,13 @@ typedef struct {
 
 /**
  * @brief mible mesh init data.
- * flags    Bits Definition
- *          bit0 Key Refresh Flag   0: False 1: True
- *          bit1 IV Update Flag     0: Normal operation 1: IV Update active
+ * flags    IV Update Flag     0: Normal operation 1: IV Update active
  */
 typedef struct{
     uint16_t unicast_address;       /**< gateway unicast address */
     uint16_t group_address;         /**< subscription group address for all initial models */
     uint32_t iv_index;              /**< iv index vaule */
-    uint8_t  flags;                 /**< iv phase and key refresh */
+    uint8_t  flags;                 /**< iv update flags*/
     uint16_t netkey_index;          /**< gloabl netkey index */
     //uint16_t appkey_index;          /**< global netkey index */
     uint8_t  primary_netkey[MIBLE_MESH_KEY_LEN];    /**< netkey */
@@ -357,7 +423,7 @@ typedef struct{
  */
 typedef struct {
     uint32_t iv_index;  /**< mesh network iv index */
-    uint8_t  flags;     /**< iv flag and key refresh */
+    uint8_t  flags;     /**< IV Update Flag     0: Normal operation 1: IV Update active*/
 } mible_mesh_iv_t;
 
 /**
@@ -381,7 +447,7 @@ typedef struct{
     uint16_t appkey_index;
     uint8_t  appkey[MIBLE_MESH_KEY_LEN];
     uint16_t global_netkey_index;       /**< local encrypt netkey index for mesh message */
-    uint16_t global_appkey_index;       /**< local appkey index */
+    uint16_t global_appkey_index;       /**< mesh spec don't need this param, only passed for special mesh stack*/
 }mible_mesh_appkey_params_t;
 
 /**
@@ -478,12 +544,12 @@ typedef struct{
  * @brief mesh message meta data.
  */
 typedef struct {
-    uint16_t src_addr;
-    uint16_t dst_addr;
-    uint16_t appkey_index;
-    uint16_t netkey_index;
-    uint8_t  rssi;
-    uint8_t  ttl;
+    uint16_t src_addr;      /**< [mandatary]  source address */
+    uint16_t dst_addr;      /**< [mandatary]  maybe group address, or provisioner addr */
+    uint16_t appkey_index;  /**< [mandatary]  appkey index for this message */
+    uint16_t netkey_index;  /**< [optional]  if not, default value 0xFFFF */
+    int8_t  rssi;           /**< [optional]  if not, default value -1 */
+    uint8_t  ttl;           /**< [optional]  if not, default value 0 */
 } mible_mesh_message_rx_meta_t;
 
 /**
@@ -555,6 +621,7 @@ typedef struct
     uint16_t version_id;
     uint16_t crpl;
     uint16_t features;
+    uint16_t data_len;
     void *data;
 } mible_mesh_conf_compo_data_status_t;
 
@@ -813,7 +880,7 @@ typedef struct
 
 /**
  * @brief Mesh Model Client event paramater type.
- *
+ * you should implement all status corresponsing to mible_mesh_node_*.
  */
 typedef struct
 {
@@ -852,7 +919,7 @@ typedef struct
 
 
 typedef union {
-    mible_gap_adv_report_t adv_report;
+    mible_gap_adv_report_t adv_report;  /**< Deprecated event */
     mible_mesh_unprov_beacon_t unprov_beacon;
     mible_mesh_iv_t mesh_iv;
     mible_mesh_config_status_t config_msg;
@@ -1046,7 +1113,7 @@ int mible_mesh_stop_recv_unprovbeacon(void);
 /**
  *@brief    update iv index, .
  *@param    [in] iv_index : current IV Index
- *@param    [in] flags : contains the Key Refresh Flag and IV Update Flag
+ *@param    [in] flags : IV Update Flag     0: Normal operation 1: IV Update active
  *@return   0: success, negetive value: failure
  */
 
