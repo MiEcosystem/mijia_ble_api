@@ -649,7 +649,7 @@ mible_status_t mible_gap_update_conn_params(uint16_t conn_handle,
     ret = gecko_cmd_le_connection_set_timing_parameters(conn_handle,
             conn_params.min_conn_interval, conn_params.max_conn_interval,
             conn_params.slave_latency, conn_params.conn_sup_timeout,
-            (conn_params.min_conn_interval - 1) * 2, (conn_params.max_conn_interval - 1) * 2)->result;
+            0, (conn_params.max_conn_interval - 1) * 2)->result;
     if (ret == bg_err_success) {
         return MI_SUCCESS;
     } else if (ret == bg_err_invalid_conn_handle) {
@@ -1041,7 +1041,7 @@ mible_status_t mible_timer_start(void* timer_handle, uint32_t time_ms, void* p_c
 
     timer_item_t * p_timer = timer_handle;
     int ret = gecko_cmd_hardware_set_soft_timer(
-                    TIMER_MS_2_TIMERTICK(time_ms),
+                    MS_2_TIMERTICK(time_ms),
                     p_timer->id,
                     p_timer->is_single_shot)->result;
 

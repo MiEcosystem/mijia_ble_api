@@ -31,8 +31,8 @@
 /** Timer Frequency used. */
 #define TIMER_CLK_FREQ                          ((uint32)32768)
 /** Convert msec to timer ticks. */
-#define TIMER_MS_2_TIMERTICK(ms)                ((TIMER_CLK_FREQ * (ms)) / 1000)
-
+#define MS_2_TIMERTICK(ms)                ((TIMER_CLK_FREQ * (ms)) / 1000)
+#define SEC_2_TIMERTICK(ms)               (TIMER_CLK_FREQ * (s))
 #define UINT32_TO_BITSTREAM(p, n)                                              \
 { *(p)++ = (uint8_t)(n); *(p)++ = (uint8_t)((n) >> 8);                         \
 *(p)++ = (uint8_t)((n) >> 16); *(p)++ = (uint8_t)((n) >> 24); }
