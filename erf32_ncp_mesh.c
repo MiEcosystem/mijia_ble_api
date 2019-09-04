@@ -26,8 +26,8 @@
 #define RELAY_EN            1
 #define RELAY_STEP          50
 #define RELAY_RETRANS_CNT   2
-#define NETTX_STEP          50
-#define NETTX_CNT           2
+#define NETTX_STEP          30
+#define NETTX_CNT           4
 #define PEND_ACK_BASE       (150+NETTX_STEP*NETTX_CNT)
 #define PEND_ACK_STEP       (NETTX_STEP)
 #define WAIT_ACK_BASE       (200+NETTX_STEP*NETTX_CNT)
@@ -272,7 +272,10 @@ void mible_mesh_stack_event_handler(struct gecko_cmd_packet *evt)
 			mible_mesh_event_callback(MIBLE_MESH_EVENT_IV_UPDATE, &current_iv);
 		}
 			break;
+		case gecko_evt_le_gap_scan_response_id:
+			break;
 		default:
+			//MI_LOG_WARNING("unknown event: header 0x%x\n", BGLIB_MSG_ID(evt->header)); 
 			break; 
 	}
 }
@@ -711,12 +714,15 @@ static void local_config_init(void)
 	uint8_t identity = gecko_cmd_mesh_test_get_local_config(mesh_node_identity, 0)->data.data[0];
 	uint8_t relay = gecko_cmd_mesh_test_get_local_config(mesh_node_relay, 0)->data.data[0]; 
 	MI_LOG_INFO("friend: %d  beacon: %d  ttl: %d  proxy: %d  identity: %d relay: %d\n", friend, beacon, ttl, proxy, identity,relay);
-	
+
+#if PTA_ENABLED	
 	// enable PTA
 	if(gecko_cmd_coex_set_options(0x0100, 0x0100)->result != 0)
 	{
 		MI_LOG_ERROR("Enable coex failed. \n"); 
 	}
+#endif 
+
 	// Get seq number 
 	struct gecko_msg_mesh_test_get_element_seqnum_rsp_t *seq_ret = gecko_cmd_mesh_test_get_element_seqnum(0);
 	if(seq_ret->result != 0){

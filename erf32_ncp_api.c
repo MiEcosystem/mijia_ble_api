@@ -382,12 +382,6 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt){
 		
 			mible_mesh_event_callback(MIBLE_MESH_EVENT_ADV_PACKAGE, &gap_evt_param.report);
 			
-			uint8_t target_mac[6] = {0x19,0x2d,0xef,0x57,0x0b,0x00}; 	
-			if(memcmp(target_mac, evt->data.evt_le_gap_scan_response.address.addr,6) == 0){
-				//MI_LOG_INFO("Recieve target message. \n"); 
-				//MI_HEXDUMP(evt->data.evt_le_gap_scan_response.data.data, 
-						//evt->data.evt_le_gap_scan_response.data.len); 
-			}	
 		}
     	break;
 
@@ -610,8 +604,10 @@ mible_status_t mible_gap_scan_start(mible_gap_scan_type_t scan_type,
 	}
 
     if (scan_type == MIBLE_SCAN_TYPE_PASSIVE) {
+		MI_LOG_DEBUG("MIBLE_SCAN_TYPE_PASSIVE\n");
         active = 0;
     } else if (scan_type == MIBLE_SCAN_TYPE_ACTIVE) {
+		MI_LOG_DEBUG("MIBLE_SCAN_TYPE_ACTIVE\n");
         active = 1;
     } else {
 		cmd_mutex_put();
