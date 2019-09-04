@@ -458,6 +458,9 @@ static int gattc_write_req_ind_handler(ke_msg_id_t const msgid, const struct gat
 								else
 										evt = MIBLE_GATTS_EVT_WRITE_PERMIT_REQ;
 
+								//add by tucc
+								evt = MIBLE_GATTS_EVT_WRITE;
+								
 								bool has_write = false;
 								if((evt == MIBLE_GATTS_EVT_WRITE) || (!get_wr_author(param->handle-mijia_env->shdl)))
 								{

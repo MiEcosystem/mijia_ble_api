@@ -222,7 +222,18 @@ mible_status_t mible_gatts_service_init(mible_gatts_db_t *p_server_db)
 {
 #if (BLE_MIJIA_SERVER)	
 	  mible_status_t state = translate_miarch_attdb(p_server_db);
-    return state;
+    //return state;
+    if(MI_SUCCESS == state)
+		{
+        mible_arch_evt_param_t param;
+        memset(&param, 0, sizeof(param));
+        param.srv_init_cmp.status = MI_SUCCESS;
+        param.srv_init_cmp.p_gatts_db = p_server_db;
+        mible_arch_event_callback(MIBLE_ARCH_EVT_GATTS_SRV_INIT_CMP, &param);
+        return MI_SUCCESS;
+		}
+		else
+			return state;
 #else
 		return MIBLE_ERR_UNKNOWN;
 #endif

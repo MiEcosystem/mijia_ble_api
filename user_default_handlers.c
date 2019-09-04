@@ -94,15 +94,19 @@ void user_process_catch(ke_msg_id_t const msgid, void const *param,
 
 void user_app_on_db_init_complete( void )
 {
-	#if (BLE_MIJIA_SERVER)
-		mible_arch_event_t evt = MIBLE_ARCH_EVT_GATTS_SRV_INIT_CMP;
-		mible_arch_evt_param_t mi_param;
-		mi_param.srv_init_cmp.status = MI_SUCCESS;
-		mi_param.srv_init_cmp.p_gatts_db = get_server_db();
-		mible_arch_event_callback(evt,&mi_param);
-	#else
-		CALLBACK_ARGS_0(user_default_app_operations.default_operation_adv)
-	#endif
+//	#if (BLE_MIJIA_SERVER)
+//		mible_arch_event_t evt = MIBLE_ARCH_EVT_GATTS_SRV_INIT_CMP;
+//		mible_arch_evt_param_t mi_param;
+//		mi_param.srv_init_cmp.status = MI_SUCCESS;
+//		mi_param.srv_init_cmp.p_gatts_db = get_server_db();
+//		mible_arch_event_callback(evt,&mi_param);
+//	#else
+//		CALLBACK_ARGS_0(user_default_app_operations.default_operation_adv)
+//	#endif
+extern void simulation_miserver_test();
+simulation_miserver_test();
+
+
 }
 
 

@@ -56,8 +56,9 @@ void app_mijia_init(void)
 {
     easy_nvds_init();
 		init_easy_timer();
-		simulation_miserver_test();
-		
+		//simulation_miserver_test();
+extern void mijia_service_init();
+	mijia_service_init();
 }
 
 /**
