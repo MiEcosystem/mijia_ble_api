@@ -21,8 +21,14 @@
 #include "mible_type.h"
 #define MI_LOG_MODULE_NAME "RTK_GAP"
 #include "mible_log.h"
-#include "platform_types.h"
+#include "mesh_api.h"
 
+static uint8_t rtk_adv_data[31];
+static uint8_t rtk_adv_data_len;
+static gap_sched_adv_type_t rtk_adv_type;
+static plt_timer_t rtk_adv_timer;
+
+extern void rtk_gap_adv_timeout(void);
 
 static mible_status_t err_code_convert(T_GAP_CAUSE cause)
 {
@@ -114,51 +120,69 @@ mible_status_t mible_gap_scan_stop(void)
     return err_code_convert(err);
 }
 
+mible_status_t mible_gap_adv_send(void)
+{
+    uint8_t *padv_data = gap_sched_task_get();
+    if (NULL == padv_data)
+    {
+        MI_LOG_ERROR("send adv data failed: busy!");
+        return MI_ERR_RESOURCES;
+    }
+
+    gap_sched_task_p ptask = CONTAINER_OF(padv_data, gap_sched_task_t, adv_data);
+    memcpy(ptask->adv_data, rtk_adv_data, rtk_adv_data_len);
+    ptask->adv_len = rtk_adv_data_len;
+    ptask->adv_type = rtk_adv_type;
+
+    gap_sched_try(ptask);
+    
+    //MI_LOG_DEBUG("adv data:");
+    //MI_LOG_HEXDUMP(rtk_adv_data, rtk_adv_data_len);
+
+    return MI_SUCCESS;
+}
+
+static void rtk_adv_timeout_handler(void *pargs)
+{
+    rtk_gap_adv_timeout();
+}
+
 mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_param)
 {
-    T_GAP_CAUSE err = GAP_CAUSE_SUCCESS;
-    uint8_t  adv_evt_type;
-    uint8_t  adv_chann_map = GAP_ADVCHAN_ALL;
-    uint16_t adv_int_min = p_param->adv_interval_min;
-    uint16_t adv_int_max = p_param->adv_interval_max;
-
+    /* ser adv type */
     if (MIBLE_ADV_TYPE_CONNECTABLE_UNDIRECTED == p_param->adv_type)
     {
-        adv_evt_type = GAP_ADTYPE_ADV_IND;
+        rtk_adv_type = GAP_SCHED_ADV_TYPE_IND;
     }
     else if (MIBLE_ADV_TYPE_SCANNABLE_UNDIRECTED == p_param->adv_type)
     {
-        adv_evt_type = GAP_ADTYPE_ADV_SCAN_IND;
+        rtk_adv_type = GAP_SCHED_ADV_TYPE_SCAN_IND;
     }
     else
     {
-        adv_evt_type = GAP_ADTYPE_ADV_NONCONN_IND;
+        rtk_adv_type = GAP_SCHED_ADV_TYPE_NONCONN_IND;
     }
-
-    if (p_param->ch_mask.ch_37_off)
+    
+    /* create timer to start adv */
+    if (NULL == rtk_adv_timer)
     {
-        adv_chann_map &= ~GAP_ADVCHAN_37;
+        rtk_adv_timer = plt_timer_create("adv_timer", p_param->adv_interval_min, TRUE, 0, rtk_adv_timeout_handler);
+        if (NULL == rtk_adv_timer)
+        {
+            return MI_ERR_RESOURCES;
+        }
     }
-
-    if (p_param->ch_mask.ch_38_off)
+    else
     {
-        adv_chann_map &= ~GAP_ADVCHAN_38;
+        plt_timer_change_period(rtk_adv_timer, p_param->adv_interval_min, 0);
     }
-
-    if (p_param->ch_mask.ch_39_off)
+    
+    if (!plt_timer_is_active(rtk_adv_timer))
     {
-        adv_chann_map &= ~GAP_ADVCHAN_39;
+        plt_timer_start(rtk_adv_timer, 0);
     }
 
-    /* set advertising parameters */
-    le_adv_set_param(GAP_PARAM_ADV_EVENT_TYPE, sizeof(adv_evt_type), &adv_evt_type);
-    le_adv_set_param(GAP_PARAM_ADV_CHANNEL_MAP, sizeof(adv_chann_map), &adv_chann_map);
-    le_adv_set_param(GAP_PARAM_ADV_INTERVAL_MIN, sizeof(adv_int_min), &adv_int_min);
-    le_adv_set_param(GAP_PARAM_ADV_INTERVAL_MAX, sizeof(adv_int_max), &adv_int_max);
-
-    err = le_adv_start();
-
-    return err_code_convert(err);
+    return MI_SUCCESS;
 }
 
 mible_status_t mible_gap_adv_data_set(uint8_t const *p_data,
@@ -167,7 +191,8 @@ mible_status_t mible_gap_adv_data_set(uint8_t const *p_data,
     T_GAP_CAUSE err = GAP_CAUSE_SUCCESS;
     if (NULL != p_data)
     {
-        le_adv_set_param(GAP_PARAM_ADV_DATA, dlen, (void *)p_data);
+        memcpy(rtk_adv_data, p_data, dlen);
+        rtk_adv_data_len = dlen;
     }
 
     if (NULL != p_sr_data)
@@ -175,15 +200,17 @@ mible_status_t mible_gap_adv_data_set(uint8_t const *p_data,
         le_adv_set_param(GAP_PARAM_SCAN_RSP_DATA, srdlen, (void *)p_sr_data);
     }
 
-    err = le_adv_update_param();
-
     return err_code_convert(err);
 }
 
 mible_status_t mible_gap_adv_stop(void)
 {
-    T_GAP_CAUSE err = le_adv_stop();
-    return err_code_convert(err);
+    if (NULL != rtk_adv_timer)
+    {
+        plt_timer_delete(rtk_adv_timer, 0);
+        rtk_adv_timer = NULL;
+    }
+    return MI_SUCCESS;
 }
 
 mible_status_t mible_gap_connect(mible_gap_scan_param_t scan_param,
