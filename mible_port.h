@@ -115,8 +115,8 @@
 #define CRITICAL_SECTION_ENTER()		GLOBAL_INT_DISABLE()
 #define CRITICAL_SECTION_EXIT()			GLOBAL_INT_RESTORE() 
 
-#define MI_LOG_PRINTF(...)					COMPrintf( __VA_ARGS__)
-#define MI_LOG_HEXDUMP(...)					COMPrintf_hexdump( __VA_ARGS__)						
+#define MI_PRINTF(...)					COMPrintf( __VA_ARGS__)
+#define MI_HEXDUMP(...)					COMPrintf_hexdump( __VA_ARGS__)						
 
 #define TRACE_INIT(x) 
 #define TRACE_ENTER(x) 
