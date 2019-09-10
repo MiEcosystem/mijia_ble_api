@@ -25,7 +25,7 @@
 #include "platform_os.h"
 #include "platform_types.h"
 
-#define MAX_GATT_DB_NUM                      1
+#define MAX_GATT_DB_NUM                      4 //To support multi services
 #define GATT_TABLE_VALUE_ALLOC               1
 
 static T_APP_RESULT result_g = APP_RESULT_SUCCESS;
