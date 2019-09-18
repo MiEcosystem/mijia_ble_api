@@ -24,8 +24,8 @@
 #include "platform_types.h"
 
 #ifdef MIBLE_API_SYNC
-extern void *adv_lock_seg_handle;
-extern void *adv_wait_seg_handle;
+extern void *gap_lock_seg_handle;
+extern void *gap_wait_seg_handle;
 #endif
 
 static mible_status_t err_code_convert(T_GAP_CAUSE cause)
@@ -95,7 +95,7 @@ mible_status_t mible_gap_scan_start(mible_gap_scan_type_t scan_type,
     T_GAP_CAUSE err = GAP_CAUSE_SUCCESS;
     uint8_t scan_mode;
 #ifdef MIBLE_API_SYNC
-		os_sem_take(adv_lock_seg_handle,0xFFFFFFFF);			//lock
+		os_sem_take(gap_lock_seg_handle,0xFFFFFFFF);			//lock
 #endif	
     if (MIBLE_SCAN_TYPE_PASSIVE == scan_type)
     {
@@ -114,12 +114,12 @@ mible_status_t mible_gap_scan_start(mible_gap_scan_type_t scan_type,
     err = le_scan_start();
 #ifdef MIBLE_API_SYNC		
 		if(GAP_CAUSE_SUCCESS == err){
-			if(false == os_sem_take(adv_wait_seg_handle,1000))	//wait GAP_SCAN_STATE_IDLE 
+			if(false == os_sem_take(gap_wait_seg_handle,1000))	//wait GAP_SCAN_STATE_IDLE 
 				MI_LOG_WARNING("wait_seg GAP_SCAN_STATE_IDLE timeout \r\n",);
 		}
 		else
 			MI_LOG_ERROR("start scan failed (err %d) \r\n", err);
-		os_sem_give(adv_lock_seg_handle);							//unlock
+		os_sem_give(gap_lock_seg_handle);							//unlock
 #endif
     return err_code_convert(err);
 }
@@ -127,17 +127,17 @@ mible_status_t mible_gap_scan_start(mible_gap_scan_type_t scan_type,
 mible_status_t mible_gap_scan_stop(void)
 {
 #ifdef MIBLE_API_SYNC
-		os_sem_take(adv_lock_seg_handle,0xFFFFFFFF);			//lock
+		os_sem_take(gap_lock_seg_handle,0xFFFFFFFF);			//lock
 #endif	
     T_GAP_CAUSE err = le_scan_stop();
 #ifdef MIBLE_API_SYNC
 		if(GAP_CAUSE_SUCCESS == err){
-			if(false == os_sem_take(adv_wait_seg_handle,1000))	//wait GAP_SCAN_STATE_SCANNING 
+			if(false == os_sem_take(gap_wait_seg_handle,1000))	//wait GAP_SCAN_STATE_SCANNING 
 				MI_LOG_WARNING("wait_seg GAP_SCAN_STATE_SCANNING timeout \r\n",);
 		}
 		else
 			MI_LOG_ERROR("stop scan failed (err %d) \r\n", err);
-		os_sem_give(adv_lock_seg_handle);							//unlock
+		os_sem_give(gap_lock_seg_handle);							//unlock
 #endif
     return err_code_convert(err);
 }
@@ -150,7 +150,7 @@ mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_param)
     uint16_t adv_int_min = p_param->adv_interval_min;
     uint16_t adv_int_max = p_param->adv_interval_max;
 #ifdef MIBLE_API_SYNC
-		os_sem_take(adv_lock_seg_handle,0xFFFFFFFF);			//lock
+		os_sem_take(gap_lock_seg_handle,0xFFFFFFFF);			//lock
 		extern T_GAP_DEV_STATE gap_dev_state;
 		MI_LOG_DEBUG("gap_dev_state = {%d, %d, %d, %d, %d}",gap_dev_state.gap_init_state,	\
 									gap_dev_state.gap_adv_sub_state, gap_dev_state.gap_adv_state,				\
@@ -193,12 +193,12 @@ mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_param)
     err = le_adv_start();
 #ifdef MIBLE_API_SYNC	
 		if(GAP_CAUSE_SUCCESS == err){
-			if(false == os_sem_take(adv_wait_seg_handle,1000))	//wait GAP_ADV_STATE_ADVERTISING 
+			if(false == os_sem_take(gap_wait_seg_handle,1000))	//wait GAP_ADV_STATE_ADVERTISING 
 				MI_LOG_WARNING("wait_seg GAP_ADV_STATE_ADVERTISING timeout \r\n",);
 		}
 		else
 			MI_LOG_ERROR("start adv failed (err %d) \r\n", err);
-		os_sem_give(adv_lock_seg_handle);							//unlock
+		os_sem_give(gap_lock_seg_handle);							//unlock
 #endif		
     return err_code_convert(err);
 }
@@ -208,7 +208,7 @@ mible_status_t mible_gap_adv_data_set(uint8_t const *p_data,
 {
     T_GAP_CAUSE err = GAP_CAUSE_SUCCESS;
 #ifdef MIBLE_API_SYNC
-		os_sem_take(adv_lock_seg_handle,0xFFFFFFFF);	//lock
+		os_sem_take(gap_lock_seg_handle,0xFFFFFFFF);	//lock
 		extern T_GAP_DEV_STATE gap_dev_state;
 		MI_LOG_DEBUG("gap_dev_state = {%d, %d, %d, %d, %d}",gap_dev_state.gap_init_state,	\
 									gap_dev_state.gap_adv_sub_state, gap_dev_state.gap_adv_state,				\
@@ -227,12 +227,12 @@ mible_status_t mible_gap_adv_data_set(uint8_t const *p_data,
     err = le_adv_update_param();
 #ifdef MIBLE_API_SYNC
 		if(GAP_CAUSE_SUCCESS == err){
-			if(false == os_sem_take(adv_wait_seg_handle,1000))	//wait GAP_MSG_LE_ADV_UPDATE_PARAM 
+			if(false == os_sem_take(gap_wait_seg_handle,1000))	//wait GAP_MSG_LE_ADV_UPDATE_PARAM 
 				MI_LOG_WARNING("wait_seg GAP_MSG_LE_ADV_UPDATE_PARAM timeout \r\n",);
 		}
 		else
 			MI_LOG_ERROR("update adv failed (err %d) \r\n", err);
-		os_sem_give(adv_lock_seg_handle);							//unlock
+		os_sem_give(gap_lock_seg_handle);							//unlock
 #endif
     return err_code_convert(err);
 }
@@ -240,7 +240,7 @@ mible_status_t mible_gap_adv_data_set(uint8_t const *p_data,
 mible_status_t mible_gap_adv_stop(void)
 {
 #ifdef MIBLE_API_SYNC
-		os_sem_take(adv_lock_seg_handle,0xFFFFFFFF);	//lock
+		os_sem_take(gap_lock_seg_handle,0xFFFFFFFF);	//lock
 		extern T_GAP_DEV_STATE gap_dev_state;
 		MI_LOG_DEBUG("gap_dev_state = {%d, %d, %d, %d, %d}",gap_dev_state.gap_init_state,	\
 									gap_dev_state.gap_adv_sub_state, gap_dev_state.gap_adv_state,				\
@@ -249,12 +249,12 @@ mible_status_t mible_gap_adv_stop(void)
     T_GAP_CAUSE err = le_adv_stop();
 #ifdef MIBLE_API_SYNC	
 		if(GAP_CAUSE_SUCCESS == err){
-			if(false == os_sem_take(adv_wait_seg_handle,1000))	//wait GAP_ADV_STATE_IDLE 
+			if(false == os_sem_take(gap_wait_seg_handle,1000))	//wait GAP_ADV_STATE_IDLE 
 				MI_LOG_WARNING("wait_seg GAP_ADV_STATE_IDLE timeout \r\n",);
 		}
 		else
 			MI_LOG_ERROR("stop adv failed (err %d) \r\n", err);
-		os_sem_give(adv_lock_seg_handle);							//unlock
+		os_sem_give(gap_lock_seg_handle);							//unlock
 #endif
     return err_code_convert(err);
 }
