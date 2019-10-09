@@ -166,7 +166,7 @@ mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_param)
     /* create timer to start adv */
     if (NULL == rtk_adv_timer)
     {
-        rtk_adv_timer = plt_timer_create("adv_timer", p_param->adv_interval_min, TRUE, 0, rtk_adv_timeout_handler);
+        rtk_adv_timer = plt_timer_create("adv_timer", p_param->adv_interval_min*625/1000, TRUE, 0, rtk_adv_timeout_handler);
         if (NULL == rtk_adv_timer)
         {
             return MI_ERR_RESOURCES;
@@ -174,7 +174,7 @@ mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_param)
     }
     else
     {
-        plt_timer_change_period(rtk_adv_timer, p_param->adv_interval_min, 0);
+        plt_timer_change_period(rtk_adv_timer, p_param->adv_interval_min*625/1000, 0);
     }
     
     if (!plt_timer_is_active(rtk_adv_timer))
