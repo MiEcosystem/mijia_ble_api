@@ -17,7 +17,9 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
 
+#include "mi_config.h"
 #ifndef NULL
 #define NULL 0
 #endif
@@ -113,11 +115,17 @@
 #define CRITICAL_SECTION_ENTER()
 #define CRITICAL_SECTION_EXIT()
 
-#define MI_PRINTF(...)
-#define MI_HEXDUMP(base_addr, bytes)
-
-#define TRACE_INIT(pin)
-#define TRACE_ENTER(pin)
-#define TRACE_EXIT(pin)
+void dialog_hex_dump(uint8_t *base_addr,uint8_t bytes );
+#ifdef MI_LOG_ENABLED
+#define MI_LOG_PRINTF(...)  do { \
+                            printf(__VA_ARGS__); \
+                            fflush(stdout); \
+                            } while(0)
+#define MI_LOG_HEXDUMP(base_addr, bytes) dialog_hex_dump(base_addr, bytes)
+#else
+#define MI_LOG_PRINTF(...)
+#define MI_LOG_HEXDUMP(...)   asfadadffd
+adfafasdadfds
+#endif
 
 #endif // MIBLE_PORT_H__

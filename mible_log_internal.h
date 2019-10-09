@@ -14,7 +14,6 @@
 #define MI_LOG_LEVEL_INFO         3U
 #define MI_LOG_LEVEL_DEBUG        4U
 
-#if MI_LOG_COLORS_ENABLE
 #define MI_LOG_COLOR_DEFAULT      "\x1B[0m"
 #define MI_LOG_COLOR_BLACK        "\x1B[1;30m"
 #define MI_LOG_COLOR_RED          "\x1B[1;31m"
@@ -24,23 +23,18 @@
 #define MI_LOG_COLOR_MAGENTA      "\x1B[1;35m"
 #define MI_LOG_COLOR_CYAN         "\x1B[1;36m"
 #define MI_LOG_COLOR_WHITE        "\x1B[1;37m"
-#else
-#define MI_LOG_COLOR_DEFAULT
-#define MI_LOG_COLOR_BLACK
-#define MI_LOG_COLOR_RED
-#define MI_LOG_COLOR_GREEN
-#define MI_LOG_COLOR_YELLOW
-#define MI_LOG_COLOR_BLUE
-#define MI_LOG_COLOR_MAGENTA
-#define MI_LOG_COLOR_CYAN
-#define MI_LOG_COLOR_WHITE
-#endif
 
+#if MI_LOG_COLORS_ENABLE
 #define MI_LOG_ERROR_COLOR   MI_LOG_COLOR_RED
 #define MI_LOG_WARNING_COLOR MI_LOG_COLOR_YELLOW
 #define MI_LOG_INFO_COLOR    MI_LOG_COLOR_DEFAULT
 #define MI_LOG_DEBUG_COLOR   MI_LOG_COLOR_GREEN
-#define MI_LOG_DEFAULT_COLOR MI_LOG_COLOR_DEFAULT
+#else // MI_LOG_COLORS_ENABLE
+#define MI_LOG_ERROR_COLOR   
+#define MI_LOG_WARNING_COLOR 
+#define MI_LOG_INFO_COLOR
+#define MI_LOG_DEBUG_COLOR   
+#endif // MI_LOG_COLORS_ENABLE
 
 #define MI_LOG_BREAK      ": "
 
@@ -49,17 +43,15 @@
 #define MI_INFO_PREFIX    MI_LOG_INFO_COLOR "[I] " MI_LOG_MODULE_NAME MI_LOG_BREAK
 #define MI_DEBUG_PREFIX   MI_LOG_DEBUG_COLOR "[D] " MI_LOG_MODULE_NAME MI_LOG_BREAK
 
-#if !defined(MI_PRINTF)
-    #error "Not defined printf function."
-#elif !defined(MI_HEXDUMP)
-    #error "Not defined hexdump function."
+#ifndef MI_LOG_PRINTF
+	#error "Not defined printf function."
 #endif
-
+ 
 #define MI_LOG_INTERNAL_ERROR(_fmt_, ...)                                       \
 do {                                                                            \
     if (MI_LOG_LEVEL >= MI_LOG_LEVEL_ERROR)                                     \
     {                                                                           \
-        MI_PRINTF(MI_ERROR_PREFIX _fmt_ MI_LOG_DEFAULT_COLOR, ##__VA_ARGS__);   \
+        MI_LOG_PRINTF(MI_ERROR_PREFIX _fmt_, ##__VA_ARGS__); \
     }                                                                           \
 } while(0)
 
@@ -67,7 +59,7 @@ do {                                                                            
 do {                                                                            \
     if (MI_LOG_LEVEL >= MI_LOG_LEVEL_WARNING)                                   \
     {                                                                           \
-        MI_PRINTF(MI_WARNING_PREFIX _fmt_ MI_LOG_DEFAULT_COLOR, ##__VA_ARGS__); \
+        MI_LOG_PRINTF(MI_WARNING_PREFIX _fmt_, ##__VA_ARGS__); \
     }                                                                           \
 } while(0)
 
@@ -75,7 +67,7 @@ do {                                                                            
 do {                                                                            \
     if (MI_LOG_LEVEL >= MI_LOG_LEVEL_INFO)                                      \
     {                                                                           \
-        MI_PRINTF(MI_INFO_PREFIX _fmt_ MI_LOG_DEFAULT_COLOR, ##__VA_ARGS__);    \
+        MI_LOG_PRINTF(MI_INFO_PREFIX _fmt_, ##__VA_ARGS__); \
     }                                                                           \
 } while(0)
 
@@ -83,17 +75,17 @@ do {                                                                            
 do {                                                                            \
     if (MI_LOG_LEVEL >= MI_LOG_LEVEL_DEBUG)                                     \
     {                                                                           \
-        MI_PRINTF(MI_DEBUG_PREFIX _fmt_ MI_LOG_DEFAULT_COLOR, ##__VA_ARGS__);   \
+        MI_LOG_PRINTF(MI_DEBUG_PREFIX _fmt_, ##__VA_ARGS__);   \
     }                                                                           \
 } while(0)
 
-#define MI_LOG_INTERNAL_HEXDUMP(p_data, len)                                    \
+#define MI_LOG_INTERNAL_HEXDUMP_DEBUG(p_data, len)                              \
 do {                                                                            \
-    if (MI_LOG_LEVEL >= MI_LOG_LEVEL_DEBUG)                                     \
+    if (MI_LOG_LEVEL >= MI_LOG_LEVEL_ERROR)                                     \
     {                                                                           \
-        MI_HEXDUMP(p_data, len);                                                \
+                                                                                \
     }                                                                           \
 } while(0)
-
+		
 #endif // __MIBLE_LOG_INTERNAL__H__
 

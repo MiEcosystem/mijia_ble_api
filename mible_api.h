@@ -1,5 +1,5 @@
-#ifndef MIBLE_API_H__
-#define MIBLE_API_H__
+#ifndef MIBLE_ARCH_H__
+#define MIBLE_ARCH_H__
 
 // Copyright [2017] [Beijing Xiaomi Mobile Software Co., Ltd]
 //
@@ -14,9 +14,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
+#include "mi_config.h"
 #include "mible_port.h"
 #include "mible_type.h"
+#include "osal.h"
+
 
 #ifndef MIN
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
@@ -111,7 +113,7 @@ mible_status_t mible_record_delete(uint16_t record_id);
 mible_status_t mible_record_read(uint16_t record_id, uint8_t* p_data,
 		uint8_t len);
 
-mible_status_t mible_record_write(uint16_t record_id, const uint8_t* p_data,
+mible_status_t mible_record_write(uint16_t record_id, uint8_t* p_data,
 		uint8_t len);
 
 mible_status_t mible_rand_num_generator(uint8_t* p_buf, uint8_t len);
@@ -142,11 +144,12 @@ int mible_gatts_register(mible_gatts_callback_t cb);
 
 int mible_arch_register(mible_arch_callback_t cb);
 
-mible_status_t mible_nvm_init(void);
+mible_status_t mible_nvm_init();
 
-mible_status_t mible_nvm_write(void * p_data, uint32_t length, uint32_t address);
+mible_status_t mible_nvm_write(void * buffer, uint32_t length, uint32_t offset);
 
-mible_status_t mible_nvm_read(void * p_data, uint32_t length, uint32_t address);
+mible_status_t mible_nvm_read(void * buffer, uint32_t length, uint32_t offset);
 
-mible_status_t mible_upgrade_firmware(void);
+mible_status_t mible_upgrade_firmware();
+int mi_mesh_otp_read(uint16_t item_type, uint8_t *p_out, uint16_t max_olen);
 #endif
