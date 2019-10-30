@@ -269,6 +269,10 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt)
         gatts_evt_param.write.offset = evt->data.evt_gatt_server_attribute_value.offset;
         gatts_evt_param.write.value_handle = char_handle;
 
+#if DEBUG_MIBLE
+        MI_LOG_DEBUG("write handle %d: ", char_handle);
+        MI_LOG_HEXDUMP(gatts_evt_param.write.data, gatts_evt_param.write.len);
+#endif
         for(uint8_t i=0; i<CHAR_TABLE_NUM; i++){
         	if(m_char_table.item[i].handle == char_handle){
         		if(m_char_table.item[i].wr_author == true){

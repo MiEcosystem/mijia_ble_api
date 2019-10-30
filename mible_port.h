@@ -22,6 +22,18 @@
 #define NULL 0
 #endif
 
+#ifndef MIN
+#define MIN(a, b) (((a) < (b)) ? (a) : (b))
+#endif
+
+#ifndef MAX
+#define MAX(a, b) (((a) > (b)) ? (a) : (b))
+#endif
+
+#ifndef CEIL_DIV
+#define CEIL_DIV(A, B)           (((A) + (B) - 1) / (B))
+#endif
+
 #if defined(__CC_ARM)
 #pragma anon_unions
 #elif defined(__ICCARM__)
@@ -144,4 +156,5 @@
 #define TRACE_ENTER(x)
 #define TRACE_EXIT(x)
 #endif
+
 #endif // MIBLE_PORT_H__
