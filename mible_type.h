@@ -267,7 +267,7 @@ typedef struct {
  * */
 typedef enum {
     // this event generated in responses to a discovery service
-    MIBLE_GATTC_EVT_DISCOVERY_RSP,
+    MIBLE_GATTC_EVT_DISCOVERY_RSP = MIBLE_GATTC_EVT_BASE,
     // this event generated in responses to a read char
     MIBLE_GATTC_EVT_READ_RSP,
     // this event generated in responses to a write_charicteristic_value_with_response procedure.

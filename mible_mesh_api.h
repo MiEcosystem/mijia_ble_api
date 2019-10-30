@@ -510,12 +510,15 @@ typedef struct{
 
 /**
  * @brief generic message params, like on_off/lightness/...
+ * adv_timeout_ms == 0 or adv_interval_ms == 0, use default adv interval and timeout for mesh message
  */
 typedef struct{
     mible_mesh_address_t dst_addr;
     uint16_t global_netkey_index;
     uint16_t global_appkey_index;
     mible_mesh_opcode_t opcode;
+    uint32_t adv_timeout_ms;    /**< mesh message advertising timeout, unit: ms */
+    uint8_t  adv_interval_ms;   /**< mesh message adv interval, unit: ms */
     uint8_t  data_len;
     uint8_t* data;      /**< mesh message raw data */
 }mible_mesh_generic_params_t;
@@ -1116,8 +1119,6 @@ int mible_mesh_stop_recv_unprovbeacon(void);
  *@param    [in] flags : IV Update Flag     0: Normal operation 1: IV Update active
  *@return   0: success, negetive value: failure
  */
-
-
 int mible_mesh_gateway_update_iv_info(uint32_t iv_index, uint8_t flags);
 
 /**
