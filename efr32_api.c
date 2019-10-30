@@ -18,7 +18,7 @@
 
 #define MAX_TASK_NUM                    4
 #define ADV_HANDLE                      0
-#define CHAR_TABLE_NUM                  10
+#define CHAR_TABLE_NUM                  8
 #define CHAR_DATA_LEN_MAX               20
 
 // connection context
@@ -187,9 +187,8 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt)
     break;
 
     case gecko_evt_gatt_server_attribute_value_id: {
-
         uint16_t char_handle = evt->data.evt_gatt_server_attribute_value.attribute;
-        mible_gatts_evt_t event;
+
 
         gatts_evt_param.conn_handle =
                 evt->data.evt_gatt_server_attribute_value.connection;
@@ -199,16 +198,24 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt)
         gatts_evt_param.write.offset = evt->data.evt_gatt_server_attribute_value.offset;
         gatts_evt_param.write.value_handle = char_handle;
 
+#if DEBUG_MIBLE
+        MI_LOG_DEBUG("write handle %d: ", char_handle);
+        MI_LOG_HEXDUMP(gatts_evt_param.write.data, gatts_evt_param.write.len);
+#endif
+
         for(uint8_t i=0; i<CHAR_TABLE_NUM; i++){
-        	if(m_char_table.item[i].handle == char_handle){
-        		if(m_char_table.item[i].wr_author == true){
-        			event = MIBLE_GATTS_EVT_WRITE_PERMIT_REQ;
-        		}else {
+            if(m_char_table.item[i].handle == char_handle){
+                mible_gatts_evt_t event;
+                if(m_char_table.item[i].wr_author == true){
+                    event = MIBLE_GATTS_EVT_WRITE_PERMIT_REQ;
+                }else {
                     event = MIBLE_GATTS_EVT_WRITE;
+                    memcpy(m_char_table.item[i].data + gatts_evt_param.write.offset,
+                            gatts_evt_param.write.data, MIN(gatts_evt_param.write.len, CHAR_DATA_LEN_MAX - gatts_evt_param.write.offset));
                 }
-        		mible_gatts_event_callback(event, &gatts_evt_param);
-        		break;
-        	}
+                mible_gatts_event_callback(event, &gatts_evt_param);
+                break;
+            }
         }
     }
     break;
@@ -239,7 +246,6 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt)
                                 evt->data.evt_gatt_server_user_read_request.characteristic,
                                 (uint8_t)bg_err_att_invalid_offset, 0, NULL);
                     } else {
-
                         gecko_cmd_gatt_server_send_user_read_response(
                                 evt->data.evt_gatt_server_user_read_request.connection,
                                 evt->data.evt_gatt_server_user_read_request.characteristic,
@@ -270,20 +276,19 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt)
         gatts_evt_param.write.value_handle = char_handle;
 
 #if DEBUG_MIBLE
-        MI_LOG_DEBUG("write handle %d: ", char_handle);
+        MI_LOG_DEBUG("user write handle %d: ", char_handle);
         MI_LOG_HEXDUMP(gatts_evt_param.write.data, gatts_evt_param.write.len);
 #endif
+
         for(uint8_t i=0; i<CHAR_TABLE_NUM; i++){
         	if(m_char_table.item[i].handle == char_handle){
         		if(m_char_table.item[i].wr_author == true){
         			event = MIBLE_GATTS_EVT_WRITE_PERMIT_REQ;
         		}else {
                     event = MIBLE_GATTS_EVT_WRITE;
-                    if((m_char_table.item[i].char_property & MIBLE_WRITE) != 0){
-
-                    	memcpy(m_char_table.item[i].data + gatts_evt_param.write.offset,
-                    			gatts_evt_param.write.data, gatts_evt_param.write.len);
-
+                    memcpy(m_char_table.item[i].data + gatts_evt_param.write.offset,
+                            gatts_evt_param.write.data, MIN(gatts_evt_param.write.len, CHAR_DATA_LEN_MAX - gatts_evt_param.write.offset));
+                    if(m_char_table.item[i].char_property & MIBLE_WRITE){
                     	gecko_cmd_gatt_server_send_user_write_response(
                     			evt->data.evt_gatt_server_user_read_request.connection,
 								evt->data.evt_gatt_server_user_read_request.characteristic,
@@ -750,14 +755,14 @@ mible_status_t mible_gatts_service_init(mible_gatts_db_t *p_server_db)
         uint16_t handle = search_char_handle(&p_char_db->char_uuid, begin, end);
         if (handle != -1) {
             p_char_db->char_value_handle = handle + 1;
-            uint8_t idx = m_char_table.num;
+            uint8_t idx = m_char_table.num++;
             m_char_table.item[idx].handle = p_char_db->char_value_handle;
             m_char_table.item[idx].rd_author = p_char_db->rd_author;
             m_char_table.item[idx].wr_author = p_char_db->wr_author;
             m_char_table.item[idx].char_property = p_char_db->char_property;
             m_char_table.item[idx].len = p_char_db->char_value_len;
-            memcpy(m_char_table.item[idx].data, p_char_db->p_value, p_char_db->char_value_len);
-            m_char_table.num++;
+            if (p_char_db->p_value != NULL)
+                memcpy(m_char_table.item[idx].data, p_char_db->p_value, MIN(p_char_db->char_value_len, CHAR_DATA_LEN_MAX));
         } else {
             MI_LOG_ERROR("no char %d found.\n", p_char_db->char_uuid.uuid16);
             ret = MI_ERR_INTERNAL;
@@ -816,7 +821,7 @@ mible_status_t mible_gatts_value_set(uint16_t srv_handle, uint16_t value_handle,
     for(uint8_t i=0; i<CHAR_TABLE_NUM; i++){
     	if(m_char_table.item[i].handle == value_handle){
     		if(m_char_table.item[i].len >= offset + len){
-    			memcpy(m_char_table.item[i].data + offset, p_value, len);
+    			memcpy(m_char_table.item[i].data + offset, p_value, MIN(len, CHAR_DATA_LEN_MAX - offset));
     			return MI_SUCCESS;
     		}else{
     			return MI_ERR_INVALID_LENGTH;
