@@ -341,6 +341,14 @@ typedef enum {
 } mible_mesh_pb_type_t;
 
 /**
+ * @brief mible mesh provision type.
+ */
+typedef enum {
+    MIBLE_MESH_NORMAL_DEVICE = 0,
+    MIBLE_MESH_LOW_POWER_DEVICE,
+} mible_mesh_device_type_t;
+
+/**
  * @brief mible mesh address type.
  */
 typedef enum {
@@ -478,6 +486,9 @@ typedef struct{
     uint8_t  appkey[MIBLE_MESH_KEY_LEN];
     uint16_t global_netkey_index;       /**< local encrypt netkey index for mesh message */
     uint16_t global_appkey_index;       /**< mesh spec don't need this param, only passed for special mesh stack*/
+    uint16_t device_type;       /**< mible_mesh_device_type_t */
+    uint16_t adv_interval_ms;   /**< mesh message adv interval, unit: ms */
+    uint32_t adv_timeout_ms;    /**< mesh message advertising timeout, unit: ms */
 }mible_mesh_appkey_params_t;
 
 /**
@@ -489,6 +500,9 @@ typedef struct{
     mible_mesh_model_id_t model_id;      /**< mible_mesh_model_id_t */
     uint16_t appkey_index;
     uint16_t global_netkey_index;       /**< local encrypt netkey index for mesh message */
+    uint16_t device_type;       /**< mible_mesh_device_type_t */
+    uint16_t adv_interval_ms;   /**< mesh message adv interval, unit: ms */
+    uint32_t adv_timeout_ms;    /**< mesh message advertising timeout, unit: ms */
 }mible_mesh_model_app_params_t;
 
 /**
@@ -500,6 +514,9 @@ typedef struct{
     mible_mesh_model_id_t model_id;
     mible_mesh_address_t sub_addr;
     uint16_t global_netkey_index;       /**< local encrypt netkey index for mesh message */
+    uint16_t device_type;       /**< mible_mesh_device_type_t */
+    uint16_t adv_interval_ms;   /**< mesh message adv interval, unit: ms */
+    uint32_t adv_timeout_ms;    /**< mesh message advertising timeout, unit: ms */
 }mible_mesh_subscription_params_t;
 
 /**
@@ -517,6 +534,9 @@ typedef struct{
     uint8_t  pub_retrans_count;
     uint8_t  pub_retrans_intvl_steps;
     uint16_t global_netkey_index;       /**< local encrypt netkey index for mesh message */
+    uint16_t device_type;       /**< mible_mesh_device_type_t */
+    uint16_t adv_interval_ms;   /**< mesh message adv interval, unit: ms */
+    uint32_t adv_timeout_ms;    /**< mesh message advertising timeout, unit: ms */
 }mible_mesh_publication_params_t;
 
 /**
@@ -525,6 +545,9 @@ typedef struct{
 typedef struct{
     uint16_t dst_addr;
     uint16_t global_netkey_index;       /**< local encrypt netkey index for mesh message */
+    uint16_t device_type;       /**< mible_mesh_device_type_t */
+    uint16_t adv_interval_ms;   /**< mesh message adv interval, unit: ms */
+    uint32_t adv_timeout_ms;    /**< mesh message advertising timeout, unit: ms */
 }mible_mesh_reset_params_t;
 
 /**
@@ -536,6 +559,9 @@ typedef struct{
     uint8_t  retransmit_count;
     uint8_t  retransmit_interval_steps;
     uint16_t global_netkey_index;       /**< local encrypt netkey index for mesh message */
+    uint16_t device_type;       /**< mible_mesh_device_type_t */
+    uint16_t adv_interval_ms;   /**< mesh message adv interval, unit: ms */
+    uint32_t adv_timeout_ms;    /**< mesh message advertising timeout, unit: ms */
 }mible_mesh_relay_params_t;
 
 /**
@@ -547,8 +573,9 @@ typedef struct{
     uint16_t global_netkey_index;
     uint16_t global_appkey_index;
     mible_mesh_opcode_t opcode;
+    uint16_t device_type;       /**< mible_mesh_device_type_t */
+    uint16_t adv_interval_ms;   /**< mesh message adv interval, unit: ms */
     uint32_t adv_timeout_ms;    /**< mesh message advertising timeout, unit: ms */
-    uint8_t  adv_interval_ms;   /**< mesh message adv interval, unit: ms */
     uint8_t  data_len;
     uint8_t* data;      /**< mesh message raw data */
 }mible_mesh_generic_params_t;
