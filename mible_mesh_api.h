@@ -306,6 +306,11 @@ extern "C" {
 #define MIBLE_MESH_GET_OPTION                                       0
 #define MIBLE_MESH_SET_OPTION                                       1
 
+/*** mesh standard provision define***/
+#define MIBLE_MESH_CONFIRMAITON_KEY_LEN                             16
+#define MIBLE_MESH_PROVISION_RANDOM_LEN                             16
+#define MIBLE_MESH_PROVISION_CONFIRMATION_LEN                       16
+
 #define MIBLE_MESH_KEY_LEN                                          16
 #define MIBLE_MESH_DEVICEKEY_LEN                                    16
 #define MIBLE_MESH_LTMK_SIGNATURE_LEN                               64
@@ -322,6 +327,9 @@ typedef enum {
     MIBLE_MESH_EVENT_IV_UPDATE,             /**< mible_mesh_iv_t */
     MIBLE_MESH_EVENT_CONFIG_MESSAGE_CB,     /**< Mesh Profile definition message */
     MIBLE_MESH_EVENT_GENERIC_MESSAGE_CB,    /**< Mesh Model definition message */
+    MIBLE_MESH_EVENT_CONFIRMATION_KEY,      /**< mible_mesh_confirmation_key_t*/
+    MIBLE_MESH_EVENT_DEV_RAND_CONFIRM,      /**< mible_mesh_device_random_confirmation_t*/
+    MIBLE_MESH_EVENT_PROV_RESULT,           /**< mible_mesh_provision_result_t*/
 } mible_mesh_event_type_t;
 
 /**
@@ -341,6 +349,28 @@ typedef enum {
     MIBLE_MESH_ADDRESS_TYPE_VIRTUAL,        /**< 0b10xxxxxxxxxxxxxx */
     MIBLE_MESH_ADDRESS_TYPE_GROUP,          /**< 0b11xxxxxxxxxxxxxx */
 } mible_mesh_address_type_t;
+
+/**
+ * @brief provisioner random and confirmation.
+ */
+typedef struct{
+    uint8_t uuid[MIBLE_MESH_DEV_UUID_LEN];                                /** provision uuid */
+    uint8_t provision_random[MIBLE_MESH_PROVISION_RANDOM_LEN];            /** provisioner random */
+    uint8_t provision_confimation[MIBLE_MESH_PROVISION_CONFIRMATION_LEN]; /** provisioner confirmation */
+}mible_mesh_prov_rand_confirm_t;
+
+/**
+ * @brief provision authentication result.
+ */
+typedef struct{
+    uint8_t result;                          /** provision result */
+    uint8_t flags;                           /** network flags */
+    uint16_t uincast_address;                /** unicast address */
+    uint16_t netkey_index;                   /** netkey index */
+    uint32_t iv_index;                       /** iv index */
+    uint8_t netkey[MIBLE_MESH_KEY_LEN];           /** net key */
+    uint8_t uuid[MIBLE_MESH_DEV_UUID_LEN];   /** provision uuid */
+}mible_mesh_authentication_result_t;
 
 /**
  * @brief mible mesh address description.
@@ -564,6 +594,32 @@ typedef struct {
     uint16_t buf_len;       /* mesh raw data len*/
     uint8_t* buf;           /* mesh raw data, see mesh profile 4.3 */
 } mible_mesh_access_message_rx_t;
+
+/**
+ * @brief provisioner confimation key.
+ */
+typedef struct{
+    uint8_t uuid[MIBLE_MESH_DEV_UUID_LEN];       /** mesh std provision uuid */
+    uint8_t confirmation_key[MIBLE_MESH_CONFIRMAITON_KEY_LEN];   /** mesh std provision confirmation key */
+}mible_mesh_confirmation_key_t;
+
+/**
+ * @brief device random and confirmation.
+ */
+typedef struct{
+    uint8_t uuid[MIBLE_MESH_DEV_UUID_LEN];           /** mesh std provision uuid */
+    uint8_t device_random[MIBLE_MESH_PROVISION_RANDOM_LEN]; /** device random */
+    uint8_t device_confirmation[MIBLE_MESH_PROVISION_CONFIRMATION_LEN];/** device confirmation */
+}mible_mesh_device_random_confirmation_t;
+
+/**
+ * @brief provision result.
+ */
+typedef struct{
+    uint8_t result;                               /** mesh provision result */
+    uint8_t uuid[MIBLE_MESH_DEV_UUID_LEN];        /** mesh std provision uuid */
+    uint8_t device_key[MIBLE_MESH_DEVICEKEY_LEN]; /** device key */
+}mible_mesh_provision_result_t;
 
 /**
  * @brief ADD contains add and update operation.
@@ -927,6 +983,9 @@ typedef union {
     mible_mesh_iv_t mesh_iv;
     mible_mesh_config_status_t config_msg;
     mible_mesh_access_message_rx_t generic_msg;
+    mible_mesh_confirmation_key_t confirm_key;
+    mible_mesh_device_random_confirmation_t dev_rand_confirm;
+    mible_mesh_provision_result_t prov_result;
 } mible_mesh_event_params_t;
 
 
@@ -1176,6 +1235,27 @@ int mible_mesh_gateway_set_device_key(mible_mesh_op_t op, mible_mesh_node_info_t
  */
 int mible_mesh_gateway_set_sub_address(mible_mesh_op_t op, uint16_t company_id, uint16_t model_id,
         mible_mesh_address_t *sub_addr);
+
+/**
+ *@brief    start provision.
+ *@param    [in] uuid : the device to start provision
+ *@return   0: success, negetive value: failure
+ */
+int mible_mesh_gateway_start_provision(uint8_t *uuid);
+
+/**
+ *@brief    set provisioner random and confirmation.
+ *@param    [in] param : the prov random confirm structure 
+ *@return   0: success, negetive value: failure
+ */
+int mible_mesh_gateway_set_provisioner_rand_confirm(mible_mesh_prov_rand_confirm_t *param);
+
+/**
+ *@brief    set provision authentication result.
+ *@param    [in] param : the check rsult structure 
+ *@return   0: success, negetive value: failure
+ */
+int mible_mesh_gateway_set_authentication_result(mible_mesh_authentication_result_t *param);
 
 /**
  *@brief    suspend adv send for mesh stack.
