@@ -24,6 +24,18 @@
 #define NULL 0
 #endif
 
+#ifndef MIN
+#define MIN(a, b) (((a) < (b)) ? (a) : (b))
+#endif
+
+#ifndef MAX
+#define MAX(a, b) (((a) > (b)) ? (a) : (b))
+#endif
+
+#ifndef CEIL_DIV
+#define CEIL_DIV(A, B)           (((A) + (B) - 1) / (B))
+#endif
+
 #if defined(__CC_ARM)
 #pragma anon_unions
 #elif defined(__ICCARM__)
@@ -114,8 +126,6 @@
 
 #define CRITICAL_SECTION_ENTER()    plt_critical_enter()
 #define CRITICAL_SECTION_EXIT()     plt_critical_exit(0)
-
-#define MI_LOG_ENABLED
 
 #ifdef MI_LOG_ENABLED
 #define MI_PRINTF(...)                   LOG_PRINT(MM_ID, LEVEL_ERROR, __VA_ARGS__)
