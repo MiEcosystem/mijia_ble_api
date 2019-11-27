@@ -22,6 +22,7 @@
 #define MI_LOG_MODULE_NAME "RTK_GAP"
 #include "mible_log.h"
 #include "mesh_api.h"
+#include "rtk_common.h"
 
 static uint8_t rtk_adv_data[31];
 static uint8_t rtk_adv_data_len;
@@ -94,7 +95,6 @@ mible_status_t mible_gap_address_get(mible_addr_t mac)
 mible_status_t mible_gap_scan_start(mible_gap_scan_type_t scan_type,
                                     mible_gap_scan_param_t scan_param)
 {
-    T_GAP_CAUSE err = GAP_CAUSE_SUCCESS;
     uint8_t scan_mode;
     if (MIBLE_SCAN_TYPE_PASSIVE == scan_type)
     {
@@ -108,16 +108,19 @@ mible_status_t mible_gap_scan_start(mible_gap_scan_type_t scan_type,
     le_scan_set_param(GAP_PARAM_SCAN_MODE, sizeof(scan_mode), &scan_mode);
     uint16_t scan_window = scan_param.scan_window;
     uint16_t scan_interval = scan_param.scan_interval;
-    le_scan_set_param(GAP_PARAM_SCAN_INTERVAL, sizeof(scan_interval), &scan_interval);
-    le_scan_set_param(GAP_PARAM_SCAN_WINDOW, sizeof(scan_window), &scan_window);
-    err = le_scan_start();
-    return err_code_convert(err);
+    gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_WINDOW, &scan_window, sizeof(scan_window));
+    gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_INTERVAL, &scan_interval,
+                         sizeof(scan_interval));
+    gap_sched_scan(TRUE);
+    
+    return MI_SUCCESS;
 }
 
 mible_status_t mible_gap_scan_stop(void)
 {
-    T_GAP_CAUSE err = le_scan_stop();
-    return err_code_convert(err);
+    gap_sched_scan(FALSE);
+    
+    return MI_SUCCESS;
 }
 
 mible_status_t mible_gap_adv_send(void)
@@ -144,7 +147,9 @@ mible_status_t mible_gap_adv_send(void)
 
 static void rtk_adv_timeout_handler(void *pargs)
 {
-    rtk_gap_adv_timeout();
+    T_IO_MSG msg;
+    msg.type = MIBLE_API_MSG_TYPE_ADV_TIMEOUT;
+    mible_api_inner_msg_send(&msg);
 }
 
 mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_param)

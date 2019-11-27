@@ -15,6 +15,7 @@
 #include "platform_types.h"
 #define MI_LOG_MODULE_NAME "RTK_OS"
 #include "mible_log.h"
+#include "rtk_common.h"
 
 #define DEFAULT_TIME_INTERVAL   0xFFFFFF
 #define MAX_TIMER_CONTEXT       10
@@ -29,6 +30,14 @@ typedef struct
 static timer_context_t timer_context[MAX_TIMER_CONTEXT];
 
 static void mi_timeout_handler(void *timer)
+{
+    T_IO_MSG msg;
+    msg.type = MIBLE_API_MSG_TYPE_TIMEOUT;
+    msg.u.buf = timer;
+    mible_api_inner_msg_send(&msg);
+}
+
+void mible_handle_timeout(void *timer)
 {
     for (uint8_t idx = 0; idx < MAX_TIMER_CONTEXT; ++idx)
     {
