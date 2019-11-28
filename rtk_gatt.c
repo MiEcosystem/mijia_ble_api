@@ -87,9 +87,58 @@ static service_db_t *find_srv_db(uint8_t attr_handle)
 static T_APP_RESULT mi_server_read_cb(uint8_t conn_id, T_SERVER_ID service_id,
                                       uint16_t attrib_index, uint16_t offset, uint16_t *p_length, uint8_t **pp_value)
 {
-    MI_LOG_DEBUG("read data from handle(%d)", attrib_index);
-    T_APP_RESULT ret = APP_RESULT_SUCCESS;
-    return ret;
+    //MI_LOG_DEBUG("read data from handle(%d-%d)", service_id, attrib_index);
+    T_APP_RESULT result;
+    uint8_t index;
+    for (index = 0; index < MAX_GATT_DB_NUM; ++index)
+    {
+        if (srv_dbs[index].used && (srv_dbs[index].service_id == service_id))
+        {
+            break;
+        }
+    }
+
+    if (index >= MAX_GATT_DB_NUM)
+    {
+        return APP_RESULT_ATTR_NOT_FOUND;
+    }
+
+    if (attrib_index >= srv_dbs[index].attr_count)
+    {
+        return APP_RESULT_ATTR_NOT_FOUND;
+    }
+
+    mible_gatts_evt_t event;
+    if (srv_dbs[index].pattrs[attrib_index].permissions & GATT_PERM_READ_AUTHOR_REQ)
+    {
+        event = MIBLE_GATTS_EVT_READ_PERMIT_REQ;
+        mible_gatts_evt_param_t param;
+        memset(&param, 0, sizeof(param));
+        param.conn_handle = conn_id;
+        param.read.value_handle = srv_dbs[index].start_handle + attrib_index;
+        mible_gatts_event_callback(event, &param);
+    }
+
+    result = result_g;
+    if (APP_RESULT_SUCCESS == result)
+    {
+        if (srv_dbs[index].pattrs[attrib_index].flags & ATTRIB_FLAG_VALUE_APPL)
+        {
+            *p_length = (srv_dbs[index].pattrs[attrib_index].value_len & 0xff);
+            if (*p_length <= offset)
+            {
+                *p_length = 0;
+				*pp_value = NULL;
+            }
+            else
+            {
+				*p_length = (srv_dbs[index].pattrs[attrib_index].value_len & 0xff) - offset;
+                *pp_value = (uint8_t *)(srv_dbs[index].pattrs[attrib_index].p_value_context) + offset;
+            }
+        }
+    }
+    result_g = APP_RESULT_SUCCESS;
+    return result;
 }
 
 static T_APP_RESULT mi_server_write_cb(uint8_t conn_id, T_SERVER_ID service_id,
@@ -134,6 +183,18 @@ static T_APP_RESULT mi_server_write_cb(uint8_t conn_id, T_SERVER_ID service_id,
     mible_gatts_event_callback(event, &param);
 
     result = result_g;
+    if (APP_RESULT_SUCCESS == result)
+    {
+        if (srv_dbs[index].pattrs[attrib_index].flags & ATTRIB_FLAG_VALUE_APPL)
+        {
+            //MI_LOG_DEBUG("gatt server set appl value by remote");
+            uint16_t max_len = (srv_dbs[index].pattrs[attrib_index].value_len >> 8);
+            uint16_t write_len = (max_len < len) ? max_len : len;
+            memcpy((uint8_t *)(srv_dbs[index].pattrs[attrib_index].p_value_context), pvalue, write_len);
+            srv_dbs[index].pattrs[attrib_index].value_len &= ~0xff;
+            srv_dbs[index].pattrs[attrib_index].value_len |= write_len;
+        }
+    }
     result_g = APP_RESULT_SUCCESS;
     return result;
 }
@@ -230,44 +291,25 @@ static mible_status_t add_characteristic_value(T_ATTRIB_APPL *pattr,
         memcpy(pattr->type_value, pcharacter->char_uuid.uuid128, UUID_128BIT_SIZE);
     }
 
-    if (pcharacter->is_variable_len)
-    {
-        /* get data from application callback */
-        pattr->flags |= ATTRIB_FLAG_VALUE_APPL;
-        pattr->value_len = 0;
-        pattr->p_value_context = NULL;
-    }
-    else
-    {
-        if (pcharacter->char_property == MIBLE_READ)
-        {
-            /* get data from p_value_context */
-            pattr->flags |= ATTRIB_FLAG_VOID;
-            pattr->value_len = pcharacter->char_value_len;
+    /* get data from p_value_context */
+    pattr->flags |= ATTRIB_FLAG_VALUE_APPL;
+    pattr->value_len = pcharacter->char_value_len;
+    pattr->value_len <<= 8;
 #if GATT_TABLE_VALUE_ALLOC
-            pattr->p_value_context = plt_malloc(pcharacter->char_value_len, RAM_TYPE_DATA_OFF);
-            memset(pattr->p_value_context, 0, pcharacter->char_value_len);
-            if (NULL == pattr->p_value_context)
-            {
-                return MI_ERR_NO_MEM;
-            }
-            if (NULL != pcharacter->p_value)
-            {
-                memcpy(pattr->p_value_context, pcharacter->p_value, pcharacter->char_value_len);
-            }
-#else
-            pattr->p_value_context = pcharacter->p_value;
-#endif
-        }
-        else
-        {
-            /* get data from application callback */
-            pattr->flags |= ATTRIB_FLAG_VALUE_APPL;
-            pattr->value_len = 0;
-            pattr->p_value_context = NULL;
-        }
+    pattr->p_value_context = plt_malloc(pcharacter->char_value_len, RAM_TYPE_DATA_ON);
+    memset(pattr->p_value_context, 0, pcharacter->char_value_len);
+    if (NULL == pattr->p_value_context)
+    {
+        return MI_ERR_NO_MEM;
     }
-
+    if (NULL != pcharacter->p_value)
+    {
+        memcpy(pattr->p_value_context, pcharacter->p_value, pcharacter->char_value_len);
+    }
+#else
+    pattr->p_value_context = pcharacter->p_value;
+#endif
+    
     if (pcharacter->rd_author)
     {
         pattr->permissions |= GATT_PERM_READ_AUTHOR_REQ;
@@ -718,29 +760,25 @@ mible_status_t mible_gatts_value_set(uint16_t srv_handle,
     if (psrv_db->pattrs[attr_idx].flags == ATTRIB_FLAG_VOID)
     {
         MI_LOG_DEBUG("gatt server set void value");
-        if (psrv_db->pattrs[attr_idx].value_len < (offset + len))
-        {
-            MI_LOG_ERROR("gatt server set failed: invalid length(void) %d-%d(%d)", offset, len,
-                         psrv_db->pattrs[attr_idx].value_len);
-            return MI_ERR_INVALID_LENGTH;
-        }
-
-        memcpy((uint8_t *)(psrv_db->pattrs[attr_idx].p_value_context) + offset, p_value, len);
+        uint16_t max_len = psrv_db->pattrs[attr_idx].value_len;
+        uint16_t write_len = (max_len < (offset + len)) ? (max_len - offset) : len;
+        memcpy((uint8_t *)(psrv_db->pattrs[attr_idx].p_value_context) + offset, p_value, write_len);
     }
     else if (psrv_db->pattrs[attr_idx].flags & ATTRIB_FLAG_VALUE_INCL)
     {
         MI_LOG_DEBUG("gatt server set incl value");
-        if (psrv_db->pattrs[attr_idx].value_len < (offset + len))
-        {
-            MI_LOG_ERROR("gatt server set failed: invalid length(incl) %d-%d(%d)", offset, len,
-                         psrv_db->pattrs[attr_idx].value_len);
-            return MI_ERR_INVALID_LENGTH;
-        }
-        memcpy(psrv_db->pattrs[attr_idx].type_value + 2 + offset, p_value, len);
+        uint16_t max_len = psrv_db->pattrs[attr_idx].value_len;
+        uint16_t write_len = (max_len < (offset + len)) ? (max_len - offset) : len;
+        memcpy(psrv_db->pattrs[attr_idx].type_value + 2 + offset, p_value, write_len);
     }
     else if (psrv_db->pattrs[attr_idx].flags & ATTRIB_FLAG_VALUE_APPL)
     {
         MI_LOG_DEBUG("gatt server set appl value");
+        uint16_t max_len = (psrv_db->pattrs[attr_idx].value_len >> 8);
+        uint16_t write_len = (max_len < (offset + len)) ? (max_len - offset) : len;
+        memcpy((uint8_t *)(psrv_db->pattrs[attr_idx].p_value_context) + offset, p_value, write_len);
+        psrv_db->pattrs[attr_idx].value_len &= ~0xff;
+        psrv_db->pattrs[attr_idx].value_len |= (offset + write_len);
     }
     else
     {
@@ -796,9 +834,8 @@ mible_status_t mible_gatts_value_get(uint16_t srv_handle,
     }
     else if (psrv_db->pattrs[attr_idx].flags & ATTRIB_FLAG_VALUE_APPL)
     {
-        uint16_t len = 0;
-        mi_server_read_cb(0, psrv_db->service_id, attr_idx, 0, &len, &p_value);
-        *p_len = (uint8_t)len;
+        *p_len = (psrv_db->pattrs[attr_idx].value_len & 0xff);
+        memcpy(p_value, psrv_db->pattrs[attr_idx].p_value_context, *p_len);
     }
     else
     {
