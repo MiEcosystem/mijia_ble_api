@@ -103,13 +103,13 @@ mible_status_t mible_record_init(void)
     return MI_SUCCESS;
 }
 
-void mible_record_clear(void)
+static void mible_record_clear(void)
 {
     memset(records, 0, sizeof(records));
     ftl_save((void *)records, OFFSET_HEADER, sizeof(records));
 }
 
-uint8_t mible_record_find_index(uint16_t record_id, uint8_t len)
+static uint8_t mible_record_find_index(uint16_t record_id, uint8_t len)
 {
     uint8_t index;
     /* find exists record */
@@ -141,7 +141,7 @@ uint8_t mible_record_find_index(uint16_t record_id, uint8_t len)
     return index;
 }
 
-uint16_t mible_record_get_offset(void)
+static uint16_t mible_record_get_offset(void)
 {
     uint8_t max_index = 0;
     uint16_t max_offset = 0;

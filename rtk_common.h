@@ -21,7 +21,7 @@ extern "C" {
 #endif
 
 
-#define MIBLE_API_EVENT                             0xF0
+#define EVENT_MI_BLEAPI                             0xF0
 
 /* mible api inner message type */
 #define MIBLE_API_MSG_TYPE_TIMEOUT                  0x00

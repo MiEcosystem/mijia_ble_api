@@ -21,7 +21,7 @@
 static void *mible_api_event_queue;
 static void *mible_api_io_queue;
 
-static uint8_t mible_api_event = MIBLE_API_EVENT;
+static const uint8_t mible_api_event = EVENT_MI_BLEAPI;
 
 extern void mible_handle_timeout(void *timer);
 #if MIBLE_MESH_API
@@ -53,16 +53,16 @@ void mible_api_inner_msg_handle(T_IO_MSG *pmsg)
 
 bool mible_api_inner_msg_send(T_IO_MSG *pmsg)
 {
-    if (!os_msg_send(mible_api_io_queue, pmsg, 0))
-    {
-        MI_LOG_ERROR("failed to send msg to mible api msg queue");
-        return false;
-    }
-
     /* send event to notify upper layer task */
     if (!os_msg_send(mible_api_event_queue, &mible_api_event, 0))
     {
         MI_LOG_ERROR("failed to send msg to mible api event queue");
+        return false;
+    }
+
+    if (!os_msg_send(mible_api_io_queue, pmsg, 0))
+    {
+        MI_LOG_ERROR("failed to send msg to mible api msg queue");
         return false;
     }
 
