@@ -17,8 +17,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include "platform_diagnose.h"
-#include "platform_os.h"
 
 #ifndef NULL
 #define NULL 0
@@ -124,15 +122,29 @@
     }
 #endif
 
+#include "platform_diagnose.h"
+#include "platform_os.h"
+#include "rtl876x.h"
+
 #define CRITICAL_SECTION_ENTER()    plt_critical_enter()
 #define CRITICAL_SECTION_EXIT()     plt_critical_exit(0)
 
-#ifdef MI_LOG_ENABLED
+#ifndef SystemCoreClock
+#define SystemCoreClock 40000000
+#endif
+
+#if 1
 #define MI_PRINTF(...)                   LOG_PRINT(MM_ID, LEVEL_ERROR, __VA_ARGS__)
 #define MI_HEXDUMP(base_addr, bytes)     LOG_DUMP(MM_ID, LEVEL_ERROR, base_addr, bytes)
 #else
-#define MI_PRINTF(...)
-#define MI_HEXDUMP(base_addr, bytes)
+#include "third_party/SEGGER_RTT/SEGGER_RTT.h"
+#define MI_PRINTF(...)     SEGGER_RTT_printf(0, __VA_ARGS__)
+#define MI_HEXDUMP(p, l)                                                       \
+do {                                                                           \
+    for (int i = 0; i < (l); i++)                                              \
+        SEGGER_RTT_printf(0, (i + 1) % 16 ? "%02X ":"%02X\n", ((char*)(p))[i]);\
+    if ( l % 16 ) SEGGER_RTT_printf(0, "\n");                                  \
+} while(0)
 #endif
 
 #define TRACE_INIT(pin)
