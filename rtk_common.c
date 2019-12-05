@@ -54,7 +54,7 @@ void mible_api_inner_msg_handle(T_IO_MSG *pmsg)
 bool mible_api_inner_msg_send(T_IO_MSG *pmsg)
 {
     /* send event to notify upper layer task */
-    if (!os_msg_send(mible_api_event_queue, &mible_api_event, 0))
+    if (!os_msg_send(mible_api_event_queue, (void*)&mible_api_event, 0))
     {
         MI_LOG_ERROR("failed to send msg to mible api event queue");
         return false;

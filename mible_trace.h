@@ -1,6 +1,7 @@
 #ifndef __MIBLE_TRACE_H__
 #define __MIBLE_TRACE_H__
 
+#include "mible_port.h"
 /* DWT (Data Watchpoint and Trace) registers, only exists on ARM Cortex-M3 above with a DWT unit */
 #ifdef DWT
 #define DWT_CYCCNTENA_BIT       (1UL<<0)
@@ -29,6 +30,17 @@
 #define DisableCycleCounter()
 #define GetCycleCounter()
 #endif /* DWT END*/
+
+#if TIME_PROFILE
+#define TIMING_BEGIN()                                                          \
+    ResetCycleCounter()
+
+#define TIMING_END(name)                                                        \
+    MI_LOG_DEBUG("%s consume time: %u us\n", (char*)name, GetCycleCounter()/(SystemCoreClock/1000000))
+#else
+#define TIMING_BEGIN()
+#define TIMING_END(name)
+#endif
 
 static uint32_t ref_tick;
 static uint32_t cpu_clk = 1000000;
