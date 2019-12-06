@@ -1271,7 +1271,7 @@ mible_status_t mible_aes128_encrypt(const uint8_t* key, const uint8_t* plaintext
 #include "common/queue.h"
 typedef struct {
     mible_handler_t handler;
-    void *arg;
+    void *p_ctx;
 } mible_task_t;
 
 static mible_task_t task_buf[MAX_TASK_NUM];
@@ -1279,40 +1279,31 @@ static queue_t task_queue;
 /*
  * @brief 	Post a task to a task quene, which can be executed in a right place(maybe a task in RTOS or while(1) in the main function).
  * @param 	[in] handler: a pointer to function
- * 			[in] param: function parameters
+ * 			[in] p_ctx: function parameters
  * @return 	MI_SUCCESS 				Successfully put the handler to quene.
  * 			MI_ERR_NO_MEM			The task quene is full.
  * 			MI_ERR_INVALID_PARAM    Handler is NULL
  * */
-mible_status_t mible_task_post(mible_handler_t handler, void *arg)
+mible_status_t mible_task_post(mible_handler_t handler, void *p_ctx)
 {
-    static uint8_t task_queue_is_init = 0;
-    uint32_t errno;
-    if (!task_queue_is_init){
-        task_queue_is_init = 1;
-        errno = queue_init(&task_queue, task_buf,
-                            sizeof(task_buf) / sizeof(task_buf[0]), sizeof(task_buf[0]));
-        MI_ERR_CHECK(errno);
+    if (task_queue.buf == NULL){
+        queue_init(&task_queue, task_buf,
+                   sizeof(task_buf) / sizeof(task_buf[0]), sizeof(task_buf[0]));
     }
 
     mible_task_t task = {
         .handler = handler,
-        .arg     = arg,
+        .p_ctx   = p_ctx,
     };
 
-    errno = enqueue(&task_queue, &task);
-    return errno;
+    return enqueue(&task_queue, &task);
 }
 
 void mible_tasks_exec(void)
 {
-    uint32_t errno = 0;
     mible_task_t task;
-    while(!errno) {
-        errno = dequeue(&task_queue, &task);
-        if (errno == MI_SUCCESS)
-            task.handler(task.arg);
-    }
+    while(dequeue(&task_queue, &task) == MI_SUCCESS)
+        task.handler(task.p_ctx);
 }
 
 /**
@@ -1608,7 +1599,7 @@ static bool nvm_part_erase(uint32_t address)
         return false;
     }
 
-    ret = MSC_WriteWord((uint32_t *)(address - address % FLASH_PAGE_SIZE),
+    ret = MSC_WriteWordFast((uint32_t *)(address - address % FLASH_PAGE_SIZE),
                                     buffer, address % FLASH_PAGE_SIZE);
     if (mscReturnOk != ret) {
         MI_LOG_WARNING("%s -- write error code %d\n", __func__, ret);
