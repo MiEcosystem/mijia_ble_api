@@ -1618,6 +1618,8 @@ static bool nvm_part_erase(uint32_t address)
     return true;
 }
 
+
+#include "mible_trace.h"
 /**
  * @brief   Function for storing data into Non-Volatile Memory.
  * @param   [in] p_data:   Pointer to data to be stored.
@@ -1638,19 +1640,25 @@ mible_status_t mible_nvm_write(void * p_data, uint32_t length, uint32_t address)
         return MI_ERR_INVALID_PARAM;
     }
 
-    if (0 == address % FLASH_PAGE_SIZE) {
-        ret = MSC_ErasePage((uint32_t *)address);
-        if (mscReturnOk != ret) {
-            MI_LOG_WARNING("%s -- erase error code %d\n", __func__, ret);
-            return MI_ERR_INTERNAL;
+    set_time_ref();
+    if (address % FLASH_PAGE_SIZE == 0) {
+        for (int i = 0; i < CEIL_DIV(length, FLASH_PAGE_SIZE); i++){
+            ret = MSC_ErasePage((uint32_t *)(address + i * FLASH_PAGE_SIZE));
+            if (mscReturnOk != ret) {
+                MI_LOG_WARNING("%s -- erase error code %d\n", __func__, ret);
+                return MI_ERR_INTERNAL;
+            }
         }
     } else if (!nvm_is_erased(address, length)) {
         if (!nvm_part_erase(address)) {
             return MI_ERR_INTERNAL;
         }
     }
+    uint32_t erase_time = us_from_time_ref();
+    ret = MSC_WriteWordFast((uint32_t *)address, p_data, length);
+    uint32_t prog_time = us_from_time_ref() - erase_time;
+    MI_LOG_INFO("%d bytes erase cost %d us, program cost %d us\n", length, erase_time, prog_time);
 
-    ret = MSC_WriteWord((uint32_t *)address, p_data, length);
     if (ret == mscReturnOk) {
         return MI_SUCCESS;
     } else {

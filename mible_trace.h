@@ -30,4 +30,38 @@
 #define GetCycleCounter()
 #endif /* DWT END*/
 
+#if TIME_PROFILE
+#define TIMING_BEGIN()                                                          \
+    ResetCycleCounter()
+
+#define TIMING_END(name)                                                        \
+    MI_LOG_DEBUG("%s consume time: %u us\n", (char*)name, GetCycleCounter()/(SystemCoreClock/1000000))
+#else
+#define TIMING_BEGIN()
+#define TIMING_END(name)
+#endif
+
+static uint32_t ref_tick;
+static uint32_t cpu_clk = 38400000;
+
+static __INLINE void init_time_profile(uint8_t cpu_running_hz)
+{
+    if (cpu_running_hz > 0 )
+        cpu_clk = cpu_running_hz;
+
+    InitCycleCounter();
+    ResetCycleCounter();
+    EnableCycleCounter();
+}
+
+static __INLINE void set_time_ref()
+{
+    ref_tick = GetCycleCounter();
+}
+
+static __INLINE uint32_t us_from_time_ref()
+{
+    return (GetCycleCounter() - ref_tick) * 10 / 384;
+}
+
 #endif /* __MIBLE_TRACE_H__ */
