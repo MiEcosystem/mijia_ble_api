@@ -133,6 +133,8 @@
 #define SystemCoreClock 40000000
 #endif
 
+#define MIBLE_API_SYNC  1
+
 #ifndef LOG_IN_SEGGER_RTT
 #define MI_PRINTF(...)                   LOG_PRINT(MM_ID, LEVEL_ERROR, __VA_ARGS__)
 #define MI_HEXDUMP(base_addr, bytes)     LOG_DUMP(MM_ID, LEVEL_ERROR, base_addr, bytes)

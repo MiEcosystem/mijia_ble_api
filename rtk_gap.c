@@ -22,10 +22,49 @@
 #define MI_LOG_MODULE_NAME "RTK_GAP"
 #include "mible_log.h"
 #include "platform_types.h"
+#include "platform_list.h"
 
-#ifdef MIBLE_API_SYNC
-extern void *gap_lock_seg_handle;
-extern void *gap_wait_seg_handle;
+
+#if MIBLE_API_SYNC
+#define RTK_GAP_TASK_TYPE_SCAN                         0
+#define RTK_GAP_TASK_TYPE_ADV                          1
+#define RTK_GAP_TASK_TYPE_UPDATE_ADV_PARAM             2
+
+typedef struct
+{
+    bool scan_enable;
+    mible_gap_scan_type_t scan_type;
+    mible_gap_scan_param_t scan_param;
+} rtk_gap_task_scan_t;
+
+typedef struct
+{
+    bool adv_enable;
+    mible_gap_adv_param_t adv_param;
+} rtk_gap_task_adv_t;
+
+typedef struct
+{
+    uint8_t adv_data[40];
+    uint8_t adv_data_len;
+    uint8_t scan_rsp_data[40];
+    uint8_t scan_rsp_data_len;
+} rtk_gap_task_update_adv_param_t;
+
+typedef struct _rtk_gap_task_t
+{
+    struct _rtk_gap_task_t *pnext;
+    uint8_t task_type;
+    union
+    {
+        rtk_gap_task_scan_t scan;
+        rtk_gap_task_adv_t adv;
+        rtk_gap_task_update_adv_param_t update_adv_param;
+    };
+} rtk_gap_task_t;
+
+static rtk_gap_task_t *pcur_task;
+static plt_list_t rtk_gap_task_list;
 #endif
 
 static mible_status_t err_code_convert(T_GAP_CAUSE cause)
@@ -83,20 +122,170 @@ static mible_status_t err_code_convert(T_GAP_CAUSE cause)
     return status;
 }
 
+static T_GAP_CAUSE rtk_gap_scan_start(mible_gap_scan_type_t scan_type,
+                                        mible_gap_scan_param_t scan_param);
+static T_GAP_CAUSE rtk_gap_adv_start(mible_gap_adv_param_t *p_param);
+static T_GAP_CAUSE rtk_gap_adv_data_set(uint8_t const *p_data,
+                                 uint8_t dlen, uint8_t const *p_sr_data, uint8_t srdlen);
+
+#if MIBLE_API_SYNC
+void rtk_gap_task_run(rtk_gap_task_t *ptask);
+
+static void rtk_gap_cur_task_done(void)
+{
+    //MI_LOG_DEBUG("task done: 0x%x", pcur_task);
+    /* free current task */
+    plt_free(pcur_task, RAM_TYPE_DATA_ON);
+    pcur_task = NULL;
+    /* run next task */
+    rtk_gap_task_t *ptask = plt_list_pop(&rtk_gap_task_list);
+    //MI_LOG_DEBUG("pop task: 0x%x", ptask);
+    if (NULL != ptask)
+    {
+        rtk_gap_task_run(ptask);
+    }
+}
+
+void rtk_gap_task_run(rtk_gap_task_t *ptask)
+{
+    //MI_LOG_DEBUG("run task: 0x%x", ptask);
+    pcur_task = ptask;
+    T_GAP_CAUSE ret = GAP_CAUSE_SUCCESS;
+    switch (ptask->task_type)
+    {
+    case RTK_GAP_TASK_TYPE_ADV:
+        if (ptask->adv.adv_enable)
+        {
+            MI_LOG_DEBUG("sync start adv");
+            ret = rtk_gap_adv_start(&ptask->adv.adv_param);
+            if (GAP_CAUSE_SUCCESS != ret)
+            {
+                MI_LOG_ERROR("sync start adv failed: %d", ret);
+                rtk_gap_cur_task_done();
+            }
+        }
+        else
+        {
+            MI_LOG_DEBUG("sync stop adv");
+            ret = le_adv_stop();
+            if (GAP_CAUSE_SUCCESS != ret)
+            {
+                MI_LOG_ERROR("sync stop adv failed: %d", ret);
+                rtk_gap_cur_task_done();
+            }
+        }
+        break;
+    case RTK_GAP_TASK_TYPE_SCAN:
+        if (ptask->scan.scan_enable)
+        {
+            MI_LOG_DEBUG("sync start scan");
+            ret = rtk_gap_scan_start(ptask->scan.scan_type, ptask->scan.scan_param);
+            if (GAP_CAUSE_SUCCESS != ret)
+            {
+                MI_LOG_ERROR("sync start scan failed: %d", ret);
+                rtk_gap_cur_task_done();
+            }
+        }
+        else
+        {
+            MI_LOG_DEBUG("sync stop scan");
+            ret = le_scan_stop();
+            if (GAP_CAUSE_SUCCESS != ret)
+            {
+                MI_LOG_ERROR("sync stop scan failed: %d", ret);
+                rtk_gap_cur_task_done();
+            }
+        }
+        break;
+    case RTK_GAP_TASK_TYPE_UPDATE_ADV_PARAM:
+        MI_LOG_DEBUG("sync update adv param");
+        ret = rtk_gap_adv_data_set(ptask->update_adv_param.adv_data, ptask->update_adv_param.adv_data_len, ptask->update_adv_param.scan_rsp_data, ptask->update_adv_param.scan_rsp_data_len);
+        if (GAP_CAUSE_SUCCESS != ret)
+        {
+            MI_LOG_ERROR("sync update adv param failed: %d", ret);
+            rtk_gap_cur_task_done();
+        }
+        break;
+    default:
+        break;
+    }
+}
+
+void rtk_gap_task_try(rtk_gap_task_t *ptask)
+{
+    if (NULL == pcur_task)
+    {
+        rtk_gap_task_run(ptask);
+    }
+    else
+    {
+        //MI_LOG_DEBUG("pending task: 0x%x", ptask);
+        plt_list_push(&rtk_gap_task_list, ptask);
+    }
+}
+
+void mible_gap_update_adv_param_done(void)
+{
+    if ((NULL != pcur_task) &&
+        (RTK_GAP_TASK_TYPE_UPDATE_ADV_PARAM == pcur_task->task_type))
+    {
+        MI_LOG_DEBUG("sync update adv param success");
+        rtk_gap_cur_task_done();
+    }
+}
+
+void mible_gap_dev_state_change(T_GAP_DEV_STATE state)
+{
+    if (NULL != pcur_task)
+    {
+        if (RTK_GAP_TASK_TYPE_ADV == pcur_task->task_type)
+        {
+            if ((pcur_task->adv.adv_enable) &&
+                (GAP_ADV_STATE_ADVERTISING == state.gap_adv_state))
+            {
+                /* start adv success */
+                MI_LOG_DEBUG("sync start adv success");
+                rtk_gap_cur_task_done();
+            }
+            else if ((!pcur_task->adv.adv_enable) &&
+                     (GAP_ADV_STATE_IDLE == state.gap_adv_state))
+            {
+                /* stop adv success */
+                MI_LOG_DEBUG("sync stop adv success");
+                rtk_gap_cur_task_done();
+            }
+        }
+        else if (RTK_GAP_TASK_TYPE_SCAN == pcur_task->task_type)
+        {
+            if ((pcur_task->scan.scan_enable) &&
+                (GAP_SCAN_STATE_SCANNING == state.gap_scan_state))
+            {
+                /* start scan success */
+                MI_LOG_DEBUG("sync start scan success");
+                rtk_gap_cur_task_done();
+            }
+            else if ((!pcur_task->scan.scan_enable) &&
+                     (GAP_SCAN_STATE_IDLE == state.gap_scan_state))
+            {
+                /* stop scan success */
+                MI_LOG_DEBUG("sync stop scan success");
+                rtk_gap_cur_task_done();
+            }
+        }
+    }
+}
+#endif
+
 mible_status_t mible_gap_address_get(mible_addr_t mac)
 {
     T_GAP_CAUSE err = gap_get_param(GAP_PARAM_BD_ADDR, mac);
     return err_code_convert(err);
 }
 
-mible_status_t mible_gap_scan_start(mible_gap_scan_type_t scan_type,
-                                    mible_gap_scan_param_t scan_param)
+static T_GAP_CAUSE rtk_gap_scan_start(mible_gap_scan_type_t scan_type,
+                                        mible_gap_scan_param_t scan_param)
 {
-    T_GAP_CAUSE err = GAP_CAUSE_SUCCESS;
     uint8_t scan_mode;
-#ifdef MIBLE_API_SYNC
-		os_sem_take(gap_lock_seg_handle,0xFFFFFFFF);			//lock
-#endif	
     if (MIBLE_SCAN_TYPE_PASSIVE == scan_type)
     {
         scan_mode = GAP_SCAN_MODE_PASSIVE;
@@ -111,51 +300,62 @@ mible_status_t mible_gap_scan_start(mible_gap_scan_type_t scan_type,
     uint16_t scan_interval = scan_param.scan_interval;
     le_scan_set_param(GAP_PARAM_SCAN_INTERVAL, sizeof(scan_interval), &scan_interval);
     le_scan_set_param(GAP_PARAM_SCAN_WINDOW, sizeof(scan_window), &scan_window);
-    err = le_scan_start();
-#ifdef MIBLE_API_SYNC		
-		if(GAP_CAUSE_SUCCESS == err){
-			if(false == os_sem_take(gap_wait_seg_handle,1000))	//wait GAP_SCAN_STATE_IDLE 
-				MI_LOG_WARNING("wait_seg GAP_SCAN_STATE_IDLE timeout \r\n",);
-		}
-		else
-			MI_LOG_ERROR("start scan failed (err %d) \r\n", err);
-		os_sem_give(gap_lock_seg_handle);							//unlock
+    return le_scan_start();
+}
+
+mible_status_t mible_gap_scan_start(mible_gap_scan_type_t scan_type,
+                                    mible_gap_scan_param_t scan_param)
+{
+    mible_status_t err = MI_SUCCESS;
+#if MIBLE_API_SYNC
+    rtk_gap_task_t *ptask = plt_malloc(sizeof(rtk_gap_task_t), RAM_TYPE_DATA_ON);
+    if (NULL != ptask)
+    {
+        ptask->task_type = RTK_GAP_TASK_TYPE_SCAN;
+        ptask->scan.scan_enable = TRUE;
+        ptask->scan.scan_type = scan_type;
+        ptask->scan.scan_param = scan_param;
+        rtk_gap_task_try(ptask);
+    }
+    else
+    {
+        err = MI_ERR_NO_MEM;
+    }
+#else
+    T_GAP_CAUSE ret = rtk_gap_scan_start(scan_type, scan_param);
+    err = err_code_convert(ret);
 #endif
-    return err_code_convert(err);
+    return err;
 }
 
 mible_status_t mible_gap_scan_stop(void)
 {
-#ifdef MIBLE_API_SYNC
-		os_sem_take(gap_lock_seg_handle,0xFFFFFFFF);			//lock
-#endif	
-    T_GAP_CAUSE err = le_scan_stop();
-#ifdef MIBLE_API_SYNC
-		if(GAP_CAUSE_SUCCESS == err){
-			if(false == os_sem_take(gap_wait_seg_handle,1000))	//wait GAP_SCAN_STATE_SCANNING 
-				MI_LOG_WARNING("wait_seg GAP_SCAN_STATE_SCANNING timeout \r\n",);
-		}
-		else
-			MI_LOG_ERROR("stop scan failed (err %d) \r\n", err);
-		os_sem_give(gap_lock_seg_handle);							//unlock
+    mible_status_t err = MI_SUCCESS;
+#if MIBLE_API_SYNC
+    rtk_gap_task_t *ptask = plt_malloc(sizeof(rtk_gap_task_t), RAM_TYPE_DATA_ON);
+    if (NULL != ptask)
+    {
+        ptask->task_type = RTK_GAP_TASK_TYPE_SCAN;
+        ptask->scan.scan_enable = FALSE;
+        rtk_gap_task_try(ptask);
+    }
+    else
+    {
+        err = MI_ERR_NO_MEM;
+    }
+#else
+    T_GAP_CAUSE ret = le_scan_stop();
+    err = err_code_convert(ret);
 #endif
-    return err_code_convert(err);
+    return err;
 }
 
-mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_param)
+static T_GAP_CAUSE rtk_gap_adv_start(mible_gap_adv_param_t *p_param)
 {
-    T_GAP_CAUSE err = GAP_CAUSE_SUCCESS;
     uint8_t  adv_evt_type;
     uint8_t  adv_chann_map = GAP_ADVCHAN_ALL;
     uint16_t adv_int_min = p_param->adv_interval_min;
     uint16_t adv_int_max = p_param->adv_interval_max;
-#ifdef MIBLE_API_SYNC
-		os_sem_take(gap_lock_seg_handle,0xFFFFFFFF);			//lock
-		extern T_GAP_DEV_STATE gap_dev_state;
-		MI_LOG_DEBUG("gap_dev_state = {%d, %d, %d, %d, %d}",gap_dev_state.gap_init_state,	\
-									gap_dev_state.gap_adv_sub_state, gap_dev_state.gap_adv_state,				\
-									gap_dev_state.gap_scan_state, gap_dev_state.gap_conn_state);
-#endif
     if (MIBLE_ADV_TYPE_CONNECTABLE_UNDIRECTED == p_param->adv_type)
     {
         adv_evt_type = GAP_ADTYPE_ADV_IND;
@@ -190,30 +390,35 @@ mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_param)
     le_adv_set_param(GAP_PARAM_ADV_INTERVAL_MIN, sizeof(adv_int_min), &adv_int_min);
     le_adv_set_param(GAP_PARAM_ADV_INTERVAL_MAX, sizeof(adv_int_max), &adv_int_max);
 		
-    err = le_adv_start();
-#ifdef MIBLE_API_SYNC	
-		if(GAP_CAUSE_SUCCESS == err){
-			if(false == os_sem_take(gap_wait_seg_handle,1000))	//wait GAP_ADV_STATE_ADVERTISING 
-				MI_LOG_WARNING("wait_seg GAP_ADV_STATE_ADVERTISING timeout \r\n",);
-		}
-		else
-			MI_LOG_ERROR("start adv failed (err %d) \r\n", err);
-		os_sem_give(gap_lock_seg_handle);							//unlock
-#endif		
-    return err_code_convert(err);
+    return le_adv_start();
 }
 
-mible_status_t mible_gap_adv_data_set(uint8_t const *p_data,
-                                      uint8_t dlen, uint8_t const *p_sr_data, uint8_t srdlen)
+mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_param)
 {
-    T_GAP_CAUSE err = GAP_CAUSE_SUCCESS;
-#ifdef MIBLE_API_SYNC
-		os_sem_take(gap_lock_seg_handle,0xFFFFFFFF);	//lock
-		extern T_GAP_DEV_STATE gap_dev_state;
-		MI_LOG_DEBUG("gap_dev_state = {%d, %d, %d, %d, %d}",gap_dev_state.gap_init_state,	\
-									gap_dev_state.gap_adv_sub_state, gap_dev_state.gap_adv_state,				\
-									gap_dev_state.gap_scan_state, gap_dev_state.gap_conn_state);
+    mible_status_t err = MI_SUCCESS;
+#if MIBLE_API_SYNC
+    rtk_gap_task_t *ptask = plt_malloc(sizeof(rtk_gap_task_t), RAM_TYPE_DATA_ON);
+    if (NULL != ptask)
+    {
+        ptask->task_type = RTK_GAP_TASK_TYPE_ADV;
+        ptask->adv.adv_enable = TRUE;
+        ptask->adv.adv_param = *p_param;
+        rtk_gap_task_try(ptask);
+    }
+    else
+    {
+        err = MI_ERR_NO_MEM;
+    }
+#else
+    T_GAP_CAUSE ret = rtk_gap_adv_start(p_param);
+    err = err_code_convert(ret);
 #endif
+    return err;
+}
+
+static T_GAP_CAUSE rtk_gap_adv_data_set(uint8_t const *p_data,
+                                 uint8_t dlen, uint8_t const *p_sr_data, uint8_t srdlen)
+{
     if (NULL != p_data)
     {
         le_adv_set_param(GAP_PARAM_ADV_DATA, dlen, (void *)p_data);
@@ -224,39 +429,55 @@ mible_status_t mible_gap_adv_data_set(uint8_t const *p_data,
         le_adv_set_param(GAP_PARAM_SCAN_RSP_DATA, srdlen, (void *)p_sr_data);
     }
 
-    err = le_adv_update_param();
-#ifdef MIBLE_API_SYNC
-		if(GAP_CAUSE_SUCCESS == err){
-			if(false == os_sem_take(gap_wait_seg_handle,1000))	//wait GAP_MSG_LE_ADV_UPDATE_PARAM 
-				MI_LOG_WARNING("wait_seg GAP_MSG_LE_ADV_UPDATE_PARAM timeout \r\n",);
-		}
-		else
-			MI_LOG_ERROR("update adv failed (err %d) \r\n", err);
-		os_sem_give(gap_lock_seg_handle);							//unlock
+    return le_adv_update_param();
+}
+
+mible_status_t mible_gap_adv_data_set(uint8_t const *p_data,
+                                      uint8_t dlen, uint8_t const *p_sr_data, uint8_t srdlen)
+{
+    mible_status_t err = MI_SUCCESS;
+#if MIBLE_API_SYNC
+    rtk_gap_task_t *ptask = plt_malloc(sizeof(rtk_gap_task_t), RAM_TYPE_DATA_ON);
+    if (NULL != ptask)
+    {
+        ptask->task_type = RTK_GAP_TASK_TYPE_UPDATE_ADV_PARAM;
+        memcpy(ptask->update_adv_param.adv_data, p_data, dlen);
+        ptask->update_adv_param.adv_data_len = dlen;
+        memcpy(ptask->update_adv_param.scan_rsp_data, p_sr_data, srdlen);
+        ptask->update_adv_param.scan_rsp_data_len = srdlen;
+        rtk_gap_task_try(ptask);
+    }
+    else
+    {
+        err = MI_ERR_NO_MEM;
+    }
+#else
+    T_GAP_CAUSE ret = rtk_gap_adv_data_set(p_data, dlen, p_sr_data, srdlen);
+    err = err_code_convert(ret);
 #endif
-    return err_code_convert(err);
+    return err;
 }
 
 mible_status_t mible_gap_adv_stop(void)
 {
-#ifdef MIBLE_API_SYNC
-		os_sem_take(gap_lock_seg_handle,0xFFFFFFFF);	//lock
-		extern T_GAP_DEV_STATE gap_dev_state;
-		MI_LOG_DEBUG("gap_dev_state = {%d, %d, %d, %d, %d}",gap_dev_state.gap_init_state,	\
-									gap_dev_state.gap_adv_sub_state, gap_dev_state.gap_adv_state,				\
-									gap_dev_state.gap_scan_state, gap_dev_state.gap_conn_state);
+    mible_status_t err = MI_SUCCESS;
+#if MIBLE_API_SYNC
+    rtk_gap_task_t *ptask = plt_malloc(sizeof(rtk_gap_task_t), RAM_TYPE_DATA_ON);
+    if (NULL != ptask)
+    {
+        ptask->task_type = RTK_GAP_TASK_TYPE_ADV;
+        ptask->adv.adv_enable = FALSE;
+        rtk_gap_task_try(ptask);
+    }
+    else
+    {
+        err = MI_ERR_NO_MEM;
+    }
+#else
+    T_GAP_CAUSE ret = le_adv_stop();
+    err = err_code_convert(ret);
 #endif
-    T_GAP_CAUSE err = le_adv_stop();
-#ifdef MIBLE_API_SYNC	
-		if(GAP_CAUSE_SUCCESS == err){
-			if(false == os_sem_take(gap_wait_seg_handle,1000))	//wait GAP_ADV_STATE_IDLE 
-				MI_LOG_WARNING("wait_seg GAP_ADV_STATE_IDLE timeout \r\n",);
-		}
-		else
-			MI_LOG_ERROR("stop adv failed (err %d) \r\n", err);
-		os_sem_give(gap_lock_seg_handle);							//unlock
-#endif
-    return err_code_convert(err);
+    return err;
 }
 
 mible_status_t mible_gap_connect(mible_gap_scan_param_t scan_param,
