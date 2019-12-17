@@ -32,12 +32,16 @@
 #endif /* DWT END*/
 
 #if TIME_PROFILE
+#define TIMING_INIT()                                                           \
+    InitCycleCounter()
+
 #define TIMING_BEGIN()                                                          \
     ResetCycleCounter()
 
 #define TIMING_END(name)                                                        \
     MI_LOG_DEBUG("%s consume time: %u us\n", (char*)name, GetCycleCounter()/(SystemCoreClock/1000000))
 #else
+#define TIMING_INIT()
 #define TIMING_BEGIN()
 #define TIMING_END(name)
 #endif
