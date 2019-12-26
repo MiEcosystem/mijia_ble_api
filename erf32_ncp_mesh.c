@@ -180,12 +180,8 @@ void mible_mesh_stack_event_handler(struct gecko_cmd_packet *evt)
 		case gecko_evt_mesh_vendor_model_receive_id:{
 
 			MI_LOG_INFO("vendor model received. \n"); 
-			if(evt->data.evt_mesh_vendor_model_receive.opcode != 
-					(MIBLE_MESH_MIOT_SPEC_STATUS & 0x3F)){
-				MI_LOG_WARNING("unknown vendor model message.\n"); 
-			}else{
-				MI_LOG_DEBUG("opcode = 0x%x\n", evt->data.evt_mesh_vendor_model_receive.opcode); 
-			}
+			MI_LOG_DEBUG("opcode = 0x%x\n", evt->data.evt_mesh_vendor_model_receive.opcode); 
+
 			memset(&generic_status, 0, sizeof(mible_mesh_access_message_rx_t)); 
 			generic_status.opcode.opcode = evt->data.evt_mesh_vendor_model_receive.opcode | 0xC0;
 			generic_status.opcode.company_id = MIBLE_MESH_COMPANY_ID_XIAOMI;
@@ -633,7 +629,7 @@ int mible_mesh_gateway_init_stack(void)
 
 	gecko_cmd_mesh_generic_client_init();
 	// init vendor client 
-	uint8_t opcode[6] = {0x01,0x03,0x04,0x05,0x0e,0x0f}; 
+	uint8_t opcode[6] = {0x05,0x07,0x08,0x0f,0x3e,0x3f}; 
 	if(gecko_cmd_mesh_vendor_model_init(0, 0x038f, 0x0001, 0, 6, opcode)->result!=0){
 		MI_LOG_ERROR("vendor model init error. \n");
 	}
