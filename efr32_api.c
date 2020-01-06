@@ -1646,6 +1646,8 @@ mible_status_t mible_nvm_write(void * p_data, uint32_t length, uint32_t address)
         }
     }
     uint32_t erase_time = us_from_time_ref();
+    // MSUT be aligned
+    length = CEIL_DIV(length, 4) * 4;
     ret = MSC_WriteWordFast((uint32_t *)address, p_data, length);
     uint32_t prog_time = us_from_time_ref() - erase_time;
     MI_LOG_INFO("%d bytes erase cost %d us, program cost %d us\n", length, erase_time, prog_time);
