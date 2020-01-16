@@ -102,13 +102,13 @@ mible_status_t mible_record_init(void)
 
     return MI_SUCCESS;
 }
-
+/*
 static void mible_record_clear(void)
 {
     memset(records, 0, sizeof(records));
     ftl_save((void *)records, OFFSET_HEADER, sizeof(records));
 }
-
+*/
 static uint8_t mible_record_find_index(uint16_t record_id, uint8_t len)
 {
     uint8_t index;
