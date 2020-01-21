@@ -41,14 +41,26 @@ typedef struct
 } record_t;
 static record_t records[MAX_RECORD_NUM];
 
-#define OFFSET_RECORD               (MI_RECORD_OFFSET + 5 * sizeof(record_t))
+#define OFFSET_RECORD               (MI_RECORD_OFFSET + sizeof(records))
 
-/* dfu releated parameters */
-static bool secboot_exist = FALSE;
-static bool app_exist = FALSE;
-//static bool patch_exist = FALSE;
-#define PATCH_SIZE        (40 * 1024)
-#define SEC_BOOT_SIZE     (4 * 1024)
+/* dfu releated parameters, support pasue and resume download */
+#define PATCH_SIZE                  (40 * 1024)
+#define SEC_BOOT_SIZE               (4 * 1024)
+#define OTA_RECORD_OFFSET           (MI_RECORD_OFFSET - 4)
+
+typedef union
+{
+    struct
+    {
+        //bool patch_exist;
+        bool secboot_exist;
+        bool app_exist;
+    };
+    uint8_t pad[4];
+} ota_ctx_t;
+
+static ota_ctx_t ota_ctx;
+
 
 static void dump_record_header(void)
 {
@@ -102,13 +114,13 @@ mible_status_t mible_record_init(void)
 
     return MI_SUCCESS;
 }
-/*
-static void mible_record_clear(void)
+
+void mible_record_clear(void)
 {
     memset(records, 0, sizeof(records));
     ftl_save((void *)records, OFFSET_HEADER, sizeof(records));
 }
-*/
+
 static uint8_t mible_record_find_index(uint16_t record_id, uint8_t len)
 {
     uint8_t index;
@@ -315,23 +327,47 @@ mible_status_t mible_nvm_init(void)
     return MI_SUCCESS;
 }
 
+static mible_status_t mible_ota_ctx_save(void)
+{
+    if (0 != ftl_save((void *)&ota_ctx, OTA_RECORD_OFFSET, sizeof(ota_ctx_t)))
+    {
+        return MI_ERR_INVALID_LENGTH;
+    }
+
+    return MI_SUCCESS;
+}
+
+static mible_status_t mible_ota_ctx_load(void)
+{
+    if (0 != ftl_load((void *)&ota_ctx, OTA_RECORD_OFFSET, sizeof(ota_ctx_t)))
+    {
+        return MI_ERR_INVALID_LENGTH;
+    }
+
+    return MI_SUCCESS;
+}
+
 mible_status_t mible_upgrade_firmware(void)
 {
-    MI_LOG_DEBUG("mible_upgrade_firmware: app_exist(%d), secboot_exist(%d)", app_exist, secboot_exist);
+    /* load ota context */
+    mible_ota_ctx_load();
+    MI_LOG_DEBUG("mible_upgrade_firmware: app_exist(%d), secboot_exist(%d)", ota_ctx.app_exist,
+                 ota_ctx.secboot_exist);
 
     uint32_t base_addr = 0;
     T_IMG_CTRL_HEADER_FORMAT *p_ota_header;
 
     unlock_flash_all();
-    if (app_exist)
+    if (ota_ctx.app_exist)
     {
-        base_addr = PATCH_SIZE + secboot_exist * SEC_BOOT_SIZE + get_temp_ota_bank_addr_by_img_id(RomPatch);
+        base_addr = PATCH_SIZE + ota_ctx.secboot_exist * SEC_BOOT_SIZE + get_temp_ota_bank_addr_by_img_id(
+                        RomPatch);
         MI_LOG_DEBUG("mible_upgrade_firmware: app base addr: 0x%x", base_addr);
         p_ota_header = (T_IMG_CTRL_HEADER_FORMAT *)base_addr;
         p_ota_header->ctrl_flag.flag_value.not_ready = 0;
     }
 
-    if (secboot_exist)
+    if (ota_ctx.secboot_exist)
     {
         base_addr = PATCH_SIZE + get_temp_ota_bank_addr_by_img_id(RomPatch);
         MI_LOG_DEBUG("mible_upgrade_firmware: secure boot base addr: 0x%x", base_addr);
@@ -372,21 +408,27 @@ mible_status_t mible_nvm_write(void *p_data, uint32_t length, uint32_t address)
 
     if ((address >= OTP->ota_tmp_addr) && (address < (OTP->ota_tmp_addr + OTP->ota_tmp_size)))
     {
-        /* ota temp area */
         if (address == OTP->ota_tmp_addr)
         {
+            /* ota started, clear context first */
+            //ota_ctx.patch_exist = FALSE;
+            ota_ctx.app_exist = FALSE;
+            ota_ctx.secboot_exist = FALSE;
+            mible_ota_ctx_save();
+
             T_IMG_CTRL_HEADER_FORMAT *p_header = (T_IMG_CTRL_HEADER_FORMAT *)p_data;
             if (p_header->image_id == RomPatch)
             {
-                //patch_exist = TRUE;
+                //ota_ctx.patch_exist = TRUE;
                 if (p_header->ctrl_flag.flag_value.rsvd & 0x08)
                 {
-                    secboot_exist = TRUE;
+                    ota_ctx.secboot_exist = TRUE;
                 }
                 if (p_header->ctrl_flag.flag_value.rsvd & 0x10)
                 {
-                    app_exist = TRUE;
+                    ota_ctx.app_exist = TRUE;
                 }
+                mible_ota_ctx_save();
             }
             if (AppPatch == p_header->image_id)
             {
