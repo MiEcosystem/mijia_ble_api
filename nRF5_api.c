@@ -1243,16 +1243,14 @@ mible_status_t mible_task_post(mible_handler_t handler, void *arg)
  * */
 void mible_tasks_exec(void)
 {
-    uint32_t errno = 0;
     mible_task_t task;
-    while(!errno) {
-        errno = nrf_queue_pop(&task_queue, &task);
-        if (errno == NRF_SUCCESS)
-            task.handler(task.arg);
+    while(nrf_queue_pop(&task_queue, &task) == NRF_SUCCESS) {
+        task.handler(task.arg);
     }
 }
 
 /* IIC related function */
+#if (HAVE_MSC != 0)
 const nrf_drv_twi_t TWI0 = NRF_DRV_TWI_INSTANCE(0);
 static mible_handler_t m_iic_handler;
 static void twi0_handler(nrf_drv_twi_evt_t const * p_event, void * p_context)
@@ -1379,3 +1377,4 @@ int mible_iic_scl_pin_read(uint8_t port, uint8_t pin)
 {
     return nrf_gpio_pin_read(pin);
 }
+#endif

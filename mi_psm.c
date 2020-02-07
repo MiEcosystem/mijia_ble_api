@@ -1,13 +1,11 @@
-#include "mible_type.h"
-
 #include "fds.h"
-
-#define MI_RECORD_FILE_ID              0x4D49       // file used to storage
-#define MI_RECORD_KEY                  0xBEEF
-
 #include "nrf_log.h"
 #include "nrf_log_ctrl.h"
 #include "mi_psm.h"
+#include "mible_type.h"
+
+#define MI_RECORD_FILE_ID              0x4D49       // file used to storage
+#define MI_RECORD_KEY                  0xBEEF
 
 static volatile uint8_t m_psm_init_done = 0;
 extern void mible_arch_event_callback(mible_arch_event_t evt, 

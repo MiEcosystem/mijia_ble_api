@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include "mible_api.h"
-#include "mible_port.h"
 #include "mible_type.h"
 
 #ifndef MIBLE_MAX_USERS
