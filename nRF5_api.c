@@ -16,7 +16,6 @@
 #include "mible_log.h"
 
 #include "nrf_soc.h"
-#include "nrf_queue.h"
 #include "nrf_error.h"
 #include "nrf_gpio.h"
 #include "ble_types.h"
@@ -39,7 +38,6 @@ static uint8_t scan_rsp_data[31];
 static uint8_t scan_rsp_data_len;
 #else
 #define USE_LEGACY_API 1
-#include "SDK12.3.0_patch/nrf_drv_twi_patched.h"
 #endif
 
 #ifdef S112
@@ -626,10 +624,13 @@ mible_status_t mible_gatts_value_get(uint16_t srv_handle, uint16_t char_handle,
     uint8_t* p_value, uint8_t *p_len)
 {
     uint32_t errno;
-    ble_gatts_value_t value = {0};
+    ble_gatts_value_t value = {
+        .len     = 20,
+        .offset  = 0,
+        .p_value = p_value,
+    };
     errno = sd_ble_gatts_value_get(BLE_CONN_HANDLE_INVALID, char_handle, &value);
     MI_ERR_CHECK(errno);
-    memcpy(p_value, value.p_value, value.len);
     *p_len = value.len;
 
     return err_code_convert(errno);
@@ -678,10 +679,12 @@ mible_status_t mible_gatts_rw_auth_reply(uint16_t conn_handle, uint8_t status,
             reply = (ble_gatts_rw_authorize_reply_params_t) {
                 .type = BLE_GATTS_AUTHORIZE_TYPE_WRITE,
                 .params.write.gatt_status = BLE_GATT_STATUS_SUCCESS,
+#ifndef S110
                 .params.write.update      = 1,
                 .params.write.offset      = offset,
                 .params.write.p_data      = p_value,
                 .params.write.len         = len
+#endif
             };
         break;
         }
@@ -938,6 +941,10 @@ mible_status_t mible_gattc_write_cmd(uint16_t conn_handle, uint16_t handle,
 }
 
 /*TIMER related function*/
+#ifdef S110
+#include "app_timer.h"
+typedef app_timer_id_t app_timer_t; 
+#endif
 typedef struct {
     uint8_t is_avail;
     app_timer_t data;
@@ -1002,14 +1009,23 @@ mible_status_t mible_timer_create(void** p_timer_id,
         is_init = errno == NRF_SUCCESS;
     }
 #endif
+#ifdef S110
+    app_timer_id_t* id  = acquire_timer();
+#else
     app_timer_id_t id  = acquire_timer();
+#endif
     if (id == NULL)
         return MI_ERR_NO_MEM;
 
     app_timer_mode_t m = mode == MIBLE_TIMER_SINGLE_SHOT ? APP_TIMER_MODE_SINGLE_SHOT : APP_TIMER_MODE_REPEATED;
     app_timer_timeout_handler_t handler = timeout_handler;
-    errno = app_timer_create(&id, m, handler);
     *p_timer_id = id;
+
+#ifdef S110
+    errno = app_timer_create(id, m, handler);
+#else
+    errno = app_timer_create(&id, m, handler);
+#endif
     return err_code_convert(errno);
 }
 
@@ -1025,8 +1041,11 @@ mible_status_t mible_timer_delete(void * timer_id)
     int id = release_timer(timer_id);
     if (id == -1)
         return MI_ERR_INVALID_PARAM;
-
+#ifdef S110
+    errno = app_timer_stop(*(app_timer_id_t*)timer_id);
+#else
     errno = app_timer_stop((app_timer_id_t)timer_id);
+#endif
     return err_code_convert(errno);
 }
 
@@ -1049,7 +1068,11 @@ mible_status_t mible_timer_start(void* timer_id, uint32_t timeout_value,
     void* p_context)
 {
     uint32_t errno;
-#if (NRF_SD_BLE_API_VERSION <= 3)
+
+
+#ifdef S110
+    errno = app_timer_start(*(app_timer_id_t*)timer_id, APP_TIMER_TICKS(timeout_value, APP_TIMER_PRESCALER), p_context);
+#elif (NRF_SD_BLE_API_VERSION <= 3)
     errno = app_timer_start((app_timer_id_t)timer_id, APP_TIMER_TICKS(timeout_value, APP_TIMER_PRESCALER), p_context);
 #else
     errno = app_timer_start((app_timer_id_t)timer_id, APP_TIMER_TICKS(timeout_value), p_context);
@@ -1067,7 +1090,11 @@ mible_status_t mible_timer_start(void* timer_id, uint32_t timeout_value,
 mible_status_t mible_timer_stop(void* timer_id) 
 {
     uint32_t errno;
+#ifdef S110
+    errno = app_timer_stop(*(app_timer_id_t*)timer_id);
+#else
     errno = app_timer_stop((app_timer_id_t)timer_id);
+#endif
     return err_code_convert(errno); 
 }
 
@@ -1085,16 +1112,19 @@ mible_status_t mible_timer_stop(void* timer_id)
  * */
 mible_status_t mible_record_create(uint16_t record_id, uint8_t len)
 {
+#ifdef S110
+    return MI_SUCCESS;
+#else
     static uint8_t fds_has_init = 0;
 
     if (fds_has_init == 0) {
         fds_has_init = 1;
         mi_psm_init();
     }
-    
+    return MI_SUCCESS;
+#endif
     // actually it does not need record_id and len.
 
-    return MI_SUCCESS;  
 }
 
 
@@ -1106,10 +1136,15 @@ mible_status_t mible_record_create(uint16_t record_id, uint8_t len)
  * */
 mible_status_t mible_record_delete(uint16_t record_id)
 {
+#ifdef S110
+    return MI_SUCCESS;
+#else
     uint32_t errno;
     errno = mi_psm_record_delete(record_id);
     return err_code_convert(errno);
+#endif
 }
+
 
 /*
  * @brief   Restore data to flash
@@ -1125,9 +1160,13 @@ mible_status_t mible_record_delete(uint16_t record_id)
 mible_status_t mible_record_read(uint16_t record_id, uint8_t* p_data,
     uint8_t len)
 {
+#ifdef S110
+    return MI_SUCCESS;
+#else
     uint32_t errno;
     errno = mi_psm_record_read(record_id, p_data, len);
     return err_code_convert(errno);
+#endif
 }
 
 /*
@@ -1147,9 +1186,13 @@ mible_status_t mible_record_read(uint16_t record_id, uint8_t* p_data,
 mible_status_t mible_record_write(uint16_t record_id, const uint8_t* p_data,
     uint8_t len)
 {
+#ifdef S110
+    return MI_SUCCESS;
+#else
     uint32_t errno;
     errno = mi_psm_record_write(record_id, p_data, len);
     return err_code_convert(errno);
+#endif
 }
 
 /*
@@ -1203,8 +1246,9 @@ mible_status_t mible_aes128_encrypt(const uint8_t* key,
     return err_code_convert(errno);
 }
 
-
+#ifndef S110
 /* TASK schedulor related function  */
+#include "nrf_queue.h"
 typedef struct {
     mible_handler_t handler;
     void *arg;
@@ -1248,9 +1292,11 @@ void mible_tasks_exec(void)
         task.handler(task.arg);
     }
 }
+#endif
 
 /* IIC related function */
 #if (HAVE_MSC != 0)
+#include "SDK12.3.0_patch/nrf_drv_twi_patched.h"
 const nrf_drv_twi_t TWI0 = NRF_DRV_TWI_INSTANCE(0);
 static mible_handler_t m_iic_handler;
 static void twi0_handler(nrf_drv_twi_evt_t const * p_event, void * p_context)

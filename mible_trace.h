@@ -30,4 +30,7 @@
 #define GetCycleCounter()
 #endif /* DWT END*/
 
+#define TIMING_BEGIN(x)
+#define TIMING_END(x)
+
 #endif /* __MIBLE_TRACE_H__ */

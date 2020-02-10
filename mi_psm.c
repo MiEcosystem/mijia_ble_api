@@ -1,3 +1,222 @@
+#ifdef S110
+#include "pstorage.h"
+#include "mible_log.h"
+#include "mible_type.h"
+
+#define BLK_SIZE      32
+#define BLK_NUM       4
+#define REC_TABLE_ID  0
+
+static uint8_t m_flags_pstorage_is_busy;
+static pstorage_handle_t m_storage_handle;
+
+
+static void pstorage_cb_handler(pstorage_handle_t * p_handle,
+                                   uint8_t             op_code,
+                                   uint32_t            result,
+                                   uint8_t           * p_data,
+                                   uint32_t            data_len)
+{
+    MI_LOG_INFO("pstorage block %X, opcode %d, result %d\n", p_handle, op_code, result);
+    m_flags_pstorage_is_busy = 0;
+}
+
+static __inline void pstorage_blocking_begin()
+{
+    m_flags_pstorage_is_busy = 1;
+}
+
+static __inline void pstorage_blocking_end()
+{
+    while(m_flags_pstorage_is_busy);
+}
+
+
+static uint16_t recordid_2_blocknum(uint16_t record_id)
+{
+    uint32_t          err_code;
+    pstorage_handle_t block_handle;
+    uint32_t          rec_table[BLK_NUM-1];
+    err_code = pstorage_block_identifier_get(&m_storage_handle, REC_TABLE_ID, &block_handle);
+    MI_ERR_CHECK(err_code);
+
+    err_code = pstorage_load((uint8_t*)rec_table, &block_handle, sizeof(rec_table), 0);    
+    if (err_code == NRF_SUCCESS) {
+        MI_LOG_DEBUG("CHK REC%d IN TABLE\n", record_id);
+        MI_LOG_HEXDUMP(rec_table, sizeof(rec_table));
+        for (uint32_t i = 0; i < BLK_NUM-1; i++) {
+            if (record_id == rec_table[i])
+                return i+1;
+        }
+    }
+
+    return 0;
+}
+
+static uint16_t recordid_del(uint16_t record_id)
+{
+    uint32_t          err_code;
+    pstorage_handle_t block_handle;
+    uint32_t          rec_table[BLK_NUM-1];
+    err_code = pstorage_block_identifier_get(&m_storage_handle, REC_TABLE_ID, &block_handle);
+    MI_ERR_CHECK(err_code);
+
+    err_code = pstorage_load((uint8_t*)rec_table, &block_handle, sizeof(rec_table), 0);    
+    if (err_code == NRF_SUCCESS) {
+        MI_LOG_DEBUG("DEL REC%d IN TABLE\n", record_id);
+        MI_LOG_HEXDUMP(rec_table, sizeof(rec_table));
+        for (uint32_t i = 0; i < BLK_NUM-1; i++) {
+            if (rec_table[i] == record_id) {
+                rec_table[i] = 0;
+                pstorage_blocking_begin();
+                pstorage_update(&block_handle, (uint8_t*)&rec_table, sizeof(rec_table), 0);
+                pstorage_blocking_end();
+                return 0;
+            }
+        }
+    }
+
+    return 0;
+}
+
+static uint16_t recordid_add(uint16_t record_id)
+{
+    uint32_t          err_code;
+    pstorage_handle_t block_handle;
+    uint32_t          rec_table[BLK_NUM-1];
+    err_code = pstorage_block_identifier_get(&m_storage_handle, REC_TABLE_ID, &block_handle);
+    MI_ERR_CHECK(err_code);
+
+    err_code = pstorage_load((uint8_t*)rec_table, &block_handle, sizeof(rec_table), 0);    
+    if (err_code == NRF_SUCCESS) {
+        MI_LOG_DEBUG("DEL REC%d IN TABLE\n", record_id);
+        MI_LOG_HEXDUMP(rec_table, sizeof(rec_table));
+        for (uint32_t i = 0; i < BLK_NUM-1; i++) {
+            if (rec_table[i] == 0) {
+                rec_table[i] = record_id;
+                pstorage_blocking_begin();
+                pstorage_update(&block_handle, (uint8_t*)&rec_table, sizeof(rec_table), 0);
+                pstorage_blocking_end();
+                return 0;
+            }
+        }
+    }
+
+    return 0;
+}
+
+void mi_psm_init(void)
+{
+    uint32_t err_code;
+    pstorage_module_param_t param;
+    param.block_size  = BLK_SIZE;
+    param.block_count = BLK_NUM;
+    param.cb          = pstorage_cb_handler;
+
+    err_code = pstorage_register(&param, &m_storage_handle);
+    MI_ERR_CHECK(err_code);
+}
+
+int mi_psm_record_write(uint16_t record_id, const uint8_t *p_data, uint16_t len)
+{
+    uint32_t          err_code;
+    pstorage_handle_t block_handle;
+    bool              is_newone;
+
+    uint16_t blk_num = recordid_2_blocknum(record_id);
+    if (blk_num == 0) {
+        MI_LOG_WARNING("ADD NEW REC %d\n", record_id);
+        is_newone = true;
+        blk_num = recordid_add(record_id);
+    } else {
+        is_newone = false;
+    }
+
+    err_code = pstorage_block_identifier_get(&m_storage_handle, blk_num, &block_handle);
+
+    if (err_code == NRF_SUCCESS)
+    {
+        MI_LOG_INFO("WR REC %d\n", record_id);
+        pstorage_blocking_begin();
+        if (is_newone)
+            pstorage_store(&block_handle, (uint8_t*)p_data, len, 0);
+        else
+            pstorage_update(&block_handle, (uint8_t*)p_data, len, 0);
+        pstorage_blocking_end();
+    }
+    else
+    {
+        MI_LOG_INFO("WR REC %d FAILED\n", record_id);
+        //Request update record entry table block.
+        recordid_del(record_id);
+    }
+    return (err_code);
+}
+
+/**@brief Flash Read function type. */
+int mi_psm_record_read(uint16_t record_id, uint8_t *p_data, uint16_t len)
+{
+    uint32_t          err_code;
+    pstorage_handle_t block_handle;
+
+    uint16_t blk_num = recordid_2_blocknum(record_id);
+    if (blk_num == 0) {
+        MI_LOG_ERROR("REC %d not found\n", record_id);
+        return MI_ERR_INVALID_PARAM;
+    }
+
+    err_code = pstorage_block_identifier_get(&m_storage_handle, blk_num, &block_handle);
+
+    if (err_code == NRF_SUCCESS)
+    {
+        MI_LOG_INFO("RD REC %d\n", record_id);
+        //Request clearing of the block.
+        err_code = pstorage_load(p_data, &block_handle, len, 0);
+    }
+    else
+    {
+        MI_LOG_INFO("RD REC %d FAILED\n", record_id);
+        //Request update record entry table block.
+        recordid_del(record_id);
+    }
+
+    return (err_code);
+}
+
+int mi_psm_record_delete(uint16_t record_id)
+{
+    uint32_t          err_code;
+    pstorage_handle_t block_handle;
+
+    uint16_t blk_num = recordid_2_blocknum(record_id);
+    if (blk_num == 0) {
+        MI_LOG_ERROR("REC %d not found\n", record_id);
+        return MI_ERR_INVALID_PARAM;
+    }
+
+    err_code = pstorage_block_identifier_get(&m_storage_handle, blk_num, &block_handle);
+
+    if (err_code == NRF_SUCCESS)
+    {
+        MI_LOG_INFO("DEL REC %d\n", record_id);
+        //Request clearing of the block.
+        pstorage_blocking_begin();
+        err_code = pstorage_clear(&block_handle, BLK_SIZE);
+        pstorage_blocking_end();
+    }
+
+    if (err_code == NRF_SUCCESS)
+    {
+        MI_LOG_INFO("DEL REC ID\n");
+        //Request update record entry table block.
+        recordid_del(record_id);
+    }
+
+    return err_code;
+}
+
+#else
+
 #include "fds.h"
 #include "nrf_log.h"
 #include "nrf_log_ctrl.h"
@@ -240,4 +459,4 @@ int mi_psm_reset(void)
 {
     return fds_file_delete(MI_RECORD_FILE_ID);
 }
-
+#endif

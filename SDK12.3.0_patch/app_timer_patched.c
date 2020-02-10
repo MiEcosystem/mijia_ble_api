@@ -40,6 +40,9 @@ STATIC_ASSERT(RTC1_IRQ_PRI == SWI_IRQ_PRI);
 #define SWI_IRQHandler SWI0_IRQHandler
 
 #define MODULE_INITIALIZED (m_op_queue.p_user_op_queue != NULL) /**< Macro designating whether the module has been initialized properly. */
+#ifdef S110
+#define VERIFY_MODULE_INITIALIZED()
+#endif
 
 /**@brief Timer node type. The nodes will be used form a linked list of running timers. */
 typedef struct

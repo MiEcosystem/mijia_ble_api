@@ -36,8 +36,11 @@ static void gap_evt_dispatch(ble_evt_t const *p_ble_evt)
 		gap_params.connect.conn_param.slave_latency     = p_ble_evt->evt.gap_evt.params.connected.conn_params.slave_latency;
 		gap_params.connect.conn_param.conn_sup_timeout  = p_ble_evt->evt.gap_evt.params.connected.conn_params.conn_sup_timeout;
 
+#ifndef S110 
         gap_params.connect.role = p_ble_evt->evt.gap_evt.params.connected.role == BLE_GAP_ROLE_PERIPH ? MIBLE_GAP_PERIPHERAL : MIBLE_GAP_CENTRAL;
-
+#else
+        gap_params.connect.role = MIBLE_GAP_PERIPHERAL;
+#endif
 		gap_evt_availble = 1;
 		break;
 
@@ -101,9 +104,11 @@ static void gatts_evt_dispatch(ble_evt_t const *p_ble_evt)
 		gatts_params.write.data = (uint8_t*)p_ble_evt->evt.gatts_evt.params.write.data;
 		gatts_params.write.len = p_ble_evt->evt.gatts_evt.params.write.len;
 		gatts_params.write.offset = p_ble_evt->evt.gatts_evt.params.write.offset;
+#ifndef S110
 		if (p_ble_evt->evt.gatts_evt.params.write.auth_required)
 			evt = MIBLE_GATTS_EVT_WRITE_PERMIT_REQ;
 		else
+#endif
 			evt = MIBLE_GATTS_EVT_WRITE;
         
         gatts_evt_availble = true;

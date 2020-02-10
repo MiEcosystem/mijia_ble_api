@@ -18,6 +18,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "app_util.h"
+
 #ifndef NULL
 #define NULL 0
 #endif
@@ -127,14 +129,21 @@
 #define CRITICAL_SECTION_EXIT() CRITICAL_REGION_EXIT()
 
 #ifdef MI_LOG_ENABLED
+#if (NRF_LOG_USES_RTT==1)
+#include "SEGGER_RTT.h"
+#define MI_PRINTF(...)             RTT_printf(__VA_ARGS__)
+#define MI_HEXDUMP(...)            RTT_printf_hex(__VA_ARGS__)
+#else
 #include "nrf_log.h"
 #define MI_PRINTF(...)             NRF_LOG_RAW_INFO(__VA_ARGS__)
 #define MI_HEXDUMP(...)            NRF_LOG_RAW_HEXDUMP_INFO(__VA_ARGS__)
 #define MI_LOG_COLORS_ENABLE       1
+#endif // NRF_LOG_USE_RTT
+
 #else
 #define MI_PRINTF(...)
 #define MI_HEXDUMP(base_addr, bytes)
-#endif
+#endif // MI_LOG_ENABLED
 
 #include "cmsis_compiler.h"
 
