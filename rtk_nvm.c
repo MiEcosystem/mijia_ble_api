@@ -104,7 +104,7 @@ mible_status_t mible_record_init(void)
     {
         if ((0 != records[index].valid) && (1 != records[index].valid))
         {
-            /* new flash, initialize it */
+            /* new record aera, initialize it */
             memset(&records[index], 0, sizeof(record_t));
         }
     }
@@ -192,7 +192,7 @@ mible_status_t mible_record_create(uint16_t record_id, uint8_t len)
     records[index].record_id = record_id;
     records[index].len = len;
     records[index].offset = offset;
-    records[index].valid = 1;
+    //records[index].valid = 1;
 
     mible_record_save_header();
 
@@ -265,7 +265,7 @@ mible_status_t mible_record_write(uint16_t record_id, const uint8_t *p_data,
     uint8_t index = 0;
     for (; index < MAX_RECORD_NUM; ++index)
     {
-        if (records[index].valid && (records[index].record_id == record_id))
+        if (records[index].record_id == record_id)
         {
             break;
         }
@@ -285,7 +285,7 @@ mible_status_t mible_record_write(uint16_t record_id, const uint8_t *p_data,
         /* find index again */
         for (index = 0; index < MAX_RECORD_NUM; ++index)
         {
-            if (records[index].valid && (records[index].record_id == record_id))
+            if (records[index].record_id == record_id)
             {
                 break;
             }
@@ -311,6 +311,12 @@ mible_status_t mible_record_write(uint16_t record_id, const uint8_t *p_data,
     if (0 != ftl_save((void *)p_data, records[index].offset, len))
     {
         return MI_ERR_INVALID_LENGTH;
+    }
+
+    if (0 == records[index].valid)
+    {
+        records[index].valid = 1;
+        mible_record_save_header();
     }
 
     mible_arch_evt_param_t param;
