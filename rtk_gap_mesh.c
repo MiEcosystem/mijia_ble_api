@@ -10,6 +10,7 @@
 * @version   v1.0
 * *********************************************************************************************************
 */
+#include <stdlib.h>
 #include <string.h>
 #include <gap.h>
 #include <gap_scan.h>
@@ -24,12 +25,17 @@
 #include "mesh_api.h"
 #include "rtk_common.h"
 
-static uint8_t rtk_adv_data[31];
-static uint8_t rtk_adv_data_len;
-static gap_sched_adv_type_t rtk_adv_type;
-static plt_timer_t rtk_adv_timer;
+typedef struct
+{
+    uint8_t adv_data[31];
+    uint8_t adv_data_len;
+    gap_sched_adv_type_t adv_type;
+    uint32_t adv_interval;
+    plt_timer_t adv_timer;
+    uint8_t adv_interval_switch;
+} gap_adv_ctx_t;
 
-extern void rtk_gap_adv_timeout(void);
+static gap_adv_ctx_t rtk_adv_ctx;
 
 static mible_status_t err_code_convert(T_GAP_CAUSE cause)
 {
@@ -133,14 +139,14 @@ mible_status_t mible_gap_adv_send(void)
     }
 
     gap_sched_task_p ptask = CONTAINER_OF(padv_data, gap_sched_task_t, adv_data);
-    memcpy(ptask->adv_data, rtk_adv_data, rtk_adv_data_len);
-    ptask->adv_len = rtk_adv_data_len;
-    ptask->adv_type = rtk_adv_type;
+    memcpy(ptask->adv_data, rtk_adv_ctx.adv_data, rtk_adv_ctx.adv_data_len);
+    ptask->adv_len = rtk_adv_ctx.adv_data_len;
+    ptask->adv_type = rtk_adv_ctx.adv_type;
 
     gap_sched_try(ptask);
     
     //MI_LOG_DEBUG("adv data:");
-    //MI_LOG_HEXDUMP(rtk_adv_data, rtk_adv_data_len);
+    //MI_LOG_HEXDUMP(rtk_adv_ctx.adv_data, rtk_adv_ctx.adv_data_len);
 
     return MI_SUCCESS;
 }
@@ -150,6 +156,13 @@ static void rtk_adv_timeout_handler(void *pargs)
     T_IO_MSG msg;
     msg.type = MIBLE_API_MSG_TYPE_ADV_TIMEOUT;
     mible_api_inner_msg_send(&msg);
+    uint32_t adv_interval = rtk_adv_ctx.adv_interval;
+    if (rtk_adv_ctx.adv_interval_switch)
+    {
+        adv_interval += 10;
+    }
+    rtk_adv_ctx.adv_interval_switch ^= 0x01;
+    plt_timer_change_period(rtk_adv_ctx.adv_timer, adv_interval, 0);
 }
 
 mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_param)
@@ -157,34 +170,36 @@ mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_param)
     /* ser adv type */
     if (MIBLE_ADV_TYPE_CONNECTABLE_UNDIRECTED == p_param->adv_type)
     {
-        rtk_adv_type = GAP_SCHED_ADV_TYPE_IND;
+        rtk_adv_ctx.adv_type = GAP_SCHED_ADV_TYPE_IND;
     }
     else if (MIBLE_ADV_TYPE_SCANNABLE_UNDIRECTED == p_param->adv_type)
     {
-        rtk_adv_type = GAP_SCHED_ADV_TYPE_SCAN_IND;
+        rtk_adv_ctx.adv_type = GAP_SCHED_ADV_TYPE_SCAN_IND;
     }
     else
     {
-        rtk_adv_type = GAP_SCHED_ADV_TYPE_NONCONN_IND;
+        rtk_adv_ctx.adv_type = GAP_SCHED_ADV_TYPE_NONCONN_IND;
     }
     
     /* create timer to start adv */
-    if (NULL == rtk_adv_timer)
+    rtk_adv_ctx.adv_interval = p_param->adv_interval_min * 625 / 1000;
+    if (NULL == rtk_adv_ctx.adv_timer)
     {
-        rtk_adv_timer = plt_timer_create("adv_timer", p_param->adv_interval_min*625/1000, TRUE, 0, rtk_adv_timeout_handler);
-        if (NULL == rtk_adv_timer)
+        rtk_adv_ctx.adv_timer = plt_timer_create("adv_timer", rtk_adv_ctx.adv_interval, FALSE, 0, rtk_adv_timeout_handler);
+        if (NULL == rtk_adv_ctx.adv_timer)
         {
             return MI_ERR_RESOURCES;
         }
+        rtk_adv_ctx.adv_interval_switch = 1;
     }
     else
     {
-        plt_timer_change_period(rtk_adv_timer, p_param->adv_interval_min*625/1000, 0);
+        plt_timer_change_period(rtk_adv_ctx.adv_timer, rtk_adv_ctx.adv_interval, 0);
     }
     
-    if (!plt_timer_is_active(rtk_adv_timer))
+    if (!plt_timer_is_active(rtk_adv_ctx.adv_timer))
     {
-        plt_timer_start(rtk_adv_timer, 0);
+        plt_timer_start(rtk_adv_ctx.adv_timer, 0);
     }
 
     return MI_SUCCESS;
@@ -196,8 +211,8 @@ mible_status_t mible_gap_adv_data_set(uint8_t const *p_data,
     T_GAP_CAUSE err = GAP_CAUSE_SUCCESS;
     if (NULL != p_data)
     {
-        memcpy(rtk_adv_data, p_data, dlen);
-        rtk_adv_data_len = dlen;
+        memcpy(rtk_adv_ctx.adv_data, p_data, dlen);
+        rtk_adv_ctx.adv_data_len = dlen;
     }
 
     if (NULL != p_sr_data)
@@ -210,10 +225,10 @@ mible_status_t mible_gap_adv_data_set(uint8_t const *p_data,
 
 mible_status_t mible_gap_adv_stop(void)
 {
-    if (NULL != rtk_adv_timer)
+    if (NULL != rtk_adv_ctx.adv_timer)
     {
-        plt_timer_delete(rtk_adv_timer, 0);
-        rtk_adv_timer = NULL;
+        plt_timer_delete(rtk_adv_ctx.adv_timer, 0);
+        rtk_adv_ctx.adv_timer = NULL;
     }
     return MI_SUCCESS;
 }
