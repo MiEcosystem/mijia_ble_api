@@ -123,10 +123,6 @@ mible_status_t mible_timer_start(void *timer_id, uint32_t timeout_value,
         if (timer_context[idx].timer == timer_id)
         {
             timer_context[idx].pcontext = p_context;
-            if (!plt_timer_is_active(timer_id))
-            {
-                plt_timer_start(timer_id, 0);
-            }
             plt_timer_change_period(timer_id, timeout_value, 0);
             return MI_SUCCESS;
         }

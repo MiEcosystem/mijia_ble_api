@@ -20,16 +20,15 @@
 extern "C" {
 #endif
 
-
-#define EVENT_MI_BLEAPI                             0xF0
+#define MIBLE_API_MSG_NUM                           20
 
 /* mible api inner message type */
 #define MIBLE_API_MSG_TYPE_TIMEOUT                  0x00
 #define MIBLE_API_MSG_TYPE_ADV_TIMEOUT              0x01
 
-void mible_api_init(void *pevent_queue, void *pio_queue);
+void mible_api_init(uint8_t evt_type, void *pevent_queue);
 bool mible_api_inner_msg_send(T_IO_MSG *pmsg);
-void mible_api_inner_msg_handle(T_IO_MSG *pmsg);
+void mible_api_inner_msg_handle(uint8_t event);
 
 
 #ifdef __cplusplus

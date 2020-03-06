@@ -43,11 +43,12 @@ typedef struct
     mible_gap_adv_param_t adv_param;
 } rtk_gap_task_adv_t;
 
+#define RTK_GAP_MAX_ADV_DATA_LEN                      31
 typedef struct
 {
-    uint8_t adv_data[40];
+    uint8_t adv_data[RTK_GAP_MAX_ADV_DATA_LEN + 2];
     uint8_t adv_data_len;
-    uint8_t scan_rsp_data[40];
+    uint8_t scan_rsp_data[RTK_GAP_MAX_ADV_DATA_LEN + 2];
     uint8_t scan_rsp_data_len;
 } rtk_gap_task_update_adv_param_t;
 
@@ -65,6 +66,8 @@ typedef struct _rtk_gap_task_t
 
 static rtk_gap_task_t *pcur_task;
 static plt_list_t rtk_gap_task_list;
+static void *rtk_gap_timer;
+#define RTK_GAP_OPERATE_TIMEOUT            500
 #endif
 
 static mible_status_t err_code_convert(T_GAP_CAUSE cause)
@@ -134,9 +137,15 @@ void rtk_gap_task_run(rtk_gap_task_t *ptask);
 static void rtk_gap_cur_task_done(void)
 {
     //MI_LOG_DEBUG("task done: 0x%x", pcur_task);
+    /* stop timer first */
+    mible_timer_stop(rtk_gap_timer);
+    
     /* free current task */
-    plt_free(pcur_task, RAM_TYPE_DATA_ON);
-    pcur_task = NULL;
+    if (NULL != pcur_task)
+    {
+        plt_free(pcur_task, RAM_TYPE_DATA_ON);
+        pcur_task = NULL;
+    }
     /* run next task */
     rtk_gap_task_t *ptask = plt_list_pop(&rtk_gap_task_list);
     //MI_LOG_DEBUG("pop task: 0x%x", ptask);
@@ -146,9 +155,21 @@ static void rtk_gap_cur_task_done(void)
     }
 }
 
+static void rtk_gap_timeout_handle(void *pargs)
+{
+    /* current task run timeout, maybe error happened or message missed */
+    MI_LOG_ERROR("task operate timeout!");
+    rtk_gap_cur_task_done();
+}
+
 void rtk_gap_task_run(rtk_gap_task_t *ptask)
 {
     //MI_LOG_DEBUG("run task: 0x%x", ptask);
+    if (NULL == rtk_gap_timer)
+    {
+        mible_timer_create(&rtk_gap_timer, rtk_gap_timeout_handle, MIBLE_TIMER_SINGLE_SHOT);
+    }
+    
     pcur_task = ptask;
     T_GAP_CAUSE ret = GAP_CAUSE_SUCCESS;
     switch (ptask->task_type)
@@ -163,6 +184,10 @@ void rtk_gap_task_run(rtk_gap_task_t *ptask)
                 MI_LOG_ERROR("sync start adv failed: %d", ret);
                 rtk_gap_cur_task_done();
             }
+            else
+            {
+                mible_timer_start(rtk_gap_timer, RTK_GAP_OPERATE_TIMEOUT, NULL);
+            }
         }
         else
         {
@@ -172,6 +197,10 @@ void rtk_gap_task_run(rtk_gap_task_t *ptask)
             {
                 MI_LOG_ERROR("sync stop adv failed: %d", ret);
                 rtk_gap_cur_task_done();
+            }
+            else
+            {
+                mible_timer_start(rtk_gap_timer, RTK_GAP_OPERATE_TIMEOUT, NULL);
             }
         }
         break;
@@ -185,6 +214,10 @@ void rtk_gap_task_run(rtk_gap_task_t *ptask)
                 MI_LOG_ERROR("sync start scan failed: %d", ret);
                 rtk_gap_cur_task_done();
             }
+            else
+            {
+                mible_timer_start(rtk_gap_timer, RTK_GAP_OPERATE_TIMEOUT, NULL);
+            }
         }
         else
         {
@@ -195,6 +228,10 @@ void rtk_gap_task_run(rtk_gap_task_t *ptask)
                 MI_LOG_ERROR("sync stop scan failed: %d", ret);
                 rtk_gap_cur_task_done();
             }
+            else
+            {
+                mible_timer_start(rtk_gap_timer, RTK_GAP_OPERATE_TIMEOUT, NULL);
+            }
         }
         break;
     case RTK_GAP_TASK_TYPE_UPDATE_ADV_PARAM:
@@ -204,6 +241,10 @@ void rtk_gap_task_run(rtk_gap_task_t *ptask)
         {
             MI_LOG_ERROR("sync update adv param failed: %d", ret);
             rtk_gap_cur_task_done();
+        }
+        else
+        {
+            mible_timer_start(rtk_gap_timer, RTK_GAP_OPERATE_TIMEOUT, NULL);
         }
         break;
     default:
@@ -319,6 +360,7 @@ mible_status_t mible_gap_scan_start(mible_gap_scan_type_t scan_type,
     }
     else
     {
+        MI_LOG_ERROR("scan start failed: out of memory!");
         err = MI_ERR_NO_MEM;
     }
 #else
@@ -341,6 +383,7 @@ mible_status_t mible_gap_scan_stop(void)
     }
     else
     {
+        MI_LOG_ERROR("scan stop failed: out of memory!");
         err = MI_ERR_NO_MEM;
     }
 #else
@@ -407,6 +450,7 @@ mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_param)
     }
     else
     {
+        MI_LOG_ERROR("adv start failed: out of memory!");
         err = MI_ERR_NO_MEM;
     }
 #else
@@ -419,12 +463,12 @@ mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_param)
 static T_GAP_CAUSE rtk_gap_adv_data_set(uint8_t const *p_data,
                                  uint8_t dlen, uint8_t const *p_sr_data, uint8_t srdlen)
 {
-    if (NULL != p_data)
+    if ((NULL != p_data) && (dlen > 0))
     {
         le_adv_set_param(GAP_PARAM_ADV_DATA, dlen, (void *)p_data);
     }
 
-    if (NULL != p_sr_data)
+    if ((NULL != p_sr_data) && (srdlen > 0))
     {
         le_adv_set_param(GAP_PARAM_SCAN_RSP_DATA, srdlen, (void *)p_sr_data);
     }
@@ -440,15 +484,19 @@ mible_status_t mible_gap_adv_data_set(uint8_t const *p_data,
     rtk_gap_task_t *ptask = plt_malloc(sizeof(rtk_gap_task_t), RAM_TYPE_DATA_ON);
     if (NULL != ptask)
     {
+        uint8_t len = (dlen > RTK_GAP_MAX_ADV_DATA_LEN) ? RTK_GAP_MAX_ADV_DATA_LEN : dlen;
         ptask->task_type = RTK_GAP_TASK_TYPE_UPDATE_ADV_PARAM;
-        memcpy(ptask->update_adv_param.adv_data, p_data, dlen);
-        ptask->update_adv_param.adv_data_len = dlen;
-        memcpy(ptask->update_adv_param.scan_rsp_data, p_sr_data, srdlen);
-        ptask->update_adv_param.scan_rsp_data_len = srdlen;
+        memcpy(ptask->update_adv_param.adv_data, p_data, len);
+        ptask->update_adv_param.adv_data_len = len;
+
+        len = (srdlen > RTK_GAP_MAX_ADV_DATA_LEN) ? RTK_GAP_MAX_ADV_DATA_LEN : srdlen;
+        memcpy(ptask->update_adv_param.scan_rsp_data, p_sr_data, len);
+        ptask->update_adv_param.scan_rsp_data_len = len;
         rtk_gap_task_try(ptask);
     }
     else
     {
+        MI_LOG_ERROR("adv data set failed: out of memory!");
         err = MI_ERR_NO_MEM;
     }
 #else
@@ -471,6 +519,7 @@ mible_status_t mible_gap_adv_stop(void)
     }
     else
     {
+        MI_LOG_ERROR("adv stop failed: out of memory!");
         err = MI_ERR_NO_MEM;
     }
 #else
