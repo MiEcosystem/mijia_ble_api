@@ -927,6 +927,9 @@ int mible_mesh_gateway_set_appkey(mible_mesh_op_t op, uint16_t netkey_index, uin
 	cmd_mutex_get();
 	if(op == MIBLE_MESH_OP_ADD){
 
+		if(gecko_cmd_mesh_test_get_key_count(1)->count == 4){
+			return -1; 
+		}
 		struct gecko_msg_mesh_prov_create_appkey_rsp_t *add_ret; 
 		add_ret = gecko_cmd_mesh_prov_create_appkey(netkey_index, 16, appkey);
 		if(add_ret->result != 0){
