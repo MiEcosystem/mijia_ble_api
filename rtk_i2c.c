@@ -16,7 +16,7 @@
 #include "mible_api.h"
 #include "app_task.h"
 #include "rtl876x_gdma.h"
-
+#define I2C0_GDMA_Channel_Handler      GDMA0_Channel0_Handler
 /* Globals ------------------------------------------------------------------*/
 static uint8_t scl_pin, sda_pin;
 static I2C_TypeDef *I2C_port;
@@ -55,7 +55,6 @@ void board_i2c_init(const iic_config_t *p_config)
 
 void GDMA_SendInit(void)
 {
-
     RCC_PeriphClockCmd(APBPeriph_GDMA, APBPeriph_GDMA_CLOCK, ENABLE);
     /* Initialize GDMA to send data */
     GDMA_InitTypeDef GDMA_InitStruct;
@@ -73,6 +72,14 @@ void GDMA_SendInit(void)
     GDMA_InitStruct.GDMA_DestHandshake       = GDMA_Handshake_I2C0_TX;
     GDMA_InitStruct.GDMA_ChannelPriority     = 0;
     GDMA_Init(GDMA_Channel0, &GDMA_InitStruct);
+    
+    NVIC_InitTypeDef NVIC_InitStruct;
+    NVIC_InitStruct.NVIC_IRQChannel         = GDMA0_Channel0_IRQn;
+    NVIC_InitStruct.NVIC_IRQChannelCmd      = (FunctionalState)ENABLE;
+    NVIC_InitStruct.NVIC_IRQChannelPriority = 3;
+    NVIC_Init(&NVIC_InitStruct);
+
+    GDMA_INTConfig(0, GDMA_INT_Transfer, ENABLE);
 }
 
 
@@ -135,6 +142,8 @@ void driver_i2c_init(const iic_config_t *p_config)
 
 void I2C_SendByGDMA(uint8_t *pWriteBuf, uint16_t Writelen, bool no_stop)
 {
+    GDMA_SendInit();
+
     uint32_t i = 0;
 
     /* Configure send data store in send buffer */
@@ -154,6 +163,8 @@ void I2C_SendByGDMA(uint8_t *pWriteBuf, uint16_t Writelen, bool no_stop)
 
 void I2C_ReadByGDMA(uint8_t *pReadBuf, uint16_t ReadLen)
 {
+    GDMA_SendInit();
+
     uint32_t i = 0;
 
     /* Configure send data store in send buffer */
@@ -168,7 +179,6 @@ void I2C_ReadByGDMA(uint8_t *pReadBuf, uint16_t ReadLen)
     GDMA_SetBufferSize(GDMA_CHANNEL_SEND, ReadLen);
     /* Start write */
     GDMA_Cmd(0, ENABLE);
-
 }
 
 
@@ -311,4 +321,8 @@ int mible_iic_scl_pin_read(uint8_t port, uint8_t pin)
     }
 }
 
-
+void I2C0_GDMA_Channel_Handler(void)
+{
+    //Add user code here
+    GDMA_ClearINTPendingBit(0, GDMA_INT_Transfer);
+}
