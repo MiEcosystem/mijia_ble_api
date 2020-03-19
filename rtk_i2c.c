@@ -16,13 +16,14 @@
 #include "mible_api.h"
 #include "app_task.h"
 #include "rtl876x_gdma.h"
+#include "mible_log.h"
 #define I2C0_GDMA_Channel_Handler      GDMA0_Channel0_Handler
 /* Globals ------------------------------------------------------------------*/
 static uint8_t scl_pin, sda_pin;
 static I2C_TypeDef *I2C_port;
 static IRQn_Type I2C_int_channel;
 static mible_handler_t i2c_callback_func;
-uint16_t I2C_SendBuf[I2C_Buf_Maxsize];
+uint16_t I2C_SendBuf[I2C_TX_MAX];
 uint8_t *I2C_ReadBuf;
 bool read = false;
 /**
@@ -65,8 +66,8 @@ void GDMA_SendInit(void)
     GDMA_InitStruct.GDMA_DestinationInc      = DMA_DestinationInc_Fix;
     GDMA_InitStruct.GDMA_SourceDataSize      = GDMA_DataSize_HalfWord;
     GDMA_InitStruct.GDMA_DestinationDataSize = GDMA_DataSize_HalfWord;
-    GDMA_InitStruct.GDMA_SourceMsize         = GDMA_Msize_4;
-    GDMA_InitStruct.GDMA_DestinationMsize    = GDMA_Msize_4;
+    GDMA_InitStruct.GDMA_SourceMsize         = GDMA_Msize_1;
+    GDMA_InitStruct.GDMA_DestinationMsize    = GDMA_Msize_1;
     GDMA_InitStruct.GDMA_SourceAddr          = (uint32_t)NULL;
     GDMA_InitStruct.GDMA_DestinationAddr     = (uint32_t)(&(I2C_port->IC_DATA_CMD));
     GDMA_InitStruct.GDMA_DestHandshake       = GDMA_Handshake_I2C0_TX;
@@ -119,7 +120,7 @@ void driver_i2c_init(const iic_config_t *p_config)
     I2C_InitStruct.I2C_Ack           = I2C_Ack_Enable;
     I2C_InitStruct.I2C_TxDmaEn       = ENABLE;
     I2C_InitStruct.I2C_RxThresholdLevel = 8;
-    I2C_InitStruct.I2C_TxWaterlevel  = 20;
+    I2C_InitStruct.I2C_TxWaterlevel  = 23;
     I2C_Init(I2C_port, &I2C_InitStruct);
 
     I2C_ClearINTPendingBit(I2C_port, I2C_INT_RX_FULL);
@@ -142,12 +143,12 @@ void driver_i2c_init(const iic_config_t *p_config)
 
 void I2C_SendByGDMA(uint8_t *pWriteBuf, uint16_t Writelen, bool no_stop)
 {
+    I2C_ClearINTPendingBit(I2C_port, I2C_INT_STOP_DET);
+    I2C_INTConfig(I2C_port, I2C_INT_STOP_DET, ENABLE);
     GDMA_SendInit();
 
-    uint32_t i = 0;
-
     /* Configure send data store in send buffer */
-    for (i = 0; i < Writelen; i++)
+    for (int i = 0; i < Writelen; i++)
     {
         I2C_SendBuf[i] = *pWriteBuf++;
     }
@@ -163,12 +164,12 @@ void I2C_SendByGDMA(uint8_t *pWriteBuf, uint16_t Writelen, bool no_stop)
 
 void I2C_ReadByGDMA(uint8_t *pReadBuf, uint16_t ReadLen)
 {
+    I2C_ClearINTPendingBit(I2C_port, I2C_INT_STOP_DET);
+    I2C_INTConfig(I2C_port, I2C_INT_STOP_DET, ENABLE);
     GDMA_SendInit();
 
-    uint32_t i = 0;
-
     /* Configure send data store in send buffer */
-    for (i = 0; i < ReadLen - 1; i++)
+    for (int i = 0; i < ReadLen - 1; i++)
     {
         I2C_SendBuf[i] = (0x0001 << 8);
     }
@@ -192,8 +193,8 @@ void DataTrans_I2C_ReceiveBuf(I2C_TypeDef *I2Cx, uint8_t *pBuf, uint16_t len)
         *pBuf++ = (uint8_t)I2Cx->IC_DATA_CMD;
     }
 }
-
-uint16_t I2C_ReadBuf_Probe = 0;
+bool xfer_abort = true;
+uint16_t I2C_ReadBuf_offset = 0;
 /**
   * @brief  I2C0 interrupt handle function.
   * @param  None.
@@ -201,51 +202,40 @@ uint16_t I2C_ReadBuf_Probe = 0;
 */
 void I2C0_Handler(void)
 {
+    iic_event_t event;
     if (I2C_GetINTStatus(I2C_port, I2C_INT_STOP_DET) == SET)
     {
-        if (read)
-        {
-            iic_event_t mible_event = IIC_EVT_XFER_DONE;
+        if (read) {
             uint32_t len = I2C_GetRxFIFOLen(I2C_port);
-            if (len)
-            {
-                DataTrans_I2C_ReceiveBuf(I2C0, I2C_ReadBuf + I2C_ReadBuf_Probe, len);
-                I2C_ReadBuf_Probe = 0;
-
-            }
-            I2C_ClearINTPendingBit(I2C_port, I2C_INT_STOP_DET);
-            i2c_callback_func(&mible_event);
+            DataTrans_I2C_ReceiveBuf(I2C0, I2C_ReadBuf + I2C_ReadBuf_offset, len);
+            I2C_ReadBuf_offset = 0;
         }
-        else
-        {
-            iic_event_t mible_event = IIC_EVT_XFER_DONE;
-            I2C_ClearINTPendingBit(I2C_port, I2C_INT_STOP_DET);
-            i2c_callback_func(&mible_event);
-        }
+        event = IIC_EVT_XFER_DONE;
+        I2C_ClearINTPendingBit(I2C_port, I2C_INT_STOP_DET);
+        i2c_callback_func(&event);
     }
     else if (I2C_GetINTStatus(I2C_port, I2C_INT_TX_ABRT) == SET)
     {
-        if (I2C_CheckEvent(I2C_port, ABRT_7B_ADDR_NOACK))
-        {
-            iic_event_t mible_event = IIC_EVT_ADDRESS_NACK;
-            i2c_callback_func(&mible_event);
-        }
-        else
-        {
-            iic_event_t mible_event = IIC_EVT_DATA_NACK;
-            i2c_callback_func(&mible_event);
+        I2C_INTConfig(I2C_port, I2C_INT_STOP_DET, DISABLE);
+        if (I2C_CheckEvent(I2C_port, ABRT_7B_ADDR_NOACK)) {
+            MI_LOG_ERROR("[IIC] ADDR_NACK");
+            event = IIC_EVT_ADDRESS_NACK;
+        } else {
+            MI_LOG_ERROR("[IIC] DATA_NACK");
+            event = IIC_EVT_DATA_NACK;
         }
         I2C_ClearINTPendingBit(I2C_port, I2C_INT_TX_ABRT);
+        i2c_callback_func(&event);
     }
     else if (I2C_GetINTStatus(I2C_port, I2C_INT_RX_FULL) == SET)
     {
-        I2C_ClearINTPendingBit(I2C_port, I2C_INT_RX_FULL);
         uint32_t len = I2C_GetRxFIFOLen(I2C_port);
         if (len)
         {
-            DataTrans_I2C_ReceiveBuf(I2C0, I2C_ReadBuf + I2C_ReadBuf_Probe, len);
-            I2C_ReadBuf_Probe += len;
+            DataTrans_I2C_ReceiveBuf(I2C0, I2C_ReadBuf + I2C_ReadBuf_offset, len);
+            I2C_ReadBuf_offset += len;
         }
+        I2C_ClearINTPendingBit(I2C_port, I2C_INT_RX_FULL);
     }
     else
     {
@@ -280,7 +270,7 @@ mible_status_t mible_iic_tx(uint8_t addr, uint8_t *p_out, uint16_t len,
 {
     no_stop = false;
     I2C_SetSlaveAddress(I2C_port, addr);
-    if (p_out == NULL || len > I2C_Buf_Maxsize)
+    if (p_out == NULL || len > I2C_TX_MAX)
     {
         return MI_ERR_INVALID_PARAM;
     }
@@ -300,7 +290,7 @@ mible_status_t mible_iic_rx(uint8_t addr, uint8_t *p_in, uint16_t len)
         return MI_ERR_BUSY;
     }
     I2C_SetSlaveAddress(I2C_port, addr);
-    if (p_in == NULL || len > I2C_Buf_Maxsize)
+    if (p_in == NULL || len > I2C_TX_MAX)
     {
         return MI_ERR_INVALID_PARAM;
     }

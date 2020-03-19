@@ -39,7 +39,7 @@ extern "C" {
 #define GDMA_CHANNEL_SEND           GDMA_Channel0
 #define GDMA_CHANNEL_SEND_NUM       0
 
-#define I2C_Buf_Maxsize             512
+#define I2C_TX_MAX                  512
 
 typedef enum
 {
