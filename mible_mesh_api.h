@@ -330,8 +330,13 @@ typedef enum {
     MIBLE_MESH_EVENT_CONFIRMATION_KEY,      /**< mible_mesh_confirmation_key_t*/
     MIBLE_MESH_EVENT_DEV_RAND_CONFIRM,      /**< mible_mesh_device_random_confirmation_t*/
     MIBLE_MESH_EVENT_PROV_RESULT,           /**< mible_mesh_provision_result_t*/
+    MIBLE_MESH_EVENT_FRIEND_MESSAGE,
 } mible_mesh_event_type_t;
 
+typedef enum {
+    MIBLE_MESH_EVENT_FRIEND_CONNECTED=0,
+    MIBLE_MESH_EVENT_FRIENED_DISCONNECT,
+}mible_mesh_event_friend_t;
 /**
  * @brief mible mesh provision type.
  */
@@ -1002,7 +1007,10 @@ typedef struct
         mible_mesh_hlth_atten_status_t hlth_atten_status;
     };
 }mible_mesh_config_status_t;
-
+typedef struct {
+    uint16_t source_address;
+    uint8_t event;
+}mible_mesh_friend_message_t;
 
 typedef union {
     mible_gap_adv_report_t adv_report;  /**< Deprecated event */
@@ -1013,6 +1021,7 @@ typedef union {
     mible_mesh_confirmation_key_t confirm_key;
     mible_mesh_device_random_confirmation_t dev_rand_confirm;
     mible_mesh_provision_result_t prov_result;
+    mible_mesh_friend_message_t friend_message;
 } mible_mesh_event_params_t;
 
 
