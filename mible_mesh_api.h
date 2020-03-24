@@ -335,7 +335,7 @@ typedef enum {
 
 typedef enum {
     MIBLE_MESH_EVENT_FRIEND_CONNECTED=0,
-    MIBLE_MESH_EVENT_FRIENED_DISCONNECT,
+    MIBLE_MESH_EVENT_FRIEND_DISCONNECTED,
 }mible_mesh_event_friend_t;
 /**
  * @brief mible mesh provision type.
