@@ -111,8 +111,7 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt)
     switch (BGLIB_MSG_ID(evt->header)) {
     case gecko_evt_le_connection_opened_id:
         m_conn_ctx.connect.role = (mible_gap_role_t) evt->data.evt_le_connection_opened.master;
-        if ((evt->data.evt_le_connection_opened.address_type == le_gap_address_type_public) ||
-            (evt->data.evt_le_connection_opened.address_type == le_gap_address_type_public_identity)) {
+        if (evt->data.evt_le_connection_opened.address_type == le_gap_address_type_public) {
             m_conn_ctx.connect.type = MIBLE_ADDRESS_TYPE_PUBLIC;
         } else {
             m_conn_ctx.connect.type = MIBLE_ADDRESS_TYPE_RANDOM;
@@ -1309,6 +1308,7 @@ void mible_tasks_exec(void)
 /**
  *        IIC APIs
  */
+#if HAVE_MSC
 #include "em_i2c.h"
 static bool iic_is_busy;
 static const iic_config_t * m_p_iic_config;
@@ -1384,7 +1384,13 @@ mible_status_t mible_iic_init(const iic_config_t * p_config,
 //    }
 
     /* Enable pins and set location */
-  #if defined (_I2C_ROUTEPEN_MASK)
+  #if defined (_SILICON_LABS_32B_SERIES_2)
+    GPIO->I2CROUTE[0].ROUTEEN = GPIO_I2C_ROUTEEN_SDAPEN | GPIO_I2C_ROUTEEN_SCLPEN;
+    GPIO->I2CROUTE[0].SCLROUTE = (p_config->scl_pin << _GPIO_I2C_SCLROUTE_PIN_SHIFT)
+                                                       | (p_config->scl_port << _GPIO_I2C_SCLROUTE_PORT_SHIFT);
+    GPIO->I2CROUTE[0].SDAROUTE = (p_config->sda_pin << _GPIO_I2C_SDAROUTE_PIN_SHIFT)
+                                               | (p_config->sda_port << _GPIO_I2C_SDAROUTE_PORT_SHIFT);
+  #elif defined (_I2C_ROUTEPEN_MASK)
     I2C0->ROUTEPEN = I2C_ROUTEPEN_SDAPEN | I2C_ROUTEPEN_SCLPEN;
     I2C0->ROUTELOC0 = (p_config->sda_extra_conf << _I2C_ROUTELOC0_SDALOC_SHIFT)
                     | (p_config->scl_extra_conf << _I2C_ROUTELOC0_SCLLOC_SHIFT);
@@ -1528,6 +1534,7 @@ int mible_iic_scl_pin_read(uint8_t port, uint8_t pin)
 {
     return GPIO_PinInGet(port, pin);
 }
+#endif
 
 mible_status_t mible_nvm_init(void)
 {
@@ -1598,9 +1605,13 @@ static bool nvm_part_erase(uint32_t address)
         MI_LOG_WARNING("%s -- erase error code %d\n", __func__, ret);
         return false;
     }
-
+#if defined(_SILICON_LABS_32B_SERIES_2)
+    ret = MSC_WriteWord((uint32_t *)(address - address % FLASH_PAGE_SIZE),
+                                        buffer, address % FLASH_PAGE_SIZE);
+#else
     ret = MSC_WriteWordFast((uint32_t *)(address - address % FLASH_PAGE_SIZE),
                                     buffer, address % FLASH_PAGE_SIZE);
+#endif
     if (mscReturnOk != ret) {
         MI_LOG_WARNING("%s -- write error code %d\n", __func__, ret);
         return false;
@@ -1648,7 +1659,11 @@ mible_status_t mible_nvm_write(void * p_data, uint32_t length, uint32_t address)
     uint32_t erase_time = us_from_time_ref();
     // MSUT be aligned
     length = CEIL_DIV(length, 4) * 4;
+#if defined(_SILICON_LABS_32B_SERIES_2)
+    ret = MSC_WriteWord((uint32_t *)address, p_data, length);
+#else
     ret = MSC_WriteWordFast((uint32_t *)address, p_data, length);
+#endif
     uint32_t prog_time = us_from_time_ref() - erase_time;
     MI_LOG_INFO("%d bytes erase cost %d us, program cost %d us\n", length, erase_time, prog_time);
 
