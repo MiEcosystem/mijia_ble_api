@@ -1622,6 +1622,27 @@ static bool nvm_part_erase(uint32_t address)
 
 
 #include "mible_trace.h"
+static uint32_t ref_tick;
+static uint32_t cpu_clk = 38400000;
+static __INLINE void init_time_profile(uint8_t cpu_running_hz)
+{
+    if (cpu_running_hz > 0 )
+        cpu_clk = cpu_running_hz;
+
+    InitCycleCounter();
+    ResetCycleCounter();
+    EnableCycleCounter();
+}
+
+static __INLINE void set_time_ref()
+{
+    ref_tick = GetCycleCounter();
+}
+
+static __INLINE uint32_t get_time_delta()
+{
+    return (GetCycleCounter() - ref_tick) * 10000000 / (SystemCoreClock);
+}
 /**
  * @brief   Function for storing data into Non-Volatile Memory.
  * @param   [in] p_data:   Pointer to data to be stored.
@@ -1656,7 +1677,7 @@ mible_status_t mible_nvm_write(void * p_data, uint32_t length, uint32_t address)
             return MI_ERR_INTERNAL;
         }
     }
-    uint32_t erase_time = us_from_time_ref();
+    uint32_t erase_time = get_time_delta();
     // MSUT be aligned
     length = CEIL_DIV(length, 4) * 4;
 #if defined(_SILICON_LABS_32B_SERIES_2)
@@ -1664,7 +1685,7 @@ mible_status_t mible_nvm_write(void * p_data, uint32_t length, uint32_t address)
 #else
     ret = MSC_WriteWordFast((uint32_t *)address, p_data, length);
 #endif
-    uint32_t prog_time = us_from_time_ref() - erase_time;
+    uint32_t prog_time = get_time_delta() - erase_time;
     MI_LOG_INFO("%d bytes erase cost %d us, program cost %d us\n", length, erase_time, prog_time);
 
     if (ret == mscReturnOk) {
