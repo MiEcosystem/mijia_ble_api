@@ -1622,26 +1622,16 @@ static bool nvm_part_erase(uint32_t address)
 
 
 #include "mible_trace.h"
-static uint32_t ref_tick;
-static uint32_t cpu_clk = 38400000;
-static __INLINE void init_time_profile(uint8_t cpu_running_hz)
-{
-    if (cpu_running_hz > 0 )
-        cpu_clk = cpu_running_hz;
-
-    InitCycleCounter();
-    ResetCycleCounter();
-    EnableCycleCounter();
-}
-
+static uint32_t ref_cycle;
 static __INLINE void set_time_ref()
 {
-    ref_tick = GetCycleCounter();
+    ref_cycle = GetCycleCounter();
 }
 
 static __INLINE uint32_t get_time_delta()
 {
-    return (GetCycleCounter() - ref_tick) * 10000000 / (SystemCoreClock);
+    uint8_t cycle_per_us =  SystemCoreClock / 1000000;
+    return (GetCycleCounter() - ref_cycle) / cycle_per_us;
 }
 /**
  * @brief   Function for storing data into Non-Volatile Memory.
