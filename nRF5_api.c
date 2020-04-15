@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #include "mible_api.h"
-#include "mible_type.h"
 #include "mible_log.h"
+#include "mi_config.h"
 
 #include "nrf_soc.h"
 #include "nrf_error.h"
@@ -29,8 +29,7 @@
 #include "app_util_platform.h"
 #if (NRF_SD_BLE_API_VERSION == 6)
 #define USE_LEGACY_API 0
-#include "SDK15.2.0_patch/nrf_drv_twi_patched.h"
-static uint8_t adv_handle = 0xFF;
+static uint8_t adv_handle = 0;
 static uint8_t is_advertising;
 static uint8_t adv_data[31];
 static uint8_t adv_data_len;
@@ -1296,7 +1295,13 @@ void mible_tasks_exec(void)
 
 /* IIC related function */
 #if (HAVE_MSC != 0)
+#if (NRF_SD_BLE_API_VERSION >= 6)
+#include "SDK15.2.0_patch/nrf_drv_twi_patched.h"
+#elif (NRF_SD_BLE_API_VERSION <= 3)
 #include "SDK12.3.0_patch/nrf_drv_twi_patched.h"
+#elif
+#error "THIS SD DONT SUPPORT MSC"
+#endif
 const nrf_drv_twi_t TWI0 = NRF_DRV_TWI_INSTANCE(0);
 static mible_handler_t m_iic_handler;
 static void twi0_handler(nrf_drv_twi_evt_t const * p_event, void * p_context)
