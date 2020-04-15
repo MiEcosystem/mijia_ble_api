@@ -113,6 +113,41 @@ int mible_mesh_node_set_relay_param(uint16_t opcode, mible_mesh_relay_params_t *
     return 0;
 }
 
+int mible_mesh_node_get_relay_param(uint16_t opcode, mible_mesh_relay_params_t *param)
+{
+    return 0;
+}
+
+int mible_mesh_node_set_ttl_param(uint16_t opcode, mible_mesh_ttl_params_t *param)
+{
+    return 0;
+}
+
+int mible_mesh_node_get_ttl_param(uint16_t opcode, mible_mesh_ttl_params_t *param)
+{
+    return 0;
+}
+
+int mible_mesh_node_set_frnd_param(uint16_t opcode, mible_mesh_frnd_params_t *param)
+{
+    return 0;
+}
+
+int mible_mesh_node_get_frnd_param(uint16_t opcode, mible_mesh_frnd_params_t *param)
+{
+    return 0;
+}
+
+int mible_mesh_node_set_nwk_param(uint16_t opcode, mible_mesh_nwk_params_t *param)
+{
+    return 0;
+}
+
+int mible_mesh_node_get_nwk_param(uint16_t opcode, mible_mesh_nwk_params_t *param)
+{
+    return 0;
+}
+
 int mible_mesh_node_generic_control(mible_mesh_generic_params_t * param)
 {
     switch(param->opcode.opcode){

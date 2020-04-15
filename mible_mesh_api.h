@@ -556,7 +556,19 @@ typedef struct{
 }mible_mesh_reset_params_t;
 
 /**
- * @brief relay get/set params.
+ * @brief set node ttl params.
+ */
+typedef struct{
+    uint16_t dst_addr;
+    uint8_t  ttl;
+    uint16_t global_netkey_index;       /**< local encrypt netkey index for mesh message */
+    uint16_t device_type;       /**< mible_mesh_device_type_t */
+    uint16_t adv_interval_ms;   /**< mesh message adv interval, unit: ms */
+    uint32_t adv_timeout_ms;    /**< mesh message advertising timeout, unit: ms */
+}mible_mesh_ttl_params_t;
+
+/**
+ * @brief set node relay params.
  */
 typedef struct{
     uint16_t dst_addr;
@@ -568,6 +580,31 @@ typedef struct{
     uint16_t adv_interval_ms;   /**< mesh message adv interval, unit: ms */
     uint32_t adv_timeout_ms;    /**< mesh message advertising timeout, unit: ms */
 }mible_mesh_relay_params_t;
+
+/**
+ * @brief set node friend params.
+ */
+typedef struct{
+    uint16_t dst_addr;
+    uint8_t  friend;
+    uint16_t global_netkey_index;       /**< local encrypt netkey index for mesh message */
+    uint16_t device_type;       /**< mible_mesh_device_type_t */
+    uint16_t adv_interval_ms;   /**< mesh message adv interval, unit: ms */
+    uint32_t adv_timeout_ms;    /**< mesh message advertising timeout, unit: ms */
+}mible_mesh_frnd_params_t;
+
+/**
+ * @brief set node network transmit params.
+ */
+typedef struct{
+    uint16_t dst_addr;
+    uint8_t network_transmit_count;
+    uint8_t network_transmit_interval_steps;
+    uint16_t global_netkey_index;       /**< local encrypt netkey index for mesh message */
+    uint16_t device_type;       /**< mible_mesh_device_type_t */
+    uint16_t adv_interval_ms;   /**< mesh message adv interval, unit: ms */
+    uint32_t adv_timeout_ms;    /**< mesh message advertising timeout, unit: ms */
+}mible_mesh_nwk_params_t;
 
 /**
  * @brief generic message params, like on_off/lightness/...
@@ -1100,13 +1137,76 @@ int mible_mesh_node_set_subscription(uint16_t opcode, mible_mesh_subscription_pa
 int mible_mesh_node_reset(uint16_t opcode, mible_mesh_reset_params_t *param);
 
 /**
- *@brief    set relay params node, mesh profile 4.3.2.12, Report 4.3.2.14 Config Relay Status.
+ *@brief    set relay params node, mesh profile 4.3.2.13, Report 4.3.2.14 Config Relay Status.
  *          report event: MIBLE_MESH_EVENT_CONFIG_MESSAGE_CB, data: mible_mesh_config_status_t.
  *@param    [in] opcode : relay
  *@param    [in] param : relay parameters corresponding to node
  *@return   0: success, negetive value: failure
  */
 int mible_mesh_node_set_relay_param(uint16_t opcode, mible_mesh_relay_params_t *param);
+
+/**
+ *@brief    get relay params node, mesh profile 4.3.2.12, Report 4.3.2.14 Config Relay Status.
+ *          report event: MIBLE_MESH_EVENT_CONFIG_MESSAGE_CB, data: mible_mesh_config_status_t.
+ *@param    [in] opcode : relay
+ *@param    [in] param : relay parameters corresponding to node
+ *@return   0: success, negetive value: failure
+ */
+int mible_mesh_node_get_relay_param(uint16_t opcode, mible_mesh_relay_params_t *param);
+
+/**
+ *@brief    set ttl params node, mesh profile 4.3.2.7, Report 4.3.2.8 Config ttl Status.
+ *          report event: MIBLE_MESH_EVENT_CONFIG_MESSAGE_CB, data: mible_mesh_config_status_t.
+ *@param    [in] opcode : ttl
+ *@param    [in] param : ttl parameters corresponding to node
+ *@return   0: success, negetive value: failure
+ */
+int mible_mesh_node_set_ttl_param(uint16_t opcode, mible_mesh_ttl_params_t *param);
+
+/**
+ *@brief    get ttl params node, mesh profile 4.3.2.6, Report 4.3.2.8 Config ttl Status.
+ *          report event: MIBLE_MESH_EVENT_CONFIG_MESSAGE_CB, data: mible_mesh_config_status_t.
+ *@param    [in] opcode : ttl
+ *@param    [in] param : ttl parameters corresponding to node
+ *@return   0: success, negetive value: failure
+ */
+int mible_mesh_node_get_ttl_param(uint16_t opcode, mible_mesh_ttl_params_t *param);
+
+/**
+ *@brief    set friend params node, mesh profile 4.3.2.56, Report 4.3.2.57 Config Friend Status.
+ *          report event: MIBLE_MESH_EVENT_CONFIG_MESSAGE_CB, data: mible_mesh_config_status_t.
+ *@param    [in] opcode : friend
+ *@param    [in] param : friend parameters corresponding to node
+ *@return   0: success, negetive value: failure
+ */
+int mible_mesh_node_set_frnd_param(uint16_t opcode, mible_mesh_frnd_params_t *param);
+
+/**
+ *@brief    get friend params node, mesh profile 4.3.2.55, Report 4.3.2.57 Config Friend Status.
+ *          report event: MIBLE_MESH_EVENT_CONFIG_MESSAGE_CB, data: mible_mesh_config_status_t.
+ *@param    [in] opcode : friend
+ *@param    [in] param : friend parameters corresponding to node
+ *@return   0: success, negetive value: failure
+ */
+int mible_mesh_node_get_frnd_param(uint16_t opcode, mible_mesh_frnd_params_t *param);
+
+/**
+ *@brief    set nwk params node, mesh profile 4.3.2.70, Report 4.3.2.71 Config Nwk Status.
+ *          report event: MIBLE_MESH_EVENT_CONFIG_MESSAGE_CB, data: mible_mesh_config_status_t.
+ *@param    [in] opcode : nwk
+ *@param    [in] param : nwk parameters corresponding to node
+ *@return   0: success, negetive value: failure
+ */
+int mible_mesh_node_set_nwk_param(uint16_t opcode, mible_mesh_nwk_params_t *param);
+
+/**
+ *@brief    get nwk params node, mesh profile 4.3.2.69, Report 4.3.2.71 Config Nwk Status.
+ *          report event: MIBLE_MESH_EVENT_CONFIG_MESSAGE_CB, data: mible_mesh_config_status_t.
+ *@param    [in] opcode : nwk
+ *@param    [in] param : nwk parameters corresponding to node
+ *@return   0: success, negetive value: failure
+ */
+int mible_mesh_node_get_nwk_param(uint16_t opcode, mible_mesh_nwk_params_t *param);
 
 /**
  *@brief    generic message, Mesh model 3.2, 4.2, 5.2, 6.3, or 7 Summary.
@@ -1281,14 +1381,14 @@ int mible_mesh_gateway_start_provision(uint8_t *uuid);
 
 /**
  *@brief    set provisioner random and confirmation.
- *@param    [in] param : the prov random confirm structure 
+ *@param    [in] param : the prov random confirm structure
  *@return   0: success, negetive value: failure
  */
 int mible_mesh_gateway_set_provisioner_rand_confirm(mible_mesh_prov_rand_confirm_t *param);
 
 /**
  *@brief    set provision authentication result.
- *@param    [in] param : the check rsult structure 
+ *@param    [in] param : the check rsult structure
  *@return   0: success, negetive value: failure
  */
 int mible_mesh_gateway_set_authentication_result(mible_mesh_authentication_result_t *param);
