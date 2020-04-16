@@ -263,7 +263,7 @@ void mible_mesh_stack_event_handler(struct gecko_cmd_packet *evt)
 
 			mible_mesh_friend_message_t friend_terminated_message;
 		   	
-			friend_terminated_message.source_address = evt->data.evt_mesh_friend_friendship_terminated.reason;
+			friend_terminated_message.source_address = evt->data.evt_mesh_friend_friendship_terminated.lpn_address;
 			friend_terminated_message.event = MIBLE_MESH_EVENT_FRIEND_DISCONNECTED;
 		
 			mible_mesh_event_params_t evt_friend_terminated_param = {
@@ -272,8 +272,8 @@ void mible_mesh_stack_event_handler(struct gecko_cmd_packet *evt)
 
 			mible_mesh_event_callback_handler(MIBLE_MESH_EVENT_FRIEND_MESSAGE, 
 					&evt_friend_terminated_param);
-			MI_LOG_ERROR("FFFFFFriendship terminated. reason: 0x%x\n",
-				evt->data.evt_mesh_friend_friendship_terminated.reason); 
+			MI_LOG_ERROR("FFFFFFriendship terminated. lpn_address: 0x%x\n",
+				evt->data.evt_mesh_friend_friendship_terminated.lpn_address); 
 			break;
 		}
 		case gecko_evt_mesh_node_ivrecovery_needed_id:
