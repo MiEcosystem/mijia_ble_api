@@ -561,9 +561,9 @@ int mible_mesh_node_generic_control(mible_mesh_generic_params_t * param)
 			return ret; 
 		// Vendor model
 		case MIBLE_MESH_MIOT_SPEC_GET:
-			
 		case MIBLE_MESH_MIOT_SPEC_SET:
-
+		case MIBLE_MESH_MIOT_SPEC_INDICATION_ACK:
+		case 0xFE:
 			MI_LOG_DEBUG("VVVVVVVVVVVendor model message send.\n"); 
 			MI_HEXDUMP(param->data, param->data_len); 
 
