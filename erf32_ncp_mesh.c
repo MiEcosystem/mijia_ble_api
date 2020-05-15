@@ -35,6 +35,7 @@
 #define SEGMENT_DELAY       (NETTX_STEP*NETTX_CNT + 20)
 #define MAX_SAR_RETRY       3
 
+#define TRANSMIT_WAIT_TIME  150
 
 static mible_mesh_event_cb_t mible_mesh_event_callback_handler;
 static bool recv_unprop = false; 
@@ -472,112 +473,114 @@ int mible_mesh_node_generic_control(mible_mesh_generic_params_t * param)
 	uint8_t flags = 0; 
 	int ret = 0;
 	cmd_mutex_get();
+
 	switch(param->opcode.opcode){
 		// GENERIC ONOFF 
 		case MIBLE_MESH_MSG_GENERIC_ONOFF_GET:
-
-			ret = gecko_cmd_mesh_generic_client_get(
-					MIBLE_MESH_MODEL_ID_GENERIC_ONOFF_CLIENT, 0, param->dst_addr.value, 
-					param->global_appkey_index, MESH_GENERIC_CLIENT_state_on_off)->result;
-			cmd_mutex_put();
+            ret = gecko_cmd_mesh_generic_client_get(
+                    MIBLE_MESH_MODEL_ID_GENERIC_ONOFF_CLIENT, 0, param->dst_addr.value, 
+                    param->global_appkey_index, MESH_GENERIC_CLIENT_state_on_off)->result;
+            arch_os_ms_sleep(TRANSMIT_WAIT_TIME);
+            cmd_mutex_put();
 			return ret; 
 
 		case MIBLE_MESH_MSG_GENERIC_ONOFF_SET:
-
-			flags = 1; 
-			ret = gecko_cmd_mesh_generic_client_set(
-					MIBLE_MESH_MODEL_ID_GENERIC_ONOFF_CLIENT, 0, 
-					param->dst_addr.value, param->global_appkey_index, param->data[1], 
-					0, 0, flags, MESH_GENERIC_CLIENT_request_on_off, 1, param->data)->result;
+            flags = 1; 
+            ret = gecko_cmd_mesh_generic_client_set(
+                    MIBLE_MESH_MODEL_ID_GENERIC_ONOFF_CLIENT, 0, 
+                    param->dst_addr.value, param->global_appkey_index, param->data[1], 
+                    0, 0, flags, MESH_GENERIC_CLIENT_request_on_off, 1, param->data)->result;
+            arch_os_ms_sleep(TRANSMIT_WAIT_TIME);
 			cmd_mutex_put();
 			return ret; 
 
 		case MIBLE_MESH_MSG_GENERIC_ONOFF_SET_UNACKNOWLEDGED:
-
-			flags = 0; 
-			ret = gecko_cmd_mesh_generic_client_set(
-					MIBLE_MESH_MODEL_ID_GENERIC_ONOFF_CLIENT, 0, 
-					param->dst_addr.value, param->global_appkey_index, param->data[1], 
-					0, 0, flags, MESH_GENERIC_CLIENT_request_on_off, 1, param->data)->result;
-			cmd_mutex_put();
+            flags = 0; 
+            ret = gecko_cmd_mesh_generic_client_set(
+                    MIBLE_MESH_MODEL_ID_GENERIC_ONOFF_CLIENT, 0, 
+                    param->dst_addr.value, param->global_appkey_index, param->data[1], 
+                    0, 0, flags, MESH_GENERIC_CLIENT_request_on_off, 1, param->data)->result;
+            arch_os_ms_sleep(TRANSMIT_WAIT_TIME);
+            cmd_mutex_put();
 			return ret; 
 				
 		// LIGHTNESS 
 		case MIBLE_MESH_MSG_LIGHT_LIGHTNESS_GET:
-			
-			ret = gecko_cmd_mesh_generic_client_get(
-					MIBLE_MESH_MODEL_ID_LIGHTNESS_CLIENT, 0, param->dst_addr.value, 
-					param->global_appkey_index, MESH_GENERIC_CLIENT_request_lightness_actual)->result;
+            ret = gecko_cmd_mesh_generic_client_get(
+                    MIBLE_MESH_MODEL_ID_LIGHTNESS_CLIENT, 0, param->dst_addr.value, 
+                    param->global_appkey_index, MESH_GENERIC_CLIENT_request_lightness_actual)->result;
+            arch_os_ms_sleep(TRANSMIT_WAIT_TIME);
 			cmd_mutex_put();
 			return ret; 
 
 		case MIBLE_MESH_MSG_LIGHT_LIGHTNESS_SET:
-
-			flags = 1; 
-			ret = gecko_cmd_mesh_generic_client_set(
-					MIBLE_MESH_MODEL_ID_LIGHTNESS_CLIENT, 0, 
-					param->dst_addr.value, param->global_appkey_index, param->data[2], 
-					0, 0, flags, MESH_GENERIC_CLIENT_request_lightness_actual, 
-					2, param->data)->result;
+            flags = 1; 
+            ret = gecko_cmd_mesh_generic_client_set(
+                    MIBLE_MESH_MODEL_ID_LIGHTNESS_CLIENT, 0, 
+                    param->dst_addr.value, param->global_appkey_index, param->data[2], 
+                    0, 0, flags, MESH_GENERIC_CLIENT_request_lightness_actual, 
+                    2, param->data)->result;
+            arch_os_ms_sleep(TRANSMIT_WAIT_TIME);
 			cmd_mutex_put();
 			return ret; 
 		case MIBLE_MESH_MSG_LIGHT_LIGHTNESS_SET_UNACKNOWLEDGED:
+            flags = 0; 
+            ret = gecko_cmd_mesh_generic_client_set(
+                    MIBLE_MESH_MODEL_ID_LIGHTNESS_CLIENT, 0, 
+                    param->dst_addr.value, param->global_appkey_index, param->data[2], 
+                    0, 0, flags, MESH_GENERIC_CLIENT_request_lightness_actual, 
+                    2, param->data)->result;
+            arch_os_ms_sleep(TRANSMIT_WAIT_TIME);
+            cmd_mutex_put();
+            return ret; 
 
-			flags = 0; 
-			ret = gecko_cmd_mesh_generic_client_set(
-					MIBLE_MESH_MODEL_ID_LIGHTNESS_CLIENT, 0, 
-					param->dst_addr.value, param->global_appkey_index, param->data[2], 
-					0, 0, flags, MESH_GENERIC_CLIENT_request_lightness_actual, 
-					2, param->data)->result;
-			cmd_mutex_put();
-			return ret; 
-
-		// LIGHTCTL
+            // LIGHTCTL
 		case MIBLE_MESH_MSG_LIGHT_CTL_TEMPERATURE_GET:
-		
-			ret = gecko_cmd_mesh_generic_client_get(
-					MIBLE_MESH_MODEL_ID_CTL_CLIENT, 0, param->dst_addr.value, 
-					param->global_appkey_index, MESH_GENERIC_CLIENT_state_ctl_temperature)->result;
+            ret = gecko_cmd_mesh_generic_client_get(
+                    MIBLE_MESH_MODEL_ID_CTL_CLIENT, 0, param->dst_addr.value, 
+                    param->global_appkey_index, MESH_GENERIC_CLIENT_state_ctl_temperature)->result;
+            arch_os_ms_sleep(TRANSMIT_WAIT_TIME);
 			cmd_mutex_put();
 			return ret; 
 			
 		case MIBLE_MESH_MSG_LIGHT_CTL_TEMPERATURE_SET: 
-			
-			flags = 1; 
-			ret = gecko_cmd_mesh_generic_client_set(
-					MIBLE_MESH_MODEL_ID_CTL_CLIENT, 0, param->dst_addr.value, 
-					param->global_appkey_index, param->data[4], 0, 0, flags, 
-					MESH_GENERIC_CLIENT_request_ctl_temperature, 4, param->data)->result;
-			cmd_mutex_put();
-			return ret; 		   
-		case MIBLE_MESH_MSG_LIGHT_CTL_TEMPERATURE_SET_UNACKNOWLEDGED:
-
-			flags = 0; 
-			ret = gecko_cmd_mesh_generic_client_set(
-					MIBLE_MESH_MODEL_ID_CTL_CLIENT, 0, param->dst_addr.value, 
-					param->global_appkey_index, param->data[4], 0, 0, flags, 
-					MESH_GENERIC_CLIENT_request_ctl_temperature, 4, param->data)->result;
-			cmd_mutex_put();
+            flags = 1; 
+            ret = gecko_cmd_mesh_generic_client_set(
+                    MIBLE_MESH_MODEL_ID_CTL_CLIENT, 0, param->dst_addr.value, 
+                    param->global_appkey_index, param->data[4], 0, 0, flags, 
+                    MESH_GENERIC_CLIENT_request_ctl_temperature, 4, param->data)->result;
+            arch_os_ms_sleep(TRANSMIT_WAIT_TIME);
+            cmd_mutex_put();
+            return ret; 		   
+        case MIBLE_MESH_MSG_LIGHT_CTL_TEMPERATURE_SET_UNACKNOWLEDGED:
+            flags = 0; 
+            ret = gecko_cmd_mesh_generic_client_set(
+                    MIBLE_MESH_MODEL_ID_CTL_CLIENT, 0, param->dst_addr.value, 
+                    param->global_appkey_index, param->data[4], 0, 0, flags, 
+                    MESH_GENERIC_CLIENT_request_ctl_temperature, 4, param->data)->result;
+            arch_os_ms_sleep(TRANSMIT_WAIT_TIME);
+            cmd_mutex_put();
 			return ret; 
 		// Vendor model
 		case MIBLE_MESH_MIOT_SPEC_GET:
 		case MIBLE_MESH_MIOT_SPEC_SET:
 		case MIBLE_MESH_MIOT_SPEC_INDICATION_ACK:
 		case 0xFE:
-			MI_LOG_DEBUG("VVVVVVVVVVVendor model message send.\n"); 
-			MI_HEXDUMP(param->data, param->data_len); 
+            MI_LOG_DEBUG("VVVVVVVVVVVendor model message send.\n"); 
+            MI_HEXDUMP(param->data, param->data_len); 
 
-			MI_LOG_DEBUG("vendor_id=0x%x, model_id=0x%x, dest_addr=0x%x, appkey_index=%d, opcode=%d\n",
-					MIBLE_MESH_COMPANY_ID_XIAOMI, MIBLE_MESH_MIOT_SPEC_CLIENT_MODEL, 
-					param->dst_addr.value, param->global_appkey_index, param->opcode.opcode&0x3F); 
+            MI_LOG_DEBUG("vendor_id=0x%x, model_id=0x%x, dest_addr=0x%x, appkey_index=%d, opcode=%d\n",
+                    MIBLE_MESH_COMPANY_ID_XIAOMI, MIBLE_MESH_MIOT_SPEC_CLIENT_MODEL, 
+                    param->dst_addr.value, param->global_appkey_index, param->opcode.opcode&0x3F); 
 
-			ret = gecko_cmd_mesh_vendor_model_send(0, MIBLE_MESH_COMPANY_ID_XIAOMI, 
-					MIBLE_MESH_MIOT_SPEC_CLIENT_MODEL, param->dst_addr.value, 
-					0, param->global_appkey_index, 0, param->opcode.opcode&0x3F,
-					1, param->data_len, param->data)->result;
-			if(ret != 0){
-				MI_LOG_ERROR("Send vendor model message fail. 0x%x\n", ret); 
-			}
+            ret = gecko_cmd_mesh_vendor_model_send(0, MIBLE_MESH_COMPANY_ID_XIAOMI, 
+                    MIBLE_MESH_MIOT_SPEC_CLIENT_MODEL, param->dst_addr.value, 
+                    0, param->global_appkey_index, 0, param->opcode.opcode&0x3F,
+                    1, param->data_len, param->data)->result;
+            if(ret != 0){
+                MI_LOG_ERROR("Send vendor model message fail. 0x%x\n", ret); 
+            }
+            arch_os_ms_sleep(TRANSMIT_WAIT_TIME);
 			cmd_mutex_put();
 			return ret; 
 		
@@ -1110,4 +1113,6 @@ int mible_mesh_suspend_transmission(void)
 int mible_mesh_resume_transmission(void)
 {
 	return 0; 
+
 }
+
