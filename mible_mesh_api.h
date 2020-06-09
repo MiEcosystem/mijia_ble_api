@@ -349,8 +349,10 @@ typedef enum {
  * @brief mible mesh provision type.
  */
 typedef enum {
-    MIBLE_MESH_NORMAL_DEVICE = 0,
+    MIBLE_MESH_UNKNOWN_DEVICE=0,
+    MIBLE_MESH_NORMAL_DEVICE,
     MIBLE_MESH_LOW_POWER_DEVICE,
+    MIBLE_MESH_UNSUPPORT_DEVICE=0xFF,
 } mible_mesh_device_type_t;
 
 /**
