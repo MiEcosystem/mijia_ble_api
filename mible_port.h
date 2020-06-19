@@ -136,6 +136,7 @@
 		CORE_EXIT_ATOMIC();               \
 	}
 
+#if MI_LOG_ENABLED==1
 #include "third_party/SEGGER_RTT/SEGGER_RTT.h"
 #define MI_PRINTF(...)     SEGGER_RTT_printf(0, __VA_ARGS__)
 #define MI_HEXDUMP(array_base, array_size)                                         \
@@ -144,7 +145,10 @@
             SEGGER_RTT_printf(0, (i+1)%16?"%02X ":"%02X\n", ((char*)(array_base))[i]);\
 		if (array_size%16) SEGGER_RTT_printf(0,"\n");                               \
 	} while(0)
-
+#else
+#define MI_PRINTF(...)
+#define MI_HEXDUMP(array_base, array_size)
+#endif
 
 #ifdef DEBUG
 #include "em_gpio.h"
