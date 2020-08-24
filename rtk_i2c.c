@@ -59,6 +59,7 @@ void GDMA_SendInit(void)
     RCC_PeriphClockCmd(APBPeriph_GDMA, APBPeriph_GDMA_CLOCK, ENABLE);
     /* Initialize GDMA to send data */
     GDMA_InitTypeDef GDMA_InitStruct;
+    GDMA_StructInit(&GDMA_InitStruct);
     GDMA_InitStruct.GDMA_ChannelNum          = 0;
     GDMA_InitStruct.GDMA_DIR                 = GDMA_DIR_MemoryToPeripheral;
     GDMA_InitStruct.GDMA_BufferSize          = 0;
