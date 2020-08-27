@@ -188,7 +188,6 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt)
     case gecko_evt_gatt_server_attribute_value_id: {
         uint16_t char_handle = evt->data.evt_gatt_server_attribute_value.attribute;
 
-
         gatts_evt_param.conn_handle =
                 evt->data.evt_gatt_server_attribute_value.connection;
         gatts_evt_param.write.data =
@@ -226,9 +225,9 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt)
 
         for(uint8_t i=0; i<CHAR_TABLE_NUM; i++){
 
-        	if(m_char_table.item[i].handle == char_handle){
+            if(m_char_table.item[i].handle == char_handle){
 
-        		if(m_char_table.item[i].rd_author == true){
+                if(m_char_table.item[i].rd_author == true){
 
                     gatts_evt_param.conn_handle =
                             evt->data.evt_gatt_server_user_read_request.connection;
@@ -237,7 +236,7 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt)
                             evt->data.evt_gatt_server_user_read_request.characteristic;
 
                     mible_gatts_event_callback(MIBLE_GATTS_EVT_READ_PERMIT_REQ, &gatts_evt_param);
-        		}else{
+                }else{
                     /* Send read response here since no application reaction needed*/
                     if (evt->data.evt_gatt_server_user_read_request.offset>m_char_table.item[i].len) {
                         gecko_cmd_gatt_server_send_user_read_response(
@@ -249,14 +248,12 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt)
                                 evt->data.evt_gatt_server_user_read_request.connection,
                                 evt->data.evt_gatt_server_user_read_request.characteristic,
                                 bg_err_success,
-								m_char_table.item[i].len
-										- evt->data.evt_gatt_server_user_read_request.offset,
-								m_char_table.item[i].data
-                                        + evt->data.evt_gatt_server_user_read_request.offset);
+                                m_char_table.item[i].len - evt->data.evt_gatt_server_user_read_request.offset,
+                                m_char_table.item[i].data + evt->data.evt_gatt_server_user_read_request.offset);
                     }
-            	}
-        		break;
-        	}
+                }
+                break;
+            }
         }
     }
     break;
@@ -1122,7 +1119,7 @@ mible_status_t mible_record_delete(uint16_t record_id)
  * @brief 	Restore data to flash
  * @param 	[in] record_id: identify an area in flash
  * 			[out] p_data: pointer to data
- *			[in] len: data length
+ *			[in] len: data buffer length
  * @return  MI_SUCCESS              The command was accepted.
  *          MI_ERR_INVALID_LENGTH   Size was 0, or higher than the maximum
  *allowed size.
@@ -1144,7 +1141,7 @@ mible_status_t mible_record_read(uint16_t record_id, uint8_t* p_data, uint8_t le
     p_rsp = gecko_cmd_flash_ps_load(record_id + 0x4000);
 
     if (p_rsp->result == bg_err_success) {
-        memcpy(p_data, p_rsp->value.data, len);
+        memcpy(p_data, p_rsp->value.data, MIN(len, p_rsp->value.len));
         return MI_SUCCESS;
     } else {
         return MI_ERR_INVALID_PARAM;
