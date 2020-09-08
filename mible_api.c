@@ -35,26 +35,26 @@ int mible_gap_register(mible_gap_callback_t cb)
 	while(i < MIBLE_MAX_USERS){
 		if(m_gap_cb_table[i] == 0){
 			m_gap_cb_table[i] = cb;
-			m_gap_users++; 
+			m_gap_users++;
 			CRITICAL_SECTION_EXIT();
 			return MI_SUCCESS;
 		}
 		i++;
 	}
 	CRITICAL_SECTION_EXIT();
-	return -1;  // full 
+	return -1;  // full
 
 }
 
 int mible_gap_unregister(mible_gap_callback_t cb)
 {
-	
+
 	CRITICAL_SECTION_ENTER();
 	int i=0;
 	while(i < MIBLE_MAX_USERS){
 		if(m_gap_cb_table[i] == cb){
 			m_gap_cb_table[i] = 0;
-			m_gap_users--; 
+			m_gap_users--;
 			CRITICAL_SECTION_EXIT();
 			return MI_SUCCESS;
 		}
@@ -71,26 +71,26 @@ int mible_gattc_register(mible_gattc_callback_t cb)
 	while(i < MIBLE_MAX_USERS){
 		if(m_gattc_cb_table[i] == 0){
 			m_gattc_cb_table[i] = cb;
-			m_gattc_users++; 
+			m_gattc_users++;
 			CRITICAL_SECTION_EXIT();
 			return MI_SUCCESS;
 		}
 		i++;
 	}
 	CRITICAL_SECTION_EXIT();
-	return -1;  // full 
+	return -1;  // full
 
 }
 
 int mible_gattc_unregister(mible_gattc_callback_t cb)
 {
-	
+
 	CRITICAL_SECTION_ENTER();
 	int i=0;
 	while(i < MIBLE_MAX_USERS){
 		if(m_gattc_cb_table[i] == cb){
 			m_gattc_cb_table[i] = 0;
-			m_gattc_users--; 
+			m_gattc_users--;
 			CRITICAL_SECTION_EXIT();
 			return MI_SUCCESS;
 		}
@@ -107,15 +107,15 @@ int mible_gatts_register(mible_gatts_callback_t cb)
 	while(i < MIBLE_MAX_USERS){
 		if(m_gatts_cb_table[i] == 0){
 			m_gatts_cb_table[i] = cb;
-			m_gatts_users++; 
+			m_gatts_users++;
 			CRITICAL_SECTION_EXIT();
 			return MI_SUCCESS;
 		}
 		i++;
 	}
 	CRITICAL_SECTION_EXIT();
-	return -1;  // full 
-	
+	return -1;  // full
+
 
 }
 int mible_gatts_unregister(mible_gatts_callback_t cb)
@@ -125,7 +125,7 @@ int mible_gatts_unregister(mible_gatts_callback_t cb)
 	while(i < MIBLE_MAX_USERS){
 		if(m_gatts_cb_table[i] == cb){
 			m_gatts_cb_table[i] = 0;
-			m_gatts_users--; 
+			m_gatts_users--;
 			CRITICAL_SECTION_EXIT();
 			return MI_SUCCESS;
 		}
@@ -142,26 +142,26 @@ int mible_arch_register(mible_arch_callback_t cb)
 	while(i < MIBLE_MAX_USERS){
 		if(m_arch_cb_table[i] == 0){
 			m_arch_cb_table[i] = cb;
-			m_arch_users++; 
+			m_arch_users++;
 			CRITICAL_SECTION_EXIT();
 			return MI_SUCCESS;
 		}
 		i++;
 	}
 	CRITICAL_SECTION_EXIT();
-	return -1;  // full 
+	return -1;  // full
 }
 
 
 int mible_arch_unregister(mible_arch_callback_t cb)
 {
-	
+
 	CRITICAL_SECTION_ENTER();
 	int i=0;
 	while(i < MIBLE_MAX_USERS){
 		if(m_arch_cb_table[i] == cb){
 			m_arch_cb_table[i] = 0;
-			m_arch_users--; 
+			m_arch_users--;
 			CRITICAL_SECTION_EXIT();
 			return MI_SUCCESS;
 		}
@@ -261,13 +261,13 @@ __WEAK mible_status_t mible_gap_address_get(mible_addr_t mac)
     return MI_SUCCESS;
 }
 
-/** 
- * @brief   Set BLE mac address. 
- * @param   [in] mac: pointer to data 
- * @return  MI_SUCCESS          The requested mac address were written to mac 
- *          MI_ERR_INTERNAL     No mac address found. 
- * @note:   You should copy mac to gap mac[6] 
- * */ 
+/**
+ * @brief   Set BLE mac address.
+ * @param   [in] mac: pointer to data
+ * @return  MI_SUCCESS          The requested mac address were written to mac
+ *          MI_ERR_INTERNAL     No mac address found.
+ * @note:   You should copy mac to gap mac[6]
+ * */
 __WEAK mible_status_t mible_gap_address_set(mible_addr_t mac)
 {
 	return MI_SUCCESS;
@@ -547,7 +547,7 @@ __WEAK mible_status_t mible_gatts_rw_auth_reply(uint16_t conn_handle,
  *          MIBLE_ERR_INVALID_CONN_HANDLE  Invaild connection handle.
  * @note    The response is given through MIBLE_GATTC_EVT_DISCOVERY_RSP event
  * */
-__WEAK mible_status_t mible_gattc_service_discovery(uint16_t conn_handle, mible_uuid_t srv_uuid)
+__WEAK mible_status_t mible_gattc_service_discovery(uint16_t conn_handle, mible_uuid_t *srv_uuid)
 {
 	return MI_SUCCESS;
 }
@@ -576,7 +576,7 @@ __WEAK mible_status_t mible_gattc_set_cccd(uint16_t conn_handle, uint16_t char_h
 /**
  * @brief   Read characteristic value by handle
  * @param   [in] conn_handle: connnection handle
- *          [in] char_handle: characteristic handle 
+ *          [in] char_handle: characteristic handle
  * @return  MI_SUCCESS             Successfully started or resumed the Read
  * using Characteristic UUID procedure.
  *          MI_ERR_INVALID_STATE   Invalid Connection State.

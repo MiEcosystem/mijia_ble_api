@@ -278,19 +278,23 @@ extern "C" {
 #define MIBLE_MESH_MIJIA_CLIENT_MODEL                               0003 //0x038f0003
 
 /*** Mesh vendor opcodes ***/
-#define MIBLE_MESH_MIOT_SPEC_GET                                    0x00C1 //0xC1038F
-#define MIBLE_MESH_MIOT_SPEC_SET                                    0x00C3 //0xC3038F
-#define MIBLE_MESH_MIOT_SPEC_SET_NOACK                              0x00C4 //0xC4038F
-#define MIBLE_MESH_MIOT_SPEC_STATUS                                 0x00C5 //0xC5038F
+#define MIBLE_MESH_MIOT_SPEC_GET                                    0x00C1 //TX: 0xC1038F
+#define MIBLE_MESH_MIOT_SPEC_SET                                    0x00C3 //TX: 0xC3038F
+#define MIBLE_MESH_MIOT_SPEC_SET_NOACK                              0x00C4 //TX: 0xC4038F
+#define MIBLE_MESH_MIOT_SPEC_STATUS                                 0x00C5 //RX: 0xC5038F
 
-#define MIBLE_MESH_MIOT_SPEC_ACTION                                 0x00C6 //0xC6038F
-#define MIBLE_MESH_MIOT_SPEC_ACTION_ACK                             0x00C7 //0xC7038F
-#define MIBLE_MESH_MIOT_SPEC_NOTIFICATION                           0x00C8 //0xC8038F
+#define MIBLE_MESH_SYNC_PROPS_REQ                                   0x00C6  //RX: 0xC6038F
+#define MIBLE_MESH_SYNC_PROPS_RSP                                   0x00C7  //TX: 0xC7038F
+#define MIBLE_MESH_MIOT_SPEC_EVENT                                  0x00C8  //RX: 0xC8038F
+#define MIBLE_MESH_MIOT_SPEC_EVENT_EXT                              0x00C9  //RX: 0xC9038F
+#define MIBLE_MESH_MIOT_SPEC_ACTION_REQ                             0x00CA  //TX: 0xCA038F
+#define MIBLE_MESH_MIOT_SPEC_ACTION_RSP                             0x00CB  //RX: 0xCB038F
 
-#define MIBLE_MESH_MIOT_SPEC_INDICATION                             0x00CE //0xCE038F
-#define MIBLE_MESH_MIOT_SPEC_INDICATION_ACK                         0x00CF //0xCF038F
+// same as MIBLE_MESH_MIOT_SPEC_STATUS, but indication mode
+#define MIBLE_MESH_MIOT_SPEC_INDICATION                             0x00CE //RX: 0xCE038F
+#define MIBLE_MESH_MIOT_SPEC_INDICATION_ACK                         0x00CF //TX: 0xCF038F
 
-#define MIBLE_MESH_MIOT_SPEC_VENDOR_CONFIG                          0x00FF //0xFF038F
+#define MIBLE_MESH_MIOT_SPEC_VENDOR_CONFIG                          0x00FF //RX: 0xFF038F
 #define MIBLE_MESH_MIOT_SPEC_VENDOR_CONFIG_SUB                      0x01
 
 #define MIBLE_MESH_COMPANY_ID_SIG                                   0xFFFF
@@ -651,9 +655,9 @@ typedef struct {
     uint16_t src_addr;      /**< [mandatary]  source address */
     uint16_t dst_addr;      /**< [mandatary]  maybe group address, or provisioner addr */
     uint16_t appkey_index;  /**< [mandatary]  appkey index for this message */
-    uint16_t netkey_index;  /**< [optional]  if not, default value 0xFFFF */
-    int8_t  rssi;           /**< [optional]  if not, default value -1 */
-    uint8_t  ttl;           /**< [optional]  if not, default value 0 */
+    uint16_t netkey_index;  /**< [optional]  if no this field info, fill default value 0xFFFF */
+    uint32_t iv_index;      /**< [optional]  if no this field info, fill default value 0x00 */
+    uint32_t seq_num;       /**< [optional]  if no this field info, fill default value 0x00 */
 } mible_mesh_message_rx_meta_t;
 
 /**
