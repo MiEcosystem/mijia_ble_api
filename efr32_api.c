@@ -471,7 +471,7 @@ mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_param)
     }
 
     result = gecko_cmd_le_gap_set_advertise_timing(ADV_HANDLE, p_param->adv_interval_min,
-            p_param->adv_interval_max, 0, 0)->result;
+            p_param->adv_interval_min, 0, 0)->result;
     MI_ERR_CHECK(result);
     if (result == bg_err_invalid_param) {
         return MI_ERR_INVALID_PARAM;
