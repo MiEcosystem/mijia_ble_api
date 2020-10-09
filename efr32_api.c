@@ -1664,7 +1664,6 @@ mible_status_t mible_nvm_write(void * p_data, uint32_t length, uint32_t address)
             return MI_ERR_INTERNAL;
         }
     }
-    uint32_t erase_time = get_time_delta();
     // MSUT be aligned
     length = CEIL_DIV(length, 4) * 4;
 #if defined(_SILICON_LABS_32B_SERIES_2)
@@ -1672,9 +1671,12 @@ mible_status_t mible_nvm_write(void * p_data, uint32_t length, uint32_t address)
 #else
     ret = MSC_WriteWordFast((uint32_t *)address, p_data, length);
 #endif
+
+#ifdef MI_LOG_ENABLED
+    uint32_t erase_time = get_time_delta();
     uint32_t prog_time = get_time_delta() - erase_time;
     MI_LOG_INFO("%d bytes erase cost %d us, program cost %d us\n", length, erase_time, prog_time);
-
+#endif
     if (ret == mscReturnOk) {
         return MI_SUCCESS;
     } else {
