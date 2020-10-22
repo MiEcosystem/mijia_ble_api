@@ -333,6 +333,8 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt)
                     connect_param_for_retry = 0xFF;
                 }
             }
+        }else if(evt->data.evt_system_external_signal.extsignals & MIBLE_TASK_BIT_MASK){
+            mible_tasks_exec();
         }
 
     break;
@@ -1282,6 +1284,7 @@ static queue_t task_queue;
  * */
 mible_status_t mible_task_post(mible_handler_t handler, void *p_ctx)
 {
+    mible_status_t ret = MI_SUCCESS;
     if (task_queue.buf == NULL){
         queue_init(&task_queue, task_buf,
                    sizeof(task_buf) / sizeof(task_buf[0]), sizeof(task_buf[0]));
@@ -1292,7 +1295,14 @@ mible_status_t mible_task_post(mible_handler_t handler, void *p_ctx)
         .p_ctx   = p_ctx,
     };
 
-    return enqueue(&task_queue, &task);
+    ret = enqueue(&task_queue, &task);
+    if(ret == MI_SUCCESS){
+        gecko_external_signal(MIBLE_TASK_BIT_MASK);
+    }else{
+        MI_LOG_ERROR("mible_task_post fail %d.\n", ret);
+    }
+
+    return ret;
 }
 
 void mible_tasks_exec(void)

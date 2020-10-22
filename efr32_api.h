@@ -41,6 +41,7 @@
 
 #define SCAN_TIMEOUT_TIMER_ID                   0xFF
 
+#define MIBLE_TASK_BIT_MASK                     (1<<29)
 #define START_ADV_RETRY_BIT_MASK                (1<<30)
 
 #define MIBLE_TIMER_NUM                         4
