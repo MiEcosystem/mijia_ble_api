@@ -1705,3 +1705,21 @@ mible_status_t mible_upgrade_firmware(void)
 
     return MI_SUCCESS;
 }
+
+/* add your own code here*/
+#define MCU_INIT_VERSION    "0001"
+#define MCU_UPDATE_VERSION  "0004"
+int read_cnt = 0;
+mible_status_t mible_mcu_get_version(uint8_t *buf)
+{
+    read_cnt++;
+    if(read_cnt==1){
+        memcpy(buf,MCU_INIT_VERSION,sizeof(MCU_INIT_VERSION));
+    }else if(read_cnt>=5){
+        memcpy(buf,MCU_UPDATE_VERSION,sizeof(MCU_UPDATE_VERSION));
+    }else{
+        return MI_ERR_BUSY;
+    }
+    return MI_SUCCESS;
+}
+
