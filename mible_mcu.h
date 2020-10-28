@@ -8,6 +8,7 @@
 #ifndef MIJIA_BLE_API_MIBLE_MCU_H_
 #define MIJIA_BLE_API_MIBLE_MCU_H_
 
+#include "mi_config.h"
 #include "mible_port.h"
 #include "mible_type.h"
 #include "third_party/pt/pt.h"

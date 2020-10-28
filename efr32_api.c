@@ -1,6 +1,5 @@
 /* Bluetooth stack headers */
 #include "bg_types.h"
-#include "native_gecko.h"
 #include "gatt_db.h"
 
 #include "mbedtls/aes.h"

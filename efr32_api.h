@@ -2,6 +2,7 @@
 #define EFR32_API_H
 
 #include "mible_type.h"
+#include "native_gecko.h"
 
 /*
  * RECORD_INFO_KEY - Information key index - DO NOT CHANGE IT
