@@ -18,7 +18,7 @@
 #include "rtk_common.h"
 
 #define DEFAULT_TIME_INTERVAL   0xFFFFFF
-#define MAX_TIMER_CONTEXT       10
+#define MAX_TIMER_CONTEXT       16
 
 typedef struct
 {
