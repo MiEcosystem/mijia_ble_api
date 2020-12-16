@@ -30,7 +30,7 @@
 #define RETRY_START_ADV_BIT_MASK                (1<<2)
 
 /** Timer Frequency used. */
-#define TIMER_CLK_FREQ                          ((uint32)32768)
+#define TIMER_CLK_FREQ                          ((uint64)32768)
 /** Convert msec to timer ticks. */
 #define MS_2_TIMERTICK(ms)                      ((TIMER_CLK_FREQ * (ms)) / 1000)
 #define SEC_2_TIMERTICK(s)                      (TIMER_CLK_FREQ * (s))
@@ -45,7 +45,9 @@
 #define MIBLE_TASK_BIT_MASK                     (1<<29)
 #define START_ADV_RETRY_BIT_MASK                (1<<30)
 
-#define MIBLE_TIMER_NUM                         4
+#define MIBLE_TIMER_NUM                         20
+#define MIBLE_USER_TIMER_INDEX                  10
+#define MIBLE_USER_REC_ID_BASE                  0x50
 
 typedef enum {
     idle_s,

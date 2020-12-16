@@ -50,8 +50,6 @@ struct{
 	user_char_t item[CHAR_TABLE_NUM];
 } m_char_table;
 
-#define TIMER_MAX_NUM 4
-
 typedef struct {
     uint8_t id;
     uint8_t is_avail;
@@ -60,17 +58,45 @@ typedef struct {
     void * p_ctx;
 } timer_item_t;
 
-static timer_item_t m_timer_pool[TIMER_MAX_NUM] = {
+static timer_item_t m_timer_pool[MIBLE_TIMER_NUM] = {
     [0] = { .id = 0, .is_avail = 1, },
     [1] = { .id = 1, .is_avail = 1, },
     [2] = { .id = 2, .is_avail = 1, },
     [3] = { .id = 3, .is_avail = 1, },
+    [4] = { .id = 4, .is_avail = 1, },
+    [5] = { .id = 5, .is_avail = 1, },
+    [6] = { .id = 6, .is_avail = 1, },
+    [7] = { .id = 7, .is_avail = 1, },
+    [8] = { .id = 8, .is_avail = 1, },
+    [9] = { .id = 9, .is_avail = 1, },
+    [10] = { .id = 10, .is_avail = 1, },
+    [11] = { .id = 11, .is_avail = 1, },
+    [12] = { .id = 12, .is_avail = 1, },
+    [13] = { .id = 13, .is_avail = 1, },
+    [14] = { .id = 14, .is_avail = 1, },
+    [15] = { .id = 15, .is_avail = 1, },
+    [16] = { .id = 16, .is_avail = 1, },
+    [17] = { .id = 17, .is_avail = 1, },
+    [18] = { .id = 18, .is_avail = 1, },
+    [19] = { .id = 19, .is_avail = 1, },
 };
 
 static timer_item_t* acquire_timer()
 {
     uint8_t i;
-    for (i = 0; i < TIMER_MAX_NUM; i++) {
+    for (i = 0; i < MIBLE_TIMER_NUM; i++) {
+        if (m_timer_pool[i].is_avail) {
+            m_timer_pool[i].is_avail = 0;
+            return &m_timer_pool[i];
+        }
+    }
+    return NULL;
+}
+
+static timer_item_t* acquire_user_timer()
+{
+    uint8_t i;
+    for (i = MIBLE_USER_TIMER_INDEX; i < MIBLE_TIMER_NUM; i++) {
         if (m_timer_pool[i].is_avail) {
             m_timer_pool[i].is_avail = 0;
             return &m_timer_pool[i];
@@ -81,7 +107,7 @@ static timer_item_t* acquire_timer()
 
 static int release_timer(void* timer_id)
 {
-    for (uint8_t i = 0; i < TIMER_MAX_NUM; i++) {
+    for (uint8_t i = 0; i < MIBLE_TIMER_NUM; i++) {
         if (timer_id == &m_timer_pool[i]) {
             m_timer_pool[i].is_avail = 1;
             m_timer_pool[i].p_ctx    = NULL;
@@ -93,7 +119,7 @@ static int release_timer(void* timer_id)
 
 static int assert_timer(void* timer_id)
 {
-    for (uint8_t i = 0; i < TIMER_MAX_NUM; i++) {
+    for (uint8_t i = 0; i < MIBLE_TIMER_NUM; i++) {
         if (timer_id == &m_timer_pool[i]) {
             return i;
         }
@@ -382,25 +408,31 @@ mible_status_t mible_gap_scan_start(mible_gap_scan_type_t scan_type,
     uint16_t result;
 
     if (scanning) {
-        return MI_ERR_INVALID_STATE;
+        result = gecko_cmd_le_gap_end_procedure();
+        MI_ERR_CHECK(result);
+        //return MI_ERR_INVALID_STATE;
     }
 
-    if (scan_type != MIBLE_SCAN_TYPE_PASSIVE ||
-        scan_type != MIBLE_SCAN_TYPE_ACTIVE) {
+    MI_LOG_WARNING("start scanning, type %d, intval %d, window %d\n", scan_type,
+                scan_param.scan_interval, scan_param.scan_window);
+
+    if (scan_type != MIBLE_SCAN_TYPE_PASSIVE && scan_type != MIBLE_SCAN_TYPE_ACTIVE) {
         return MI_ERR_INVALID_PARAM;
     }
 
     scan_interval = scan_param.scan_interval;
     scan_window = scan_param.scan_window;
 
-    gecko_cmd_le_gap_set_discovery_type(1, (uint8_t)scan_type);
+    result = gecko_cmd_le_gap_set_discovery_type(1, (uint8_t)scan_type)->result;
+    MI_ERR_CHECK(result);
     result = gecko_cmd_le_gap_set_discovery_timing(1, scan_interval, scan_window)->result;
+    MI_ERR_CHECK(result);
     if (result == bg_err_invalid_param) {
         return MI_ERR_INVALID_PARAM;
     }
 
     result = gecko_cmd_le_gap_start_discovery(1, le_gap_discover_observation)->result;
-
+    MI_ERR_CHECK(result);
     if (result == bg_err_success && scan_param.timeout != 0) {
         gecko_cmd_hardware_set_soft_timer(32768 * scan_param.timeout,
                 SCAN_TIMEOUT_TIMER_ID, 1);
@@ -419,10 +451,10 @@ mible_status_t mible_gap_scan_start(mible_gap_scan_type_t scan_type,
 
 mible_status_t mible_gap_scan_stop(void)
 {
-    if (!scanning) {
-        return MI_ERR_INVALID_STATE;
-    }
-    MI_LOG_ERROR("stop scanning\n");
+//    if (!scanning) {
+//        return MI_ERR_INVALID_STATE;
+//    }
+//    MI_LOG_ERROR("stop scanning\n");
     gecko_cmd_le_gap_end_procedure();
     scanning = 0;
     return MI_SUCCESS;
@@ -1012,6 +1044,37 @@ mible_status_t mible_timer_create(void** pp_timer, mible_timer_handler timeout_h
     return MI_SUCCESS;
 }
 
+/*TIMER related function*/
+
+/*
+ * @brief   Create a timer.
+ * @param   [out] pp_timer: a pointer to timer handle address which can uniquely
+ *  identify the timer.
+ *          [in] timeout_handler: a function will be called when the timer expires.
+ *          [in] mode: repeated or single shot.
+ * @return  MI_SUCCESS             If the timer was successfully created.
+ *          MI_ERR_INVALID_PARAM   Invalid pointer supplied.
+ *          MI_ERR_INVALID_STATE   timer module has not been initialized or the
+ * timer is running.
+ *          MI_ERR_NO_MEM          timer pool is full.
+ *
+ * */
+mible_status_t mible_user_timer_create(void** pp_timer, mible_timer_handler timeout_handler,
+        mible_timer_mode mode)
+{
+    if (pp_timer == NULL || timeout_handler == NULL)
+        return MI_ERR_INVALID_PARAM;
+
+    *pp_timer = acquire_user_timer();
+    if (*pp_timer == NULL)
+        return MI_ERR_NO_MEM;
+
+    timer_item_t * p_timer = *pp_timer;
+    p_timer->handler = timeout_handler;
+    p_timer->is_single_shot = mode == MIBLE_TIMER_SINGLE_SHOT;
+    return MI_SUCCESS;
+}
+
 /*
  * @brief 	Delete a timer.
  * @param 	[in] timer_handle: unique index of the timer.
@@ -1180,6 +1243,26 @@ mible_status_t mible_record_write(uint16_t record_id, const uint8_t* p_data, uin
     arch_evt_param.record.status = p_rsp->result == bg_err_success ? MI_SUCCESS : MI_ERR_RESOURCES;
     mible_arch_event_callback(MIBLE_ARCH_EVT_RECORD_WRITE, &arch_evt_param);
     return MI_SUCCESS;
+}
+
+mible_status_t mible_user_record_create(uint16_t record_id, uint8_t len)
+{
+    return mible_record_create(MIBLE_USER_REC_ID_BASE + record_id, len);
+}
+
+mible_status_t mible_user_record_delete(uint16_t record_id)
+{
+    return mible_record_delete(MIBLE_USER_REC_ID_BASE + record_id);
+}
+
+mible_status_t mible_user_record_read(uint16_t record_id, uint8_t* p_data, uint8_t len)
+{
+    return mible_record_read(MIBLE_USER_REC_ID_BASE + record_id, p_data, len);
+}
+
+mible_status_t mible_user_record_write(uint8_t record_id, const uint8_t *p_data, uint8_t len)
+{
+    return mible_record_write(MIBLE_USER_REC_ID_BASE + record_id, p_data, len);
 }
 
 /*

@@ -93,6 +93,9 @@ mible_status_t mible_gattc_write_cmd(uint16_t conn_handle, uint16_t handle,
 mible_status_t mible_timer_create(void** p_timer_id,
 		mible_timer_handler timeout_handler, mible_timer_mode mode);
 
+mible_status_t mible_user_timer_create(void** p_timer_id,
+        mible_timer_handler timeout_handler, mible_timer_mode mode);
+
 mible_status_t mible_timer_delete(void* timer_id);
 
 mible_status_t mible_timer_start(void* timer_id, uint32_t timeout_value,
@@ -109,6 +112,14 @@ mible_status_t mible_record_read(uint16_t record_id, uint8_t* p_data,
 
 mible_status_t mible_record_write(uint16_t record_id, const uint8_t* p_data,
 		uint8_t len);
+
+mible_status_t mible_user_record_create(uint16_t record_id, uint8_t len);
+
+mible_status_t mible_user_record_delete(uint16_t record_id);
+
+mible_status_t mible_user_record_read(uint16_t record_id, uint8_t* p_data, uint8_t len);
+
+mible_status_t mible_user_record_write(uint8_t record_id, const uint8_t *p_data, uint8_t len);
 
 mible_status_t mible_rand_num_generator(uint8_t* p_buf, uint8_t len);
 
