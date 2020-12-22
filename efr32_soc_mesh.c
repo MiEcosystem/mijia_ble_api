@@ -159,59 +159,42 @@ static void generic_request(uint16_t model_id,
                           uint16_t delay_ms,
                           uint8_t request_flags)
 {
-    mible_mesh_access_message_t generic_status;
+    mible_mesh_event_params_t evt_generic_param;
 
     MI_LOG_INFO("ON/OFF request: requested state=<%s>, transition=%lu, delay=%u\r\n",
                 request->on_off ? "ON" : "OFF", transition_ms, delay_ms);
 
-    memset(&generic_status, 0, sizeof(mible_mesh_access_message_t));
+    memset(&evt_generic_param.generic_msg, 0, sizeof(mible_mesh_access_message_t));
     switch(request->kind){
     case mesh_generic_request_on_off:
-        generic_status.opcode.opcode = MIBLE_MESH_MSG_GENERIC_ONOFF_SET;
-        generic_status.buf = (uint8_t*)&(request->on_off);
-        generic_status.buf_len = sizeof(uint8_t);
+        evt_generic_param.generic_msg.opcode.opcode = MIBLE_MESH_MSG_GENERIC_ONOFF_SET;
+        evt_generic_param.generic_msg.buf = (uint8_t*)&(request->on_off);
+        evt_generic_param.generic_msg.buf_len = sizeof(uint8_t);
         break;
+#if defined(MI_MESH_TEMPLATE_LIGHTNESS) || defined(MI_MESH_TEMPLATE_LIGHTCTL)
     case mesh_lighting_request_lightness_actual:
-        generic_status.opcode.opcode = MIBLE_MESH_MSG_LIGHT_LIGHTNESS_SET;
-        generic_status.buf = (uint8_t*)&(request->lightness);
-        generic_status.buf_len = sizeof(uint16_t);
+        evt_generic_param.generic_msg.opcode.opcode = MIBLE_MESH_MSG_LIGHT_LIGHTNESS_SET;
+        evt_generic_param.generic_msg.buf = (uint8_t*)&(request->lightness);
+        evt_generic_param.generic_msg.buf_len = sizeof(uint16_t);
         break;
+#if defined(MI_MESH_TEMPLATE_LIGHTCTL)
     case mesh_lighting_request_ctl_temperature:
-        generic_status.opcode.opcode = MIBLE_MESH_MSG_LIGHT_CTL_TEMPERATURE_SET;
-        generic_status.buf = (uint8_t*)&(request->ctl_temperature);
-        generic_status.buf_len = sizeof(uint16_t) + sizeof(int16_t);
+        evt_generic_param.generic_msg.opcode.opcode = MIBLE_MESH_MSG_LIGHT_CTL_TEMPERATURE_SET;
+        evt_generic_param.generic_msg.buf = (uint8_t*)&(request->ctl_temperature);
+        evt_generic_param.generic_msg.buf_len = sizeof(uint16_t) + sizeof(int16_t);
         break;
+#endif
+#endif
     default:
         MI_LOG_ERROR("can't find request type %d\r\n",request->kind);
         return;
     }
-    generic_status.opcode.company_id = MIBLE_MESH_COMPANY_ID_SIG;
-    generic_status.meta_data.dst_addr = server_addr;
-    generic_status.meta_data.src_addr = client_addr;
-    generic_status.meta_data.elem_index = element_index;
-    mible_mesh_event_params_t evt_generic_param = {
-        .generic_msg = generic_status,
-    };
-    mible_mesh_event_callback(MIBLE_MESH_EVENT_GENERIC_MESSAGE_CB, &evt_generic_param);
-}
+    evt_generic_param.generic_msg.opcode.company_id = MIBLE_MESH_COMPANY_ID_SIG;
+    evt_generic_param.generic_msg.meta_data.dst_addr = server_addr;
+    evt_generic_param.generic_msg.meta_data.src_addr = client_addr;
+    evt_generic_param.generic_msg.meta_data.elem_index = element_index;
 
-/***************************************************************************//**
- * This function is a handler for generic on/off change event.
- *
- * @param[in] model_id       Server model ID.
- * @param[in] element_index  Server model element index.
- * @param[in] current        Pointer to current state structure.
- * @param[in] target         Pointer to target state structure.
- * @param[in] remaining_ms   Time (in milliseconds) remaining before transition
- *                           from current state to target state is complete.
- ******************************************************************************/
-static void generic_change(uint16_t model_id,
-                         uint16_t element_index,
-                         const struct mesh_generic_state *current,
-                         const struct mesh_generic_state *target,
-                         uint32_t remaining_ms)
-{
-    //MI_LOG_INFO("generic changed: elem_idx %d\n", element_index);
+    mible_mesh_event_callback(MIBLE_MESH_EVENT_GENERIC_MESSAGE_CB, &evt_generic_param);
 }
 
 /***************************************************************************//**
@@ -237,53 +220,46 @@ static int init_sig_models(void)
     result = mesh_lib_generic_server_register_handler(MIBLE_MESH_MODEL_ID_GENERIC_ONOFF_SERVER,
                                             PRIMARY_ELEM,
                                             generic_request,
-                                            generic_change,
+                                            NULL,
                                             NULL);
     MI_ERR_CHECK(result);
-//    result = gecko_cmd_mesh_test_set_local_model_pub(PRIMARY_ELEM, 0, 0xFFFF, MIBLE_MESH_MODEL_ID_GENERIC_ONOFF_SERVER,
-//                MIBLE_MESH_GATEWAY_GROUP, DEFAULT_TTL, 0, 0, 0)->result;
-//    MI_ERR_CHECK(result);
 #endif
 #if defined(MI_MESH_TEMPLATE_TWO_KEY_SWITCH) || defined(MI_MESH_TEMPLATE_THREE_KEY_SWITCH)
     result = mesh_lib_generic_server_register_handler(MIBLE_MESH_MODEL_ID_GENERIC_ONOFF_SERVER,
                                             SECONDARY_ELEM,
                                             generic_request,
-                                            generic_change,
+                                            NULL,
                                             NULL);
     MI_ERR_CHECK(result);
-//    result = gecko_cmd_mesh_test_set_local_model_pub(SECONDARY_ELEM, 0, 0xFFFF, MIBLE_MESH_MODEL_ID_GENERIC_ONOFF_SERVER,
-//                MIBLE_MESH_GATEWAY_GROUP, DEFAULT_TTL, 0, 0, 0)->result;
-//    MI_ERR_CHECK(result);
 #endif
 #if defined(MI_MESH_TEMPLATE_THREE_KEY_SWITCH)
     result = mesh_lib_generic_server_register_handler(MIBLE_MESH_MODEL_ID_GENERIC_ONOFF_SERVER,
                                             TERTIARY_ELEM,
                                             generic_request,
-                                            generic_change,
+                                            NULL,
                                             NULL);
     MI_ERR_CHECK(result);
-//    result = gecko_cmd_mesh_test_set_local_model_pub(TERTIARY_ELEM, 0, 0xFFFF, MIBLE_MESH_MODEL_ID_GENERIC_ONOFF_SERVER,
-//                MIBLE_MESH_GATEWAY_GROUP, DEFAULT_TTL, 0, 0, 0)->result;
-//    MI_ERR_CHECK(result);
 #endif
 
 #if defined(MI_MESH_TEMPLATE_LIGHTNESS) || defined(MI_MESH_TEMPLATE_LIGHTCTL)
     result = gecko_cmd_mesh_generic_server_init_lightness()->result;
     MI_ERR_CHECK(result);
-    mesh_lib_generic_server_register_handler(MESH_LIGHTING_LIGHTNESS_SERVER_MODEL_ID,
+    result = mesh_lib_generic_server_register_handler(MESH_LIGHTING_LIGHTNESS_SERVER_MODEL_ID,
                                             PRIMARY_ELEM,
                                             generic_request,
-                                            generic_change,
+                                            NULL,
                                             NULL);
+    MI_ERR_CHECK(result);
 #endif
 #if defined(MI_MESH_TEMPLATE_LIGHTCTL)
     result = gecko_cmd_mesh_generic_server_init_ctl()->result;
     MI_ERR_CHECK(result);
-    mesh_lib_generic_server_register_handler(MESH_LIGHTING_CTL_TEMPERATURE_SERVER_MODEL_ID,
+    result = mesh_lib_generic_server_register_handler(MESH_LIGHTING_CTL_TEMPERATURE_SERVER_MODEL_ID,
                                             SECONDARY_ELEM,
                                             generic_request,
-                                            generic_change,
+                                            NULL,
                                             NULL);
+    MI_ERR_CHECK(result);
 #endif
 
 #ifndef MI_MESH_TEMPLATE_CLOUD
@@ -313,10 +289,6 @@ static void local_config_init(void)
                                                 0,
                                                 NULL)->result;
     MI_ERR_CHECK(result);
-    // Enable Vendor model publish
-    //result = gecko_cmd_mesh_test_set_local_model_pub(0, 0, MIBLE_MESH_COMPANY_ID_XIAOMI,
-    //        MIBLE_MESH_MIOT_SPEC_SERVER_MODEL, MIBLE_MESH_GATEWAY_GROUP, DEFAULT_TTL, 0, 0, 0)->result;
-    //MI_ERR_CHECK(result);
 
     result = gecko_cmd_mesh_test_set_nettx(NETTX_CNT, NETTX_STEP/10-1)->result;
     MI_ERR_CHECK(result);
@@ -475,11 +447,13 @@ int mible_mesh_device_set_netkey(mible_mesh_op_t op, uint16_t netkey_index, uint
             MI_LOG_ERROR("set netkey error. \n");
             return -1;
         }
+#if !MINIMIZE_FLASH_SIZE
     }else{
         if(gecko_cmd_mesh_test_del_local_key(0, netkey_index)->result != 0){
             MI_LOG_ERROR("delete netkey error. \n");
             return -2;
         }
+#endif
     }
     return 0;
 }
@@ -505,12 +479,14 @@ int mible_mesh_device_set_appkey(mible_mesh_op_t op, uint16_t netkey_index, uint
             return -1;
         }
         //*stack_appkey_index = appkey_index;
+#if !MINIMIZE_FLASH_SIZE
     }else{
         if(gecko_cmd_mesh_test_del_local_key(1, appkey_index)->result != 0){
             MI_LOG_ERROR("delete appkey error. \n");
             return -2;
         }
         //*stack_appkey_index = appkey_index;
+#endif
     }
     return 0;
 }
@@ -530,10 +506,12 @@ int mible_mesh_device_set_model_app(mible_mesh_op_t op, uint16_t elem_index, uin
         result = gecko_cmd_mesh_test_bind_local_model_app(elem_index, appkey_index,
                 company_id == 0? 0xFFFF: company_id, model_id)->result;
         MI_LOG_DEBUG("[model bind] company_id = %x, model_id = %x, appkey_index = %x, result = %x \n", company_id, model_id, appkey_index, result);
+#if !MINIMIZE_FLASH_SIZE
     }else{
         result = gecko_cmd_mesh_test_unbind_local_model_app(elem_index, appkey_index,
                 company_id == 0? 0xFFFF: company_id, model_id)->result;
         MI_LOG_DEBUG("[model unbind] company_id = %x, model_id = %x, appkey_index = %x, result = %x \n", company_id, model_id, appkey_index, result);
+#endif
     }
     return result;
 }
@@ -596,7 +574,7 @@ int mible_mesh_device_set_tx_power(int16_t power)
     uint16_t result;
     result = gecko_cmd_system_set_tx_power(power)->set_power;
     MI_LOG_DEBUG("set tx power %d.\n", result);
-    return 0;
+    return result;
 }
 
 /**
@@ -695,72 +673,90 @@ uint64_t mible_mesh_get_exact_systicks(void)
 
 static void process_mesh_node_init_event(struct gecko_cmd_packet *evt)
 {
-    mible_mesh_node_init_t node_info;
-    struct gecko_msg_mesh_node_initialized_evt_t *pData = (struct gecko_msg_mesh_node_initialized_evt_t *)&(evt->data);
-    node_info.provisioned = pData->provisioned;
-    node_info.address = pData->address;
-    node_info.ivi = pData->ivi;
-    //node_info.seq = gecko_cmd_mesh_test_get_element_seqnum(0)->seqnum;
-    memset(node_info.map, 0, sizeof(node_info.map));
-    /* vendor model info */
-    node_info.map[0].model_id = MIBLE_MESH_MIOT_SPEC_SERVER_MODEL;
-    node_info.map[0].company_id = MIBLE_MESH_COMPANY_ID_XIAOMI;
-    node_info.map[0].element = 0;
-    memcpy(&node_info.map[0].appkey_idx, gecko_cmd_mesh_test_get_local_model_app_bindings(node_info.map[0].element,\
-            node_info.map[0].company_id, node_info.map[0].model_id)->appkeys.data, sizeof(uint16_t));
-    /* mijia model info */
-    node_info.map[1].model_id = MIBLE_MESH_MIJIA_SERVER_MODEL;
-    node_info.map[1].company_id = MIBLE_MESH_COMPANY_ID_XIAOMI;
-    node_info.map[1].element = 0;
-    memcpy(&node_info.map[1].appkey_idx, gecko_cmd_mesh_test_get_local_model_app_bindings(node_info.map[1].element,\
-            node_info.map[1].company_id, node_info.map[1].model_id)->appkeys.data, sizeof(uint16_t));
-    /* sig model info */
+    mible_mesh_node_init_t node_info = {
+        .map = {
+            [0] = {
+                .siid = 0,
+                .piid = 0,
+                .model_id = MIBLE_MESH_MIOT_SPEC_SERVER_MODEL,
+                .company_id = MIBLE_MESH_COMPANY_ID_XIAOMI,
+                .element = 0,
+                .appkey_idx = 0,
+            },
+            [1] = {
+                .siid = 0,
+                .piid = 0,
+                .model_id = MIBLE_MESH_MIJIA_SERVER_MODEL,
+                .company_id = MIBLE_MESH_COMPANY_ID_XIAOMI,
+                .element = 0,
+                .appkey_idx = 0,
+            },
 #if defined(MI_MESH_TEMPLATE_LIGHTNESS) || defined(MI_MESH_TEMPLATE_LIGHTCTL) || defined(MI_MESH_TEMPLATE_ONE_KEY_SWITCH) \
     || defined(MI_MESH_TEMPLATE_TWO_KEY_SWITCH) || defined(MI_MESH_TEMPLATE_THREE_KEY_SWITCH) || defined(MI_MESH_TEMPLATE_FAN)
-    node_info.map[2].siid = 2;
-    node_info.map[2].piid = 1;
-    node_info.map[2].model_id = MIBLE_MESH_MODEL_ID_GENERIC_ONOFF_SERVER;
-    node_info.map[2].company_id = MIBLE_MESH_COMPANY_ID_SIG;
-    node_info.map[2].element = 0;
-    memcpy(&node_info.map[2].appkey_idx, gecko_cmd_mesh_test_get_local_model_app_bindings(node_info.map[2].element,\
-            node_info.map[2].company_id, node_info.map[2].model_id)->appkeys.data, sizeof(uint16_t));
+            [2] = {
+                .siid = 2,
+                .piid = 1,
+                .model_id = MIBLE_MESH_MODEL_ID_GENERIC_ONOFF_SERVER,
+                .company_id = MIBLE_MESH_COMPANY_ID_SIG,
+                .element = 0,
+                .appkey_idx = 0,
+            },
+    #if defined(MI_MESH_TEMPLATE_TWO_KEY_SWITCH) || defined(MI_MESH_TEMPLATE_THREE_KEY_SWITCH)
+            [3] = {
+                .siid = 3,
+                .piid = 1,
+                .model_id = MIBLE_MESH_MODEL_ID_GENERIC_ONOFF_SERVER,
+                .company_id = MIBLE_MESH_COMPANY_ID_SIG,
+                .element = 1,
+                .appkey_idx = 0,
+            },
+        #if defined(MI_MESH_TEMPLATE_THREE_KEY_SWITCH)
+            [4] = {
+                .siid = 4,
+                .piid = 1,
+                .model_id = MIBLE_MESH_MODEL_ID_GENERIC_ONOFF_SERVER,
+                .company_id = MIBLE_MESH_COMPANY_ID_SIG,
+                .element = 2,
+                .appkey_idx = 0,
+            },
+        #else
+            [4] = {0},
+        #endif
+    #elif defined(MI_MESH_TEMPLATE_LIGHTNESS) || defined(MI_MESH_TEMPLATE_LIGHTCTL)
+            [3] = {
+                .siid = 2,
+                .piid = 2,
+                .model_id = MIBLE_MESH_MODEL_ID_LIGHTNESS_SERVER,
+                .company_id = MIBLE_MESH_COMPANY_ID_SIG,
+                .element = 0,
+                .appkey_idx = 0,
+            },
+        #if defined(MI_MESH_TEMPLATE_LIGHTCTL)
+            [4] = {
+                .siid = 2,
+                .piid = 3,
+                .model_id = MIBLE_MESH_MODEL_ID_CTL_TEMPEATURE_SERVER,
+                .company_id = MIBLE_MESH_COMPANY_ID_SIG,
+                .element = 1,
+                .appkey_idx = 0,
+            },
+        #else
+            [4] = {0},
+        #endif
+    #else
+            [3] = {0},
+            [4] = {0},
+    #endif
+#else
+            [2] = {0},
+            [3] = {0},
+            [4] = {0},
 #endif
-#if defined(MI_MESH_TEMPLATE_TWO_KEY_SWITCH) || defined(MI_MESH_TEMPLATE_THREE_KEY_SWITCH)
-    node_info.map[3].siid = 3;
-    node_info.map[3].piid = 1;
-    node_info.map[3].model_id = MIBLE_MESH_MODEL_ID_GENERIC_ONOFF_SERVER;
-    node_info.map[3].company_id = MIBLE_MESH_COMPANY_ID_SIG;
-    node_info.map[3].element = 1;
-    memcpy(&node_info.map[3].appkey_idx, gecko_cmd_mesh_test_get_local_model_app_bindings(node_info.map[3].element,\
-            node_info.map[3].company_id, node_info.map[3].model_id)->appkeys.data, sizeof(uint16_t));
-#endif
-#if defined(MI_MESH_TEMPLATE_THREE_KEY_SWITCH)
-    node_info.map[4].siid = 4;
-    node_info.map[4].piid = 1;
-    node_info.map[4].model_id = MIBLE_MESH_MODEL_ID_GENERIC_ONOFF_SERVER;
-    node_info.map[4].company_id = MIBLE_MESH_COMPANY_ID_SIG;
-    node_info.map[4].element = 2;
-    memcpy(&node_info.map[4].appkey_idx, gecko_cmd_mesh_test_get_local_model_app_bindings(node_info.map[4].element,\
-            node_info.map[4].company_id, node_info.map[4].model_id)->appkeys.data, sizeof(uint16_t));
-#endif
-#if defined(MI_MESH_TEMPLATE_LIGHTNESS) || defined(MI_MESH_TEMPLATE_LIGHTCTL)
-    node_info.map[3].siid = 2;
-    node_info.map[3].piid = 2;
-    node_info.map[3].model_id = MIBLE_MESH_MODEL_ID_LIGHTNESS_SERVER;
-    node_info.map[3].company_id = MIBLE_MESH_COMPANY_ID_SIG;
-    node_info.map[3].element = 0;
-    memcpy(&node_info.map[3].appkey_idx, gecko_cmd_mesh_test_get_local_model_app_bindings(node_info.map[3].element,\
-            node_info.map[3].company_id, node_info.map[3].model_id)->appkeys.data, sizeof(uint16_t));
-#endif
-#if defined(MI_MESH_TEMPLATE_LIGHTCTL)
-    node_info.map[4].siid = 2;
-    node_info.map[4].piid = 3;
-    node_info.map[4].model_id = MIBLE_MESH_MODEL_ID_CTL_TEMPEATURE_SERVER;
-    node_info.map[4].company_id = MIBLE_MESH_COMPANY_ID_SIG;
-    node_info.map[4].element = 1;
-    memcpy(&node_info.map[4].appkey_idx, gecko_cmd_mesh_test_get_local_model_app_bindings(node_info.map[4].element,\
-            node_info.map[4].company_id, node_info.map[4].model_id)->appkeys.data, sizeof(uint16_t));
-#endif
+        },
+    };
+    node_info.provisioned = evt->data.evt_mesh_node_initialized.provisioned;
+    node_info.address = evt->data.evt_mesh_node_initialized.address;
+    node_info.ivi = evt->data.evt_mesh_node_initialized.ivi;
     is_provisioned = node_info.provisioned;
 
     mible_mesh_event_callback(MIBLE_MESH_EVENT_DEVICE_INIT_DONE, &node_info);
@@ -768,19 +764,17 @@ static void process_mesh_node_init_event(struct gecko_cmd_packet *evt)
 
 static void process_mesh_vendor_model_recv_event(struct gecko_cmd_packet *evt)
 {
-    mible_mesh_access_message_t generic_status;
+    mible_mesh_event_params_t evt_vendor_param;
 
-    memset(&generic_status, 0, sizeof(mible_mesh_access_message_t));
-    generic_status.opcode.opcode = evt->data.evt_mesh_vendor_model_receive.opcode | 0xC0;
-    generic_status.opcode.company_id = MIBLE_MESH_COMPANY_ID_XIAOMI;
-    generic_status.meta_data.dst_addr = evt->data.evt_mesh_vendor_model_receive.destination_address;
-    generic_status.meta_data.src_addr = evt->data.evt_mesh_vendor_model_receive.source_address;
-    generic_status.buf = evt->data.evt_mesh_vendor_model_receive.payload.data;
-    generic_status.buf_len = evt->data.evt_mesh_vendor_model_receive.payload.len;
-    mible_mesh_event_params_t evt_vendor_param = {
-        .generic_msg = generic_status,
-    };
-    MI_LOG_INFO("vvvvvvendor model received, opcode %04x, data:\n", generic_status.opcode.opcode);
+    memset(&evt_vendor_param.generic_msg, 0, sizeof(mible_mesh_access_message_t));
+    evt_vendor_param.generic_msg.opcode.opcode = evt->data.evt_mesh_vendor_model_receive.opcode | 0xC0;
+    evt_vendor_param.generic_msg.opcode.company_id = MIBLE_MESH_COMPANY_ID_XIAOMI;
+    evt_vendor_param.generic_msg.meta_data.dst_addr = evt->data.evt_mesh_vendor_model_receive.destination_address;
+    evt_vendor_param.generic_msg.meta_data.src_addr = evt->data.evt_mesh_vendor_model_receive.source_address;
+    evt_vendor_param.generic_msg.buf = evt->data.evt_mesh_vendor_model_receive.payload.data;
+    evt_vendor_param.generic_msg.buf_len = evt->data.evt_mesh_vendor_model_receive.payload.len;
+
+    MI_LOG_INFO("vvvvvvendor model received, opcode %04x, data:\n", evt_vendor_param.generic_msg.opcode.opcode);
     MI_LOG_HEXDUMP(evt->data.evt_mesh_vendor_model_receive.payload.data, evt->data.evt_mesh_vendor_model_receive.payload.len);
     mible_mesh_event_callback(MIBLE_MESH_EVENT_GENERIC_MESSAGE_CB, &evt_vendor_param);
 }
@@ -788,8 +782,8 @@ static void process_mesh_vendor_model_recv_event(struct gecko_cmd_packet *evt)
 static void process_mesh_node_model_config(struct gecko_cmd_packet *evt)
 {
     static uint16_t m_pri_group = 0;
-    mible_mesh_config_status_t config_msg;
-    memset(&config_msg, 0, sizeof(mible_mesh_config_status_t));
+    mible_mesh_event_params_t evt_vendor_param;
+    memset(&evt_vendor_param.config_msg, 0, sizeof(mible_mesh_config_status_t));
 
     struct gecko_msg_mesh_node_model_config_changed_evt_t changed = evt->data.evt_mesh_node_model_config_changed;
     if(changed.mesh_node_config_state == 0x02){     //Model subscription list
@@ -797,28 +791,25 @@ static void process_mesh_node_model_config(struct gecko_cmd_packet *evt)
         struct gecko_msg_mesh_test_get_local_model_sub_rsp_t* p = gecko_cmd_mesh_test_get_local_model_sub(
                     changed.element_address - m_pri_elem_addr, changed.vendor_id, changed.model_id);
         if (p->result == bg_err_success) {
-            config_msg.opcode.company_id = MIBLE_MESH_COMPANY_ID_SIG;
-            config_msg.meta_data.dst_addr = changed.element_address;
-            config_msg.meta_data.elem_index = changed.element_address - m_pri_elem_addr;
-            config_msg.model_sub_set.elem_addr = changed.element_address;
-            config_msg.model_sub_set.model_id.model_id = changed.model_id;
-            config_msg.model_sub_set.model_id.company_id = changed.vendor_id;
+            evt_vendor_param.config_msg.opcode.company_id = MIBLE_MESH_COMPANY_ID_SIG;
+            evt_vendor_param.config_msg.meta_data.dst_addr = changed.element_address;
+            evt_vendor_param.config_msg.meta_data.elem_index = changed.element_address - m_pri_elem_addr;
+            evt_vendor_param.config_msg.model_sub_set.elem_addr = changed.element_address;
+            evt_vendor_param.config_msg.model_sub_set.model_id.model_id = changed.model_id;
+            evt_vendor_param.config_msg.model_sub_set.model_id.company_id = changed.vendor_id;
             if(p->addresses.len){
-                config_msg.opcode.opcode = MIBLE_MESH_MSG_CONFIG_MODEL_SUBSCRIPTION_OVERWRITE;
-                memcpy(&config_msg.model_sub_set.address, p->addresses.data, 2);
-                m_pri_group = config_msg.model_sub_set.address - config_msg.meta_data.elem_index;
+                evt_vendor_param.config_msg.opcode.opcode = MIBLE_MESH_MSG_CONFIG_MODEL_SUBSCRIPTION_OVERWRITE;
+                memcpy(&evt_vendor_param.config_msg.model_sub_set.address, p->addresses.data, 2);
+                m_pri_group = evt_vendor_param.config_msg.model_sub_set.address - evt_vendor_param.config_msg.meta_data.elem_index;
                 MI_LOG_INFO("[SUB OVERWRITE]model %04x, elem %d, group address %d\n", changed.model_id,
-                            config_msg.meta_data.elem_index, config_msg.model_sub_set.address);
+                            evt_vendor_param.config_msg.meta_data.elem_index, evt_vendor_param.config_msg.model_sub_set.address);
             }else{
-                config_msg.opcode.opcode = MIBLE_MESH_MSG_CONFIG_MODEL_SUBSCRIPTION_DELETE;
-                config_msg.model_sub_set.address = m_pri_group + config_msg.meta_data.elem_index;
+                evt_vendor_param.config_msg.opcode.opcode = MIBLE_MESH_MSG_CONFIG_MODEL_SUBSCRIPTION_DELETE;
+                evt_vendor_param.config_msg.model_sub_set.address = m_pri_group + evt_vendor_param.config_msg.meta_data.elem_index;
                 MI_LOG_INFO("[SUB DELETE]model %04x, elem %d, group address %d\n", changed.model_id,
-                            config_msg.meta_data.elem_index, config_msg.model_sub_set.address);
+                            evt_vendor_param.config_msg.meta_data.elem_index, evt_vendor_param.config_msg.model_sub_set.address);
             }
 
-            mible_mesh_event_params_t evt_vendor_param = {
-                .config_msg = config_msg,
-            };
             mible_mesh_event_callback(MIBLE_MESH_EVENT_CONFIG_MESSAGE_CB, &evt_vendor_param);
         }
     }else if(changed.mesh_node_config_state == 0x00){
@@ -961,7 +952,7 @@ void mible_mesh_stack_event_handler(struct gecko_cmd_packet *evt)
         MI_LOG_WARNING("[Stack event] server_state_changed\r\n");
         // pass the server state changed event to mesh lib handler that will invoke
         // the callback functions registered by application
-        mesh_lib_generic_server_event_handler(evt);
+        // mesh_lib_generic_server_event_handler(evt);
         break;
     case gecko_evt_mesh_vendor_model_receive_id:
         MI_LOG_WARNING("[Stack event] vendor_model_receive\r\n");
@@ -973,7 +964,7 @@ void mible_mesh_stack_event_handler(struct gecko_cmd_packet *evt)
         break;
     case gecko_evt_mesh_node_config_set_id:
         MI_LOG_WARNING("[Stack event] config_set\r\n");
-        process_mesh_node_config_set(evt);
+        //process_mesh_node_config_set(evt);
         break;
     case gecko_evt_mesh_node_reset_id:
         MI_LOG_WARNING("[Stack event] evt gecko_evt_mesh_node_reset_id\r\n");

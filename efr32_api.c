@@ -408,7 +408,7 @@ mible_status_t mible_gap_scan_start(mible_gap_scan_type_t scan_type,
     uint16_t result;
 
     if (scanning) {
-        result = gecko_cmd_le_gap_end_procedure();
+        result = gecko_cmd_le_gap_end_procedure()->result;
         MI_ERR_CHECK(result);
         //return MI_ERR_INVALID_STATE;
     }
@@ -1243,26 +1243,6 @@ mible_status_t mible_record_write(uint16_t record_id, const uint8_t* p_data, uin
     arch_evt_param.record.status = p_rsp->result == bg_err_success ? MI_SUCCESS : MI_ERR_RESOURCES;
     mible_arch_event_callback(MIBLE_ARCH_EVT_RECORD_WRITE, &arch_evt_param);
     return MI_SUCCESS;
-}
-
-mible_status_t mible_user_record_create(uint16_t record_id, uint8_t len)
-{
-    return mible_record_create(MIBLE_USER_REC_ID_BASE + record_id, len);
-}
-
-mible_status_t mible_user_record_delete(uint16_t record_id)
-{
-    return mible_record_delete(MIBLE_USER_REC_ID_BASE + record_id);
-}
-
-mible_status_t mible_user_record_read(uint16_t record_id, uint8_t* p_data, uint8_t len)
-{
-    return mible_record_read(MIBLE_USER_REC_ID_BASE + record_id, p_data, len);
-}
-
-mible_status_t mible_user_record_write(uint8_t record_id, const uint8_t *p_data, uint8_t len)
-{
-    return mible_record_write(MIBLE_USER_REC_ID_BASE + record_id, p_data, len);
 }
 
 /*

@@ -735,69 +735,6 @@ __WEAK mible_status_t mible_record_write(uint16_t record_id, const uint8_t* p_da
 }
 
 /**
- * @brief   Create a record in flash
- * @param   [in] record_id: identify a record in flash
- *          [in] len: record length
- * @return  MI_SUCCESS              Create successfully.
- *          MI_ERR_INVALID_LENGTH   Size was 0, or higher than the maximum
- *allowed size.
- *          MI_ERR_NO_MEM,          Not enough flash memory to be assigned
- *
- * */
-__WEAK mible_status_t mible_user_record_create(uint16_t record_id, uint8_t len)
-{
-    return MI_SUCCESS;
-}
-
-/**
- * @brief   Delete a record in flash
- * @param   [in] record_id: identify a record in flash
- * @return  MI_SUCCESS              Delete successfully.
- *          MI_ERR_INVALID_PARAMS   Invalid record id supplied.
- * */
-__WEAK mible_status_t mible_user_record_delete(uint16_t record_id)
-{
-    return MI_SUCCESS;
-}
-
-/**
- * @brief   Restore data to flash
- * @param   [in] record_id: identify an area in flash
- *          [out] p_data: pointer to data
- *          [in] len: data length
- * @return  MI_SUCCESS              The command was accepted.
- *          MI_ERR_INVALID_LENGTH   Size was 0, or higher than the maximum
- *allowed size.
- *          MI_ERR_INVALID_PARAMS   Invalid record id supplied.
- *          MI_ERR_INVALID_ADDR     Invalid pointer supplied.
- * */
-__WEAK mible_status_t mible_user_record_read(uint16_t record_id, uint8_t* p_data,
-        uint8_t len)
-{
-    return MI_SUCCESS;
-}
-
-/**
- * @brief   Store data to flash
- * @param   [in] record_id: identify an area in flash
- *          [in] p_data: pointer to data
- *          [in] len: data length
- * @return  MI_SUCCESS              The command was accepted.
- *          MI_ERR_INVALID_LENGTH   Size was 0, or higher than the maximum
- * allowed size.
- *          MI_ERR_INVALID_PARAMS   p_data is not aligned to a 4 byte boundary.
- * @note    Should use asynchronous mode to implement this function.
- *          The data to be written to flash has to be kept in memory until the
- * operation has terminated, i.e., an event is received.
- *          When record writing complete , call mible_arch_event_callback function and pass MIBLE_ARCH_EVT_RECORD_WRITE_CMP event and result.
- * */
-__WEAK mible_status_t mible_user_record_write(uint16_t record_id, const uint8_t* p_data,
-        uint8_t len)
-{
-    return MI_SUCCESS;
-}
-
-/**
  *        MISC APIs
  */
 

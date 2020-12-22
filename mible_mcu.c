@@ -36,16 +36,19 @@ __WEAK mible_status_t mible_mcu_cmd_send(mible_mcu_cmd_t cmd, void* arg)
 __WEAK mible_status_t mible_mcu_cmd_wait(mible_mcu_cmd_t cmd, void* arg)
 {
     mible_status_t ret = MI_SUCCESS;
-    const char old_ver[] = "0001";
-    const char new_ver[] = "0007";
-    static uint8_t getver_cnt = 0;
+    //const char old_ver[] = "0001";
+    //const char new_ver[] = "0007";
+    //static uint8_t getver_cnt = 0;
     switch(cmd) {
     case MIBLE_MCU_GET_VERSION:
+        ret = MI_ERR_NOT_FOUND;
+/*
         getver_cnt++;
         if(getver_cnt < 2)
             memcpy((uint8_t*)arg, old_ver, strlen(old_ver));
         else
             memcpy((uint8_t*)arg, new_ver, strlen(new_ver));
+*/
         break;
     case MIBLE_MCU_READ_DFUINFO:
         ret = MI_ERR_NOT_FOUND;
