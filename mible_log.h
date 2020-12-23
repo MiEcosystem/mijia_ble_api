@@ -80,8 +80,8 @@
     } while (0)
 #else // MI_ASSERT
 
-#define MI_ERR_CHECK(ERR_CODE)
-#define MI_ERR_TEST(ERR_CODE, EXPECT)
+#define MI_ERR_CHECK(ERR_CODE)                             (void)(ERR_CODE)
+#define MI_ERR_TEST(ERR_CODE, EXPECT)                      (void)(ERR_CODE);(void)(EXPECT)
 
 #endif // MI_ASSERT END
 

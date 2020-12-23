@@ -97,6 +97,9 @@ mible_status_t mible_gattc_write_cmd(uint16_t conn_handle, uint16_t handle,
 mible_status_t mible_timer_create(void** p_timer_id,
 		mible_timer_handler timeout_handler, mible_timer_mode mode);
 
+mible_status_t mible_user_timer_create(void** p_timer_id,
+        mible_timer_handler timeout_handler, mible_timer_mode mode);
+
 mible_status_t mible_timer_delete(void* timer_id);
 
 mible_status_t mible_timer_start(void* timer_id, uint32_t timeout_value,

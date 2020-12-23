@@ -605,6 +605,25 @@ __WEAK mible_status_t mible_timer_create(void** p_timer_id,
 }
 
 /**
+ * @brief   Create a timer.
+ * @param   [out] p_timer_id: a pointer to timer id address which can uniquely identify the timer.
+ *          [in] timeout_handler: a pointer to a function which can be
+ * called when the timer expires.
+ *          [in] mode: repeated or single shot.
+ * @return  MI_SUCCESS             If the timer was successfully created.
+ *          MI_ERR_INVALID_PARAM   Invalid timer id supplied.
+ *          MI_ERR_INVALID_STATE   timer module has not been initialized or the
+ * timer is running.
+ *          MI_ERR_NO_MEM          timer pool is full.
+ *
+ * */
+__WEAK mible_status_t mible_user_timer_create(void** p_timer_id,
+        mible_timer_handler timeout_handler, mible_timer_mode mode)
+{
+    return MI_SUCCESS;
+}
+
+/**
  * @brief   Delete a timer.
  * @param   [in] timer_id: timer id
  * @return  MI_SUCCESS             If the timer was successfully deleted.
