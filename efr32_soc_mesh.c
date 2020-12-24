@@ -28,6 +28,10 @@
 #include "mesh_lighting_model_capi_types.h"
 #include "mesh_lib.h"
 
+#ifndef MI_MESH_LOW_POWER_NODE
+#define MI_MESH_LOW_POWER_NODE  0
+#endif
+
 #define PRIMARY_ELEM        0
 #define SECONDARY_ELEM      1
 #define TERTIARY_ELEM       3
@@ -45,8 +49,11 @@
 #define SEGMENT_DELAY       (NETTX_STEP*NETTX_CNT + 20)
 #define MAX_SAR_RETRY       3
 
+#define GATT_CONN_TIMEOUT                       30   //30s
+
 #define TIMER_ID_RESTART                        128
 #define TIMER_ID_POLL_SECOND                    129
+#define TIMER_ID_CONN_TIMEOUT                   130
 
 static const uint8_t miot_spec_opcode_set[] = {
         [0] = MIBLE_MESH_MIOT_SPEC_GET&0x3F,
@@ -379,6 +386,16 @@ int mible_mesh_device_unprovsion_done(void)
 }
 
 /**
+ *@brief    mesh login done.
+ *@return   0: success, negetive value: failure
+ */
+int mible_mesh_device_login_done(uint8_t status)
+{
+    MI_LOG_INFO("LOGIN SUCCESS, stop TIMER_ID_CONN_TIMEOUT\n");
+    return gecko_cmd_hardware_set_soft_timer(0, TIMER_ID_CONN_TIMEOUT, 1)->result;
+}
+
+/**
  *@brief    set local provisioner network transmit params.
  *@param    [in] count : advertise counter for every adv packet, adv transmit times
  *@param    [in] interval_steps : adv interval = interval_steps*0.625ms
@@ -400,12 +417,31 @@ int mible_mesh_device_set_network_transmit_param(uint8_t count, uint8_t interval
  *@param    [in] interval: Relay retransmit interval steps. 10*(1+steps) milliseconds. Range: 0-31.
  *@return   0: success, negetive value: failure
  */
-int mible_mesh_device_set_relay(uint8_t enabled,uint8_t count, uint8_t interval)
+int mible_mesh_device_set_relay(uint8_t enabled, uint8_t count, uint8_t interval)
 {
     uint16_t result;
     result = gecko_cmd_mesh_test_set_relay(enabled, count, interval)->result;
     MI_ERR_CHECK(result);
     return result;
+}
+
+/**
+ *@brief    get node relay state.
+ *@param    [out] enabled : 0: relay off, 1: relay on
+ *@param    [out] count: Number of relay transmissions beyond the initial one. Range: 0-7
+ *@param    [out] interval: Relay retransmit interval steps. 10*(1+steps) milliseconds. Range: 0-31.
+ *@return   0: success, negetive value: failure
+ */
+int mible_mesh_device_get_relay(uint8_t *enabled, uint8_t *count, uint8_t *step)
+{
+    struct gecko_msg_mesh_test_get_relay_rsp_t *p_relay = gecko_cmd_mesh_test_get_relay();
+    MI_LOG_WARNING("relay\t stat %d\t cnt %d\t interval %d\n", p_relay->enabled, p_relay->count, (p_relay->interval+1)*10);
+
+    *enabled = p_relay->enabled;
+    *count = p_relay->count;
+    *step = p_relay->interval;
+
+    return p_relay->result;
 }
 
 /**
@@ -755,6 +791,7 @@ static void process_mesh_node_init_event(struct gecko_cmd_packet *evt)
         },
     };
     node_info.provisioned = evt->data.evt_mesh_node_initialized.provisioned;
+    node_info.lpn_node = MI_MESH_LOW_POWER_NODE;
     node_info.address = evt->data.evt_mesh_node_initialized.address;
     node_info.ivi = evt->data.evt_mesh_node_initialized.ivi;
     is_provisioned = node_info.provisioned;
@@ -821,6 +858,7 @@ static void process_mesh_node_model_config(struct gecko_cmd_packet *evt)
     }
 }
 
+#if !MINIMIZE_FLASH_SIZE
 static void process_mesh_node_config_set(struct gecko_cmd_packet *evt)
 {
     mible_mesh_config_status_t config_msg;
@@ -846,6 +884,7 @@ static void process_mesh_node_config_set(struct gecko_cmd_packet *evt)
         MI_LOG_INFO("[Node config]known id %d\n", config_set.id);
     }
 }
+#endif
 
 static void process_mesh_node_reset(struct gecko_cmd_packet *evt)
 {
@@ -887,9 +926,25 @@ static void process_soft_timer_event(struct gecko_cmd_packet *evt)
         non_mesh_event_cnt = 0;
         // procedures run periodic
         if (is_provisioned && systime % 1800 == 0) {
+#if defined(MI_MESH_TEMPLATE_LIGHTNESS) || defined(MI_MESH_TEMPLATE_ONE_KEY_SWITCH) || defined(MI_MESH_TEMPLATE_FAN)
             uint32_t seq_remain = gecko_cmd_mesh_node_get_seq_remaining(0)->count;
+#elif defined(MI_MESH_TEMPLATE_TWO_KEY_SWITCH) || defined(MI_MESH_TEMPLATE_LIGHTCTL)
+            uint32_t seq_remain = MIN(gecko_cmd_mesh_node_get_seq_remaining(0)->count,
+                                      gecko_cmd_mesh_node_get_seq_remaining(1)->count);
+#elif defined(MI_MESH_TEMPLATE_THREE_KEY_SWITCH)
+            uint32_t seq_remain = MIN(gecko_cmd_mesh_node_get_seq_remaining(0)->count,
+                                  MIN(gecko_cmd_mesh_node_get_seq_remaining(1)->count,
+                                      gecko_cmd_mesh_node_get_seq_remaining(2)->count));
+#endif
             if (seq_remain < 0x100000 && gecko_cmd_mesh_node_get_ivupdate_state()->state == 0)
                 gecko_cmd_mesh_node_request_ivupdate();
+        }
+        break;
+    case TIMER_ID_CONN_TIMEOUT:
+        // disconnect from remote
+        MI_LOG_INFO("Gatt timeout %d sec, disconnect handle %04x\n", GATT_CONN_TIMEOUT, conn_handle);
+        if (conn_handle != 0xFF) {
+            gecko_cmd_le_connection_close(conn_handle);
         }
         break;
     default:
@@ -915,7 +970,6 @@ void mible_mesh_stack_event_handler(struct gecko_cmd_packet *evt)
     case gecko_evt_system_boot_id:
         MI_LOG_WARNING("[Stack event] gecko_evt_system_boot_id\n");
         mi_service_init();
-        //mi_scheduler_init(10, mible_mesh_schd_event_handler, NULL);
         mible_mesh_device_set_tx_power(85);
         result = gecko_cmd_hardware_set_soft_timer(MS_2_TIMERTICK(1000), TIMER_ID_POLL_SECOND, 0)->result;
         MI_ERR_CHECK(result);
@@ -964,7 +1018,9 @@ void mible_mesh_stack_event_handler(struct gecko_cmd_packet *evt)
         break;
     case gecko_evt_mesh_node_config_set_id:
         MI_LOG_WARNING("[Stack event] config_set\r\n");
-        //process_mesh_node_config_set(evt);
+#if !MINIMIZE_FLASH_SIZE
+        process_mesh_node_config_set(evt);
+#endif
         break;
     case gecko_evt_mesh_node_reset_id:
         MI_LOG_WARNING("[Stack event] evt gecko_evt_mesh_node_reset_id\r\n");
@@ -981,11 +1037,15 @@ void mible_mesh_stack_event_handler(struct gecko_cmd_packet *evt)
         MI_ERR_CHECK(result);
         result = gecko_cmd_le_gap_start_discovery(1, 2)->result;
         MI_ERR_CHECK(result);
+        result = gecko_cmd_hardware_set_soft_timer(SEC_2_TIMERTICK(GATT_CONN_TIMEOUT), TIMER_ID_CONN_TIMEOUT, 1)->result;
+        MI_ERR_CHECK(result);
         break;
     case gecko_evt_le_connection_closed_id:
         conn_handle = 0xFF;
         MI_LOG_WARNING("[Stack event] conn closed, reason 0x%x\r\n", evt->data.evt_le_connection_closed.reason);
         result = mible_mesh_device_scan_set(mesh_scan_level);
+        MI_ERR_CHECK(result);
+        result = gecko_cmd_hardware_set_soft_timer(0, TIMER_ID_CONN_TIMEOUT, 1)->result;
         MI_ERR_CHECK(result);
         break;
     case gecko_evt_le_connection_parameters_id:

@@ -18,6 +18,10 @@
 #include "mible_port.h"
 #include "mible_type.h"
 
+#ifndef MIN
+#define MIN(a, b) (((a) < (b)) ? (a) : (b))
+#endif
+
 void mible_gap_event_callback(mible_gap_evt_t evt, mible_gap_evt_param_t* param);
 
 void mible_gatts_event_callback(mible_gatts_evt_t evt,
@@ -35,6 +39,8 @@ mible_status_t mible_gap_scan_start(mible_gap_scan_type_t scan_type,
 		mible_gap_scan_param_t scan_param);
 
 mible_status_t mible_gap_scan_stop(void);
+
+mible_status_t mible_gap_scan_param_get(mible_gap_scan_param_t *scan_param);
 
 mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_adv_param);
 

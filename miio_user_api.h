@@ -8,15 +8,15 @@
 #ifndef MIJIA_BLE_API_MIIO_USER_API_H_
 #define MIJIA_BLE_API_MIIO_USER_API_H_
 
+#include "ble_spec/gatt_spec.h"
 #include "mible_api.h"
 #include "mible_mesh_api.h"
 #include "mijia_profiles/mi_service_server.h"
 #include "gatt_dfu/mible_dfu_main.h"
 #include "mesh_auth/mible_mesh_auth.h"
 #include "mesh_auth/mible_mesh_device.h"
-#include "mi_spec_type.h"
+#include "ble_spec/mi_spec_type.h"
 #include "mesh_auth/mible_mesh_operation.h"
-#include "ble_spec/mible_spec.h"
 
 #define MIBLE_USER_REC_ID_BASE                  0x50
 
@@ -213,7 +213,7 @@ static inline int miio_mesh_user_event_unregister(mible_user_event_cb_t user_eve
  */
 static inline int miio_gatt_spec_init(uint16_t buf_len)
 {
-    return mible_spec_gatt_init(buf_len);
+    return mible_gatt_spec_init(buf_len);
 }
 
 
@@ -233,9 +233,19 @@ static inline int miio_devinfo_callback_register(mi_service_devinfo_callback_t c
  *          2: NORMAL 20% window, 3: HIGH 30% window, 4: FULL 100% window
  *@return   0: success, negetive value: failure
  */
-static inline int miio_mesh_scan_set(uint8_t level)
+static inline int miio_mesh_set_scan_level(uint8_t level)
 {
     return mible_mesh_device_scan_set(level);
+}
+
+/**
+ *@brief    set mibeacon advertising timeout.
+ *@param    [in] millsecond : adv timeout in ms, 0 is stop adv, 0xffffffff is always on.
+ *@return   0: success, negetive value: failure
+ */
+static inline int miio_mesh_set_adv_timeout(uint32_t timeout)
+{
+    return mible_mesh_device_adv_start(timeout);
 }
 
 /**
@@ -243,7 +253,7 @@ static inline int miio_mesh_scan_set(uint8_t level)
  *@param    [in] power : TX power in 0.1 dBm steps.
  *@return   0: success, negetive value: failure
  */
-static inline int miio_mesh_tx_power_set(int16_t power)
+static inline int miio_mesh_set_tx_power(int16_t power)
 {
     return mible_mesh_device_set_tx_power(power);
 }
@@ -253,12 +263,19 @@ static inline int miio_mesh_tx_power_set(int16_t power)
  *@param    [in] value : value by type.
  *@return   NULL: out of memory, others: pointer of value or arguments
  */
+property_value_t * property_value_new_bytype(property_format_t type, void *value);
 property_value_t * property_value_new_boolean(bool value);
 property_value_t * property_value_new_integer(int32_t value);
-property_value_t * property_value_new_unsigned(uint32_t value);
-property_value_t * property_value_new_longlong(int64_t value);
 property_value_t * property_value_new_float(float value);
 property_value_t * property_value_new_string(const char *value);
+property_value_t * property_value_new_char(int8_t value);
+property_value_t * property_value_new_uchar(uint8_t value);
+property_value_t * property_value_new_short(int16_t value);
+property_value_t * property_value_new_ushort(uint16_t value);
+property_value_t * property_value_new_long(int32_t value);
+property_value_t * property_value_new_ulong(uint32_t value);
+property_value_t * property_value_new_longlong(int64_t value);
+property_value_t * property_value_new_ulonglong(uint64_t value);
 arguments_t * arguments_new(void);
 
 /**
@@ -282,7 +299,7 @@ void on_gatt_action_invoke(action_operation_t *o);
  */
 static inline int miio_mesh_properties_changed(uint16_t siid, uint16_t piid, property_value_t *newValue)
 {
-    return send_property_changed(siid, piid, newValue);
+    return mesh_send_property_changed(siid, piid, newValue);
 }
 
 /**
@@ -294,7 +311,7 @@ static inline int miio_mesh_properties_changed(uint16_t siid, uint16_t piid, pro
  */
 static inline int miio_mesh_event_occurred(uint16_t siid, uint16_t eiid, arguments_t *newArgs)
 {
-    return send_event_occurred(siid, eiid, newArgs);
+    return mesh_send_event_occurred(siid, eiid, newArgs);
 }
 
 /**
@@ -304,7 +321,7 @@ static inline int miio_mesh_event_occurred(uint16_t siid, uint16_t eiid, argumen
  */
 static inline int miio_mesh_request_gmt_offset(void)
 {
-    return send_property_request(128, 1);
+    return mesh_send_property_request(128, 1);
 }
 
 /**
@@ -314,7 +331,7 @@ static inline int miio_mesh_request_gmt_offset(void)
  */
 static inline int miio_mesh_request_weather(void)
 {
-    return send_property_request(128, 2);
+    return mesh_send_property_request(128, 2);
 }
 
 /**
@@ -324,7 +341,31 @@ static inline int miio_mesh_request_weather(void)
  */
 static inline int miio_mesh_request_utc_time(void)
 {
-    return send_property_request(128, 3);
+    return mesh_send_property_request(128, 3);
+}
+
+/**
+ *@brief    send properties_changed.
+ *@param    [in] siid: service id.
+ *@param    [in] piid: property id.
+ *@param    [in] newValue: property value.
+ *@return   0: success, negetive value: failure
+ */
+static inline int miio_gatt_properties_changed(uint16_t siid, uint16_t piid, property_value_t *newValue)
+{
+    return gatt_send_property_changed(siid, piid, newValue);
+}
+
+/**
+ *@brief    send properties_changed.
+ *@param    [in] siid: service id.
+ *@param    [in] piid: property id.
+ *@param    [in] newArgs: event args.
+ *@return   0: success, negetive value: failure
+ */
+static inline int miio_gatt_event_occurred(uint16_t siid, uint16_t eiid, arguments_t *newArgs)
+{
+    return gatt_send_event_occurred(siid, eiid, newArgs);
 }
 
 #endif /* MIJIA_BLE_API_MIIO_USER_API_H_ */

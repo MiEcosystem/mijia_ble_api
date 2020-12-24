@@ -223,6 +223,17 @@ __WEAK mible_status_t mible_gap_scan_stop(void)
 }
 
 /**
+ * @brief   Get scan param
+ * @param   [out] scan_param: scan interval and window
+ * @return  MI_SUCCESS             Successfully stopped scanning procedure.
+ *          MI_ERR_INVALID_STATE   Not in scanning state.
+ * */
+__WEAK mible_status_t mible_gap_scan_param_get(mible_gap_scan_param_t *scan_param)
+{
+    return MI_SUCCESS;
+}
+
+/**
  * @brief   Start advertising
  * @param   [in] p_adv_param : pointer to advertising parameters, see
  * mible_gap_adv_param_t for details

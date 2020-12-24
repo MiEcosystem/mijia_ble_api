@@ -401,6 +401,7 @@ mible_status_t mible_gap_address_get(mible_addr_t mac)
  * 	        The scan response is given through
  * MIBLE_GAP_EVT_ADV_REPORT event
  */
+static mible_gap_scan_param_t scan_param_save = {0};
 mible_status_t mible_gap_scan_start(mible_gap_scan_type_t scan_type,
         mible_gap_scan_param_t scan_param)
 {
@@ -431,6 +432,8 @@ mible_status_t mible_gap_scan_start(mible_gap_scan_type_t scan_type,
         return MI_ERR_INVALID_PARAM;
     }
 
+    scan_param_save = scan_param;
+
     result = gecko_cmd_le_gap_start_discovery(1, le_gap_discover_observation)->result;
     MI_ERR_CHECK(result);
     if (result == bg_err_success && scan_param.timeout != 0) {
@@ -457,6 +460,12 @@ mible_status_t mible_gap_scan_stop(void)
 //    MI_LOG_ERROR("stop scanning\n");
     gecko_cmd_le_gap_end_procedure();
     scanning = 0;
+    return MI_SUCCESS;
+}
+
+mible_status_t mible_gap_scan_param_get(mible_gap_scan_param_t *scan_param)
+{
+    *scan_param = scan_param_save;
     return MI_SUCCESS;
 }
 
