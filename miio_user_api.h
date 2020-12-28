@@ -10,14 +10,16 @@
 
 #include "mi_config.h"
 #include "ble_spec/gatt_spec.h"
+#include "ble_spec/mi_spec_type.h"
 #include "mible_api.h"
-#include "mible_mesh_api.h"
 #include "mijia_profiles/mi_service_server.h"
 #include "gatt_dfu/mible_dfu_main.h"
+#if defined(MI_MESH_ENABLED)
+#include "mible_mesh_api.h"
 #include "mesh_auth/mible_mesh_auth.h"
 #include "mesh_auth/mible_mesh_device.h"
-#include "ble_spec/mi_spec_type.h"
 #include "mesh_auth/mible_mesh_operation.h"
+#endif
 
 #define MIBLE_USER_REC_ID_BASE                  0x50
 
@@ -397,6 +399,40 @@ static inline int miio_mesh_request_utc_time(void)
 {
     return mesh_send_property_request(128, 3);
 }
+
+#else
+
+static inline void miio_system_adv_init(uint8_t solicite_bind)
+{
+    MI_LOG_INFO("advertising init...\n");
+
+    // add user customized adv struct : complete local name
+    uint8_t data[31], len;
+    data[0] = 1 + strlen(MODEL_NAME);
+    data[1] = 9;  // complete local name
+    if(strlen(MODEL_NAME) <= 29)
+    {
+        strcpy((char*)&data[2], MODEL_NAME);
+        len = 2 + strlen(MODEL_NAME);
+    }
+    else
+    {
+        strncpy((char*)&data[2], MODEL_NAME, 29);
+        data[0] = 1+29;
+        len = 31;
+    }
+
+    if(MI_SUCCESS != mibeacon_adv_data_set(solicite_bind, 0, data, len)){
+        MI_LOG_ERROR("mibeacon_data_set failed. \r\n");
+    }
+}
+
+static inline void miio_system_adv_start(uint16_t adv_interval_ms)
+{
+    MI_LOG_INFO("advertising start...\n");
+    mibeacon_adv_start(adv_interval_ms);
+}
+
 #endif
 
 #endif /* MIJIA_BLE_API_MIIO_USER_API_H_ */
