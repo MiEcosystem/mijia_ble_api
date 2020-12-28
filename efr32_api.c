@@ -336,11 +336,14 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt)
 
     case gecko_evt_hardware_soft_timer_id: {
         uint8_t handle = evt->data.evt_hardware_soft_timer.handle;
-        if (handle == SCAN_TIMEOUT_TIMER_ID) {
+        if (handle == TIMER_ID_SCAN_TIMEOUT) {
             scan_timeout_for_retry = 0;
             mible_gap_scan_stop();
         } else if (handle < MIBLE_TIMER_NUM) {
             m_timer_pool[handle].handler(m_timer_pool[handle].p_ctx);
+        } else if (handle == TIMER_ID_RESTART){
+            MI_LOG_INFO("system reboot.\n");
+            gecko_cmd_system_reset(0);
         }
     }
     break;
@@ -438,7 +441,7 @@ mible_status_t mible_gap_scan_start(mible_gap_scan_type_t scan_type,
     MI_ERR_CHECK(result);
     if (result == bg_err_success && scan_param.timeout != 0) {
         gecko_cmd_hardware_set_soft_timer(32768 * scan_param.timeout,
-                SCAN_TIMEOUT_TIMER_ID, 1);
+                TIMER_ID_SCAN_TIMEOUT, 1);
     }
 
     scanning = 1;
@@ -1776,3 +1779,27 @@ mible_status_t mible_upgrade_firmware(void)
 
     return MI_SUCCESS;
 }
+
+/**
+ *@brief    reboot device.
+ *@return   0: success, negetive value: failure
+ */
+mible_status_t mible_reboot(void)
+{
+    return gecko_cmd_hardware_set_soft_timer(32768 / 2, TIMER_ID_RESTART, 1)->result;
+}
+
+/**
+ *@brief    set node tx power.
+ *@param    [in] power : TX power in 0.1 dBm steps.
+ *@return   0: success, negetive value: failure
+ */
+mible_status_t mible_set_tx_power(int16_t power)
+{
+    uint16_t result;
+    result = gecko_cmd_system_set_tx_power(power)->set_power;
+    MI_LOG_DEBUG("set tx power %d.\n", result);
+
+    return MI_SUCCESS;
+}
+

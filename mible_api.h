@@ -154,4 +154,9 @@ mible_status_t mible_nvm_write(void * p_data, uint32_t length, uint32_t address)
 mible_status_t mible_nvm_read(void * p_data, uint32_t length, uint32_t address);
 
 mible_status_t mible_upgrade_firmware(void);
+
+mible_status_t mible_reboot(void);
+
+mible_status_t mible_set_tx_power(int16_t power);
+
 #endif

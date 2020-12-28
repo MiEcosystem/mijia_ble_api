@@ -51,9 +51,8 @@
 
 #define GATT_CONN_TIMEOUT                       30   //30s
 
-#define TIMER_ID_RESTART                        128
-#define TIMER_ID_POLL_SECOND                    129
-#define TIMER_ID_CONN_TIMEOUT                   130
+#define TIMER_ID_POLL_SECOND                    0XF0
+#define TIMER_ID_CONN_TIMEOUT                   0XF1
 
 static const uint8_t miot_spec_opcode_set[] = {
         [0] = MIBLE_MESH_MIOT_SPEC_GET&0x3F,
@@ -361,7 +360,7 @@ int mible_mesh_device_set_provsion_data(mible_mesh_provisioning_data_t *param)
  */
 int mible_mesh_device_provsion_done(void)
 {
-    return mible_mesh_device_reboot();
+    return mible_reboot();
 }
 
 /**
@@ -382,7 +381,7 @@ int mible_mesh_node_reset(void)
  */
 int mible_mesh_device_unprovsion_done(void)
 {
-    return mible_mesh_device_reboot();
+    return mible_reboot();
 }
 
 /**
@@ -598,28 +597,6 @@ int mible_mesh_device_set_sub_address(mible_mesh_op_t op, uint16_t element, uint
     }
 
     return 0;
-}
-
-/**
- *@brief    set node tx power.
- *@param    [in] power : TX power in 0.1 dBm steps.
- *@return   0: success, negetive value: failure
- */
-int mible_mesh_device_set_tx_power(int16_t power)
-{
-    uint16_t result;
-    result = gecko_cmd_system_set_tx_power(power)->set_power;
-    MI_LOG_DEBUG("set tx power %d.\n", result);
-    return result;
-}
-
-/**
- *@brief    reboot device.
- *@return   0: success, negetive value: failure
- */
-int mible_mesh_device_reboot(void)
-{
-    return gecko_cmd_hardware_set_soft_timer(32768 / 2, TIMER_ID_RESTART, 1)->result;
 }
 
 /**
@@ -912,10 +889,6 @@ static void process_mesh_iv_update_event(uint32_t iv_index, uint8_t flags)
 static void process_soft_timer_event(struct gecko_cmd_packet *evt)
 {
     switch (evt->data.evt_hardware_soft_timer.handle) {
-    case TIMER_ID_RESTART:
-        MI_LOG_INFO("system reboot.\n");
-        gecko_cmd_system_reset(0);
-        break;
     case TIMER_ID_POLL_SECOND:
         systime ++;
         rtc_cnt = RTCC_CounterGet();
@@ -970,15 +943,9 @@ void mible_mesh_stack_event_handler(struct gecko_cmd_packet *evt)
     case gecko_evt_system_boot_id:
         MI_LOG_WARNING("[Stack event] gecko_evt_system_boot_id\n");
         mi_service_init();
-        mible_mesh_device_set_tx_power(85);
+        mible_set_tx_power(85);
         result = gecko_cmd_hardware_set_soft_timer(MS_2_TIMERTICK(1000), TIMER_ID_POLL_SECOND, 0)->result;
         MI_ERR_CHECK(result);
-        if (GPIO_PinInGet(BSP_BUTTON0_PORT, BSP_BUTTON0_PIN) == 0){
-            result = gecko_cmd_mesh_node_reset()->result;
-            MI_ERR_CHECK(result);
-            result = gecko_cmd_hardware_set_soft_timer(32768 / 2, TIMER_ID_RESTART, 1)->result;
-            MI_ERR_CHECK(result);
-        }
         mible_mesh_event_callback(MIBLE_MESH_EVENT_STACK_INIT_DONE, NULL);
         break;
     case gecko_evt_mesh_node_initialized_id:

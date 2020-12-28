@@ -922,3 +922,22 @@ __WEAK mible_status_t mible_upgrade_firmware(void)
 {
     return MI_ERR_BUSY;
 }
+
+/**
+ *@brief    reboot device.
+ *@return   0: success, negetive value: failure
+ */
+__WEAK mible_status_t mible_reboot(void)
+{
+    return MI_ERR_BUSY;
+}
+
+/**
+ *@brief    set node tx power.
+ *@param    [in] power : TX power in 0.1 dBm steps.
+ *@return   0: success, negetive value: failure
+ */
+__WEAK mible_status_t mible_set_tx_power(int16_t power)
+{
+    return MI_SUCCESS;
+}

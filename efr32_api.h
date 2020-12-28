@@ -40,7 +40,8 @@
 
 #define RECORD_TO_STORE_BYTES(rid, len) {(uint8_t)((rid) >> 8), (uint8_t)(rid), (uint8_t)(len)};
 
-#define SCAN_TIMEOUT_TIMER_ID                   0xFF
+#define TIMER_ID_RESTART                        0xFE
+#define TIMER_ID_SCAN_TIMEOUT                   0xFF
 
 #define MIBLE_TASK_BIT_MASK                     (1<<29)
 #define START_ADV_RETRY_BIT_MASK                (1<<30)

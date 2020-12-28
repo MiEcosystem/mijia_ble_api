@@ -553,19 +553,6 @@ int mible_mesh_device_set_sub_address(mible_mesh_op_t op, uint16_t element, uint
 int mible_mesh_node_generic_control(mible_mesh_access_message_t *param);
 
 /**
- *@brief    set node tx power.
- *@param    [in] power : TX power in 0.1 dBm steps.
- *@return   0: success, negetive value: failure
- */
-int mible_mesh_device_set_tx_power(int16_t power);
-
-/**
- *@brief    reboot device.
- *@return   0: success, negetive value: failure
- */
-int mible_mesh_device_reboot(void);
-
-/**
  *@brief    get system time.
  *@return   systicks in ms.
  */
