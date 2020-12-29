@@ -300,6 +300,7 @@ typedef struct __PACKED{
 
 typedef struct __PACKED{
     uint8_t provisioned;
+    uint8_t lpn_node;
     uint16_t address;
     uint32_t ivi;
     mible_mesh_template_map_t map[5];
@@ -456,6 +457,12 @@ int mible_mesh_node_reset(void);
 int mible_mesh_device_unprovsion_done(void);
 
 /**
+ *@brief    mesh login done.
+ *@return   0: success, negetive value: failure
+ */
+int mible_mesh_device_login_done(uint8_t status);
+
+/**
  *@brief    set local provisioner network transmit params.
  *@param    [in] count : advertise counter for every adv packet, adv transmit times
  *@param    [in] interval_steps : adv interval = interval_steps*0.625ms
@@ -471,6 +478,15 @@ int mible_mesh_device_set_network_transmit_param(uint8_t count, uint8_t interval
  *@return   0: success, negetive value: failure
  */
 int mible_mesh_device_set_relay(uint8_t enabled,uint8_t count,uint8_t interval);
+
+/**
+ *@brief    get node relay state.
+ *@param    [out] enabled : 0: relay off, 1: relay on
+ *@param    [out] count: Number of relay transmissions beyond the initial one. Range: 0-7
+ *@param    [out] interval: Relay retransmit interval steps. 10*(1+steps) milliseconds. Range: 0-31.
+ *@return   0: success, negetive value: failure
+ */
+int mible_mesh_device_get_relay(uint8_t *enabled, uint8_t *count, uint8_t *step);
 
 /**
  *@brief    update iv index, .
@@ -535,19 +551,6 @@ int mible_mesh_device_set_sub_address(mible_mesh_op_t op, uint16_t element, uint
  *@return   0: success, negetive value: failure
  */
 int mible_mesh_node_generic_control(mible_mesh_access_message_t *param);
-
-/**
- *@brief    set node tx power.
- *@param    [in] power : TX power in 0.1 dBm steps.
- *@return   0: success, negetive value: failure
- */
-int mible_mesh_device_set_tx_power(int16_t power);
-
-/**
- *@brief    reboot device.
- *@return   0: success, negetive value: failure
- */
-int mible_mesh_device_reboot(void);
 
 /**
  *@brief    get system time.

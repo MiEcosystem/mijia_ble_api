@@ -223,6 +223,17 @@ __WEAK mible_status_t mible_gap_scan_stop(void)
 }
 
 /**
+ * @brief   Get scan param
+ * @param   [out] scan_param: scan interval and window
+ * @return  MI_SUCCESS             Successfully stopped scanning procedure.
+ *          MI_ERR_INVALID_STATE   Not in scanning state.
+ * */
+__WEAK mible_status_t mible_gap_scan_param_get(mible_gap_scan_param_t *scan_param)
+{
+    return MI_SUCCESS;
+}
+
+/**
  * @brief   Start advertising
  * @param   [in] p_adv_param : pointer to advertising parameters, see
  * mible_gap_adv_param_t for details
@@ -910,4 +921,23 @@ __WEAK mible_status_t mible_nvm_write(void * p_data, uint32_t length, uint32_t a
 __WEAK mible_status_t mible_upgrade_firmware(void)
 {
     return MI_ERR_BUSY;
+}
+
+/**
+ *@brief    reboot device.
+ *@return   0: success, negetive value: failure
+ */
+__WEAK mible_status_t mible_reboot(void)
+{
+    return MI_ERR_BUSY;
+}
+
+/**
+ *@brief    set node tx power.
+ *@param    [in] power : TX power in 0.1 dBm steps.
+ *@return   0: success, negetive value: failure
+ */
+__WEAK mible_status_t mible_set_tx_power(int16_t power)
+{
+    return MI_SUCCESS;
 }

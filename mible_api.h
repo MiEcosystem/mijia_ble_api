@@ -40,6 +40,8 @@ mible_status_t mible_gap_scan_start(mible_gap_scan_type_t scan_type,
 
 mible_status_t mible_gap_scan_stop(void);
 
+mible_status_t mible_gap_scan_param_get(mible_gap_scan_param_t *scan_param);
+
 mible_status_t mible_gap_adv_start(mible_gap_adv_param_t *p_adv_param);
 
 mible_status_t mible_gap_adv_data_set(uint8_t const * p_data, uint8_t dlen,
@@ -152,4 +154,9 @@ mible_status_t mible_nvm_write(void * p_data, uint32_t length, uint32_t address)
 mible_status_t mible_nvm_read(void * p_data, uint32_t length, uint32_t address);
 
 mible_status_t mible_upgrade_firmware(void);
+
+mible_status_t mible_reboot(void);
+
+mible_status_t mible_set_tx_power(int16_t power);
+
 #endif

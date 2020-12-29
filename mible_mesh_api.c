@@ -100,6 +100,11 @@ __WEAK int mible_mesh_device_unprovsion_done(void)
     return 0;
 }
 
+__WEAK int mible_mesh_device_login_done(uint8_t status)
+{
+    return 0;
+}
+
 __WEAK int mible_mesh_device_set_network_transmit_param(uint8_t count, uint8_t interval_steps)
 {
     // set adv interval and adv transmit times
@@ -107,6 +112,11 @@ __WEAK int mible_mesh_device_set_network_transmit_param(uint8_t count, uint8_t i
 }
 
 __WEAK int mible_mesh_device_set_relay(uint8_t enabled,uint8_t count,uint8_t interval)
+{
+    return 0;
+}
+
+__WEAK int mible_mesh_device_get_relay(uint8_t *enabled, uint8_t *count, uint8_t *step)
 {
     return 0;
 }
