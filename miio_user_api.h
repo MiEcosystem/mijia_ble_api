@@ -433,6 +433,35 @@ static inline void miio_system_adv_start(uint16_t adv_interval_ms)
     mibeacon_adv_start(adv_interval_ms);
 }
 
+static inline int miio_ble_property_changed(uint16_t siid, uint16_t piid, property_value_t *newValue, uint8_t stop_adv, uint8_t isUrgent)
+{
+    int ret = mibeacon_property_changed(siid, piid, get_property_len(newValue), &(newValue->data), stop_adv, isUrgent);
+    if (newValue != NULL){
+        property_value_delete(newValue);
+    }
+    return ret;
+}
+static inline int miio_ble_event_occurred(uint16_t siid, uint16_t eiid, arguments_t *newArgs, uint8_t stop_adv, uint8_t isUrgent)
+{
+    uint8_t p_num = (NULL == newArgs)? 0 : newArgs->size;
+    int ret = -1;
+    if(p_num > 0)
+    {
+        uint8_t buff[9] = {0};
+        uint8_t len = 0;
+
+        for(int i = 0; i < p_num; i++){
+            property_value_t *newValue = newArgs->arguments[i].value;
+            memcpy(buff + len, &(newValue->data), get_property_len(newValue));
+            len += get_property_len(newValue);
+        }
+
+        ret = mibeacon_event_occurred(siid, eiid, len, buff, stop_adv, isUrgent);
+    }
+
+    return ret;
+}
+
 #endif
 
 #endif /* MIJIA_BLE_API_MIIO_USER_API_H_ */
