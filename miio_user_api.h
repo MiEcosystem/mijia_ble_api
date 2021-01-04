@@ -10,16 +10,21 @@
 
 #include "mi_config.h"
 #include "ble_spec/gatt_spec.h"
+#include "ble_spec/mi_spec_type.h"
 #include "mible_api.h"
-#include "mible_mesh_api.h"
 #include "mijia_profiles/mi_service_server.h"
 #include "gatt_dfu/mible_dfu_main.h"
+#if defined(MI_MESH_ENABLED)
+#include "mible_mesh_api.h"
 #include "mesh_auth/mible_mesh_auth.h"
 #include "mesh_auth/mible_mesh_device.h"
-#include "ble_spec/mi_spec_type.h"
 #include "mesh_auth/mible_mesh_operation.h"
+#endif
 
 #define MIBLE_USER_REC_ID_BASE                  0x50
+#define SERVER_GMT_OFFSET                       1
+#define SERVER_WEATHER                          2
+#define SERVER_UTC_TIME                         3
 
 /**
  *@brief    reboot device.
@@ -53,7 +58,7 @@ static inline uint64_t miio_system_get_time(void)
 }
 
 /**
- *@brief    set mibeacon advertising timeout.
+ *@brief    set mibeacon advertising timeout, after timeout advertising will stop.
  *@param    [in] millsecond : adv timeout in ms, 0 is stop adv, 0xffffffff is always on.
  *@return   0: success, negetive value: failure
  */
@@ -61,6 +66,8 @@ static inline int miio_system_set_adv_timeout(uint32_t timeout)
 {
 #if defined(MI_MESH_ENABLED)
     return mible_mesh_device_adv_start(timeout);
+#else
+    return mibeacon_set_adv_timeout(timeout);
 #endif
 }
 
@@ -75,8 +82,15 @@ static inline int miio_system_set_tx_power(int16_t power)
 }
 
 /**
- *@brief    sync method, register event callback
- *@param    [in] cb : event callback
+ *@brief    register callback for report MCU Version/ SN or vendor info, you can ignore it if you don't need
+ *@brief    sdk will callback when provision or login, you should fill in buffer and return code
+ *@param    [in/out] cb : event type and require data
+ *@note     DEV_INFO_SUPPORT(Must include): Info type your supported
+ *@note     DEV_INFO_MCU_VERSION: Version of outside mcu, 4 byte string, eg. "0001"
+ *@note     DEV_INFO_DEVICE_SN: Device Serial Number, maximum 20byte string , eg. "12345/A8Q600001"
+ *@note     DEV_INFO_HARDWARE_VERSION: Device Hardware Version, maximum 20byte string
+ *@note     DEV_INFO_VENDOR1: Vendor Info (app not support yet), maximum 20byte string
+ *@note     DEV_INFO_VENDOR2: Vendor Info (app not support yet), maximum 20byte string
  *@return   0: success, negetive value: failure
  */
 static inline int miio_system_info_callback_register(mi_service_devinfo_callback_t cb)
@@ -254,22 +268,20 @@ arguments_t * arguments_new(void);
 /* Gatt spec related function*/
 
 /**
- *@brief    sync method, register event callback
+ *@brief    register gatt spec control callback, and set buffer length
+ *@param    [in] set_cb : set_properties callback
+ *@param    [in] get_cb : get_properties callback
+ *@param    [in] action_cb : action callback
  *@param    [in] buf_len : gatt buffer length(default 64byte, minimum 32byte)
  *@return   0: success, negetive value: failure
  */
-static inline int miio_gatt_spec_init(uint16_t buf_len)
+static inline int miio_gatt_spec_init(property_operation_callback_t set_cb,
+                                    property_operation_callback_t get_cb,
+                                    action_operation_callback_t action_cb,
+                                    uint16_t buflen)
 {
-    return mible_gatt_spec_init(buf_len);
+    return mible_gatt_spec_init(set_cb, get_cb, action_cb, buflen);
 }
-
-/**
- *@brief    callbacks user need adapt.
- *@param    [in] o : property or action struct pointer.
- */
-void on_gatt_property_set(property_operation_t *o);
-void on_gatt_property_get(property_operation_t *o);
-void on_gatt_action_invoke(action_operation_t *o);
 
 /**
  *@brief    send properties_changed.
@@ -311,25 +323,20 @@ static inline int miio_mesh_set_scan_level(uint8_t level)
 
 /**
  *@brief    sync method, register event callback
- *@param    [in] mible_mesh_event_cb : event callback
+ *@param    [in] set_cb : set_properties callback, require siid/piid/ *value, need rsp code
+ *@param    [in] get_cb : get_properties callback, require siid/piid, need rsp *value/code
+ *@param    [in] action_cb : action callback, require siid/aiid/ *args, need rsp code
+ *@param    [in] user_event_cb : when provision/login/connect state changed, execute callback
  *@return   0: success, negetive value: failure
  */
-static inline int miio_mesh_user_event_register(mible_user_event_cb_t user_event_cb)
+static inline int miio_mesh_user_callback_register(property_operation_callback_t set_cb,
+                                                    property_operation_callback_t get_cb,
+                                                    action_operation_callback_t action_cb,
+                                                    mible_user_event_cb_t user_event_cb)
 {
+    mible_mesh_spec_callback_register(set_cb, get_cb, action_cb);
     return mible_mesh_user_event_register_event_callback(user_event_cb);
 }
-static inline int miio_mesh_user_event_unregister(mible_user_event_cb_t user_event_cb)
-{
-    return mible_mesh_user_event_unregister_event_callback(user_event_cb);
-}
-
-/**
- *@brief    callbacks user need adapt.
- *@param    [in] o : property or action struct pointer.
- */
-void on_property_set(property_operation_t *o);
-void on_property_get(property_operation_t *o);
-void on_action_invoke(action_operation_t *o);
 
 /**
  *@brief    period send properties_changed.
@@ -339,13 +346,13 @@ void on_action_invoke(action_operation_t *o);
  *          others: if period > 10min, send properties_changed to gateway every period
  *@return   0: success, negetive value: failure
  */
-static inline int miio_mesh_properties_publish_init(uint16_t siid, uint16_t piid, uint32_t period)
+static inline int miio_mesh_properties_period_publish_init(uint16_t siid, uint16_t piid, uint32_t period)
 {
     return mible_mesh_pub_add(siid, piid, period);
 }
 
 /**
- *@brief    send properties_changed.
+ *@brief    send mesh properties_changed.
  *@param    [in] siid: service id.
  *@param    [in] piid: property id.
  *@param    [in] newValue: property value.
@@ -357,7 +364,7 @@ static inline int miio_mesh_properties_changed(uint16_t siid, uint16_t piid, pro
 }
 
 /**
- *@brief    send properties_changed.
+ *@brief    send mesh event occurred.
  *@param    [in] siid: service id.
  *@param    [in] piid: property id.
  *@param    [in] newArgs: event args.
@@ -369,34 +376,107 @@ static inline int miio_mesh_event_occurred(uint16_t siid, uint16_t eiid, argumen
 }
 
 /**
- *@brief    require service info: GMT OFFSET.
- *          callback event: on_property_set, data: int32.
+ *@brief    require service info: GMT offset, Weather or UTC time.
+ *          callback event: on_property_set callback, data: int32.
+ *@param    [in] type: 1: SERVER_GMT_OFFSET, 2: SERVER_WEATHER, 3: SERVER_UTC_TIME.
  *@return   0: success, negetive value: failure
  */
-static inline int miio_mesh_request_gmt_offset(void)
+static inline int miio_mesh_request_property(uint8_t type)
 {
-    return mesh_send_property_request(128, 1);
+    return mesh_send_property_request(128, type);
+}
+
+#else
+
+/**
+ *@brief    init ble adv
+ *@param    [in] solicite_bind: if APP will connect to this device.
+ */
+static inline void miio_ble_adv_init(uint8_t solicite_bind)
+{
+    MI_LOG_INFO("advertising init...\n");
+
+    // add user customized adv struct : complete local name
+    uint8_t data[31], len;
+    uint8_t str_len = MIN(29, strlen(MODEL_NAME));
+    data[0] = 1 + str_len;
+    data[1] = 9;  // complete local name
+
+    strncpy((char*)&data[2], MODEL_NAME, str_len);
+    len = 2 + str_len;
+
+    if(MI_SUCCESS != mibeacon_adv_data_set(solicite_bind, 0, data, len)){
+        MI_LOG_ERROR("mibeacon_data_set failed. \r\n");
+    }
 }
 
 /**
- *@brief    require service info: Weather.
- *          callback event: on_property_set, data: int32.
- *@return   0: success, negetive value: failure
+ *@brief    set ble adv interval
+ *@param    [in] adv_interval_ms: adv interval in millisecond.
  */
-static inline int miio_mesh_request_weather(void)
+static inline void miio_ble_adv_start(uint16_t adv_interval_ms)
 {
-    return mesh_send_property_request(128, 2);
+    MI_LOG_INFO("advertising start...\n");
+    mibeacon_adv_start(adv_interval_ms);
 }
 
 /**
- *@brief    require service info: UTC TIME.
- *          callback event: on_property_set, data: uint32.
+ *@brief    send ble properties_changed.
+ *@param    [in] siid: service id.
+ *@param    [in] piid: property id.
+ *@param    [in] newValue: property value.
+ *@param    [in] stop_adv: When the object queue is sent out, it will SHUTDOWN BLE advertising
+ *@param    [in] isUrgent: if enqueue this object into a high priority queue
  *@return   0: success, negetive value: failure
  */
-static inline int miio_mesh_request_utc_time(void)
+static inline int miio_ble_property_changed(uint16_t siid, uint16_t piid, property_value_t *newValue, uint8_t stop_adv, uint8_t isUrgent)
 {
-    return mesh_send_property_request(128, 3);
+    int ret = mibeacon_property_changed(siid, piid, get_property_len(newValue), &(newValue->data), stop_adv, isUrgent);
+    if (newValue != NULL){
+        property_value_delete(newValue);
+    }
+    return ret;
 }
+
+/**
+ *@brief    send ble event occurred.
+ *@param    [in] siid: service id.
+ *@param    [in] piid: property id.
+ *@param    [in] newArgs: event args.
+ *@param    [in] stop_adv: When the object queue is sent out, it will SHUTDOWN BLE advertising
+ *@param    [in] isUrgent: if enqueue this object into a high priority queue
+ *@return   0: success, negetive value: failure
+ */
+static inline int miio_ble_event_occurred(uint16_t siid, uint16_t eiid, arguments_t *newArgs, uint8_t stop_adv, uint8_t isUrgent)
+{
+    uint8_t p_num = (NULL == newArgs)? 0 : newArgs->size;
+    int ret = -1;
+    if(p_num > 0) {
+        uint8_t buff[9] = {0};
+        uint8_t len = 0;
+
+        for(int i = 0; i < p_num; i++){
+            property_value_t *newValue = newArgs->arguments[i].value;
+            memcpy(buff + len, &(newValue->data), get_property_len(newValue));
+            len += get_property_len(newValue);
+            if(len > 9)
+            {
+                return -1;
+            }
+        }
+
+        ret = mibeacon_event_occurred(siid, eiid, len, buff, stop_adv, isUrgent);
+    }
+
+    return ret;
+}
+
+static inline int miio_ble_get_registered_state(void)
+{
+    return mibeacon_get_registered_state();
+}
+
 #endif
 
 #endif /* MIJIA_BLE_API_MIIO_USER_API_H_ */
+

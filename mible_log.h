@@ -18,6 +18,7 @@
 #include <stdint.h>
 
 #include "mible_port.h"
+#include "mible_api.h"
 
 #ifdef MI_LOG_ENABLED
 

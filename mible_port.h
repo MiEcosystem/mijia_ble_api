@@ -125,8 +125,13 @@
 #define CRITICAL_SECTION_ENTER()
 #define CRITICAL_SECTION_EXIT()
 
+#if MI_LOG_ENABLED==1
+#define MI_PRINTF(...)                      mible_log_printf(__VA_ARGS__)
+#define MI_HEXDUMP(array_base, array_size)  mible_log_hexdump(array_base, array_size)
+#else
 #define MI_PRINTF(...)
 #define MI_HEXDUMP(base_addr, bytes)
+#endif
 
 #define TRACE_INIT(pin)
 #define TRACE_ENTER(pin)
