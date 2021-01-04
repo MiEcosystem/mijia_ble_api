@@ -475,12 +475,21 @@ static inline int miio_ble_event_occurred(uint16_t siid, uint16_t eiid, argument
             property_value_t *newValue = newArgs->arguments[i].value;
             memcpy(buff + len, &(newValue->data), get_property_len(newValue));
             len += get_property_len(newValue);
+            if(len > 9)
+            {
+                return -1;
+            }
         }
 
         ret = mibeacon_event_occurred(siid, eiid, len, buff, stop_adv, isUrgent);
     }
 
     return ret;
+}
+
+static inline int miio_ble_get_registered_state(void)
+{
+    return mibeacon_get_registered_state();
 }
 
 #endif
