@@ -137,14 +137,9 @@
 	}
 
 #if MI_LOG_ENABLED==1
-#include "third_party/SEGGER_RTT/SEGGER_RTT.h"
-#define MI_PRINTF(...)     SEGGER_RTT_printf(0, __VA_ARGS__)
-#define MI_HEXDUMP(array_base, array_size)                                         \
-	do {                                                                           \
-        for (int Mi_index = 0; Mi_index<(array_size); Mi_index++)                                       \
-            SEGGER_RTT_printf(0, (Mi_index+1)%16?"%02X ":"%02X\n", ((char*)(array_base))[Mi_index]);\
-		if (array_size%16) SEGGER_RTT_printf(0,"\n");                               \
-	} while(0)
+#define MI_PRINTF(...)                      mible_log_printf(__VA_ARGS__)
+#define MI_HEXDUMP(array_base, array_size)  mible_log_hexdump(array_base, array_size)
+
 #else
 #define MI_PRINTF(...)
 #define MI_HEXDUMP(array_base, array_size)

@@ -1803,3 +1803,26 @@ mible_status_t mible_set_tx_power(int16_t power)
     return MI_SUCCESS;
 }
 
+#include "third_party/SEGGER_RTT/SEGGER_RTT.h"
+#include <stdarg.h>
+extern int SEGGER_RTT_vprintf(unsigned BufferIndex, const char * sFormat,
+                                va_list * pParamList);
+int mible_log_printf(const char * sFormat, ...)
+{
+    va_list ParamList;
+    va_start(ParamList, sFormat);
+    SEGGER_RTT_vprintf(0, sFormat, &ParamList);
+    va_end(ParamList);
+
+    return MI_SUCCESS;
+}
+
+int mible_log_hexdump(void* array_base, uint16_t array_size)
+{
+    do {                                                                           \
+        for (int Mi_index = 0; Mi_index<(array_size); Mi_index++)                                       \
+            SEGGER_RTT_printf(0, (Mi_index+1)%16?"%02X ":"%02X\n", ((char*)(array_base))[Mi_index]);\
+        if (array_size%16) SEGGER_RTT_printf(0,"\n");                               \
+    } while(0);
+    return MI_SUCCESS;
+}

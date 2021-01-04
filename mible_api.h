@@ -159,4 +159,8 @@ mible_status_t mible_reboot(void);
 
 mible_status_t mible_set_tx_power(int16_t power);
 
+int mible_log_printf(const char * sFormat, ...);
+
+int mible_log_hexdump(void* array_base, uint16_t array_size);
+
 #endif
