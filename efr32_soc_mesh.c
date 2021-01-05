@@ -893,8 +893,8 @@ static void process_soft_timer_event(struct gecko_cmd_packet *evt)
         systime ++;
         rtc_cnt = RTCC_CounterGet();
 
-        MI_LOG_DEBUG("events: mesh %3d, others %3d. systime: %d\n",
-                    mesh_event_cnt, non_mesh_event_cnt, systime);
+        MI_LOG_DEBUG("events: mesh %3d, others %3d. systime: %u\n",
+                    mesh_event_cnt, non_mesh_event_cnt, (uint32_t)systime);
         mesh_event_cnt = 0;
         non_mesh_event_cnt = 0;
         // procedures run periodic
