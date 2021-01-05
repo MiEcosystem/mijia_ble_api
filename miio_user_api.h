@@ -415,6 +415,36 @@ static inline void miio_ble_user_adv_stop(void)
 }
 
 /**
+ * @brief   Enqueue a object value into the mibeacon object tx queue.
+ *
+ * @param   [in] nm:  object id name
+ *          [in] len: length of the object value
+ *          [in] val: pointer to the object value
+ *          [in] isUrgent: if enqueue this object into a high priority queue
+ *
+ * @return  MI_SUCCESS             Successfully enqueued a object into the object queue.
+ *          MI_ERR_DATA_SIZE       Object value length is too long.
+ *          MI_ERR_RESOURCES       Object queue is full. Please try again later.
+ *          MI_ERR_INTERNAL        Can not invoke the sending handler.
+ *
+ * @note    This function ONLY works when the device has been registered and has restored the keys.
+ *
+ * The mibeacon object is an adv message contains the status or event. BLE gateway
+ * can receive the beacon message (by BLE scanning) and upload it to server for
+ * triggering customized home automation scene.
+ *
+ * OBJ_QUEUE_SIZE      : max num of objects can be concurrency advertising
+ *                      ( actually, it will be sent one by one )
+ * OBJ_ADV_INTERVAL    : the object adv interval
+ * OBJ_ADV_TIMEOUT_MS  : the time one object will be continuously sent.
+ *
+ */
+static inline int miio_ble_obj_enque(uint16_t nm, uint8_t len, void *val, uint8_t isUrgent)
+{
+    return mibeacon_obj_enque(nm, len, val, 0, isUrgent);
+}
+
+/**
  *@brief    send ble properties_changed.
  *@param    [in] siid: service id.
  *@param    [in] piid: property id.
@@ -432,7 +462,6 @@ static inline int miio_ble_property_changed(uint16_t siid, uint16_t piid, proper
  *@param    [in] siid: service id.
  *@param    [in] piid: property id.
  *@param    [in] newArgs: event args.
- *@param    [in] stop_adv: When the object queue is sent out, it will SHUTDOWN BLE advertising
  *@param    [in] isUrgent: if enqueue this object into a high priority queue
  *@return   0: success, negetive value: failure
  */
