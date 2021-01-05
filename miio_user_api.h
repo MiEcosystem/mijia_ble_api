@@ -392,32 +392,26 @@ static inline int miio_mesh_request_property(uint8_t type)
  *@brief    init ble adv
  *@param    [in] solicite_bind: if APP will connect to this device.
  */
-static inline void miio_ble_adv_init(uint8_t solicite_bind)
+static inline void miio_ble_user_adv_init(uint8_t solicite_bind)
 {
-    MI_LOG_INFO("advertising init...\n");
-
-    // add user customized adv struct : complete local name
-    uint8_t data[31], len;
-    uint8_t str_len = MIN(29, strlen(MODEL_NAME));
-    data[0] = 1 + str_len;
-    data[1] = 9;  // complete local name
-
-    strncpy((char*)&data[2], MODEL_NAME, str_len);
-    len = 2 + str_len;
-
-    if(MI_SUCCESS != mibeacon_adv_data_set(solicite_bind, 0, data, len)){
-        MI_LOG_ERROR("mibeacon_data_set failed. \r\n");
-    }
+    advertising_init(solicite_bind);
 }
 
 /**
- *@brief    set ble adv interval
+ *@brief    set ble adv interval , should be 100ms ~ 1000 ms
  *@param    [in] adv_interval_ms: adv interval in millisecond.
  */
-static inline void miio_ble_adv_start(uint16_t adv_interval_ms)
+static inline int miio_ble_user_adv_start(uint16_t adv_interval_ms)
 {
-    MI_LOG_INFO("advertising start...\n");
-    mibeacon_adv_start(adv_interval_ms);
+    return advertising_start(adv_interval_ms);
+}
+
+/**
+ *@brief    stop ble adv
+ */
+static inline void miio_ble_user_adv_stop(void)
+{
+    return advertising_stop();
 }
 
 /**
@@ -425,17 +419,12 @@ static inline void miio_ble_adv_start(uint16_t adv_interval_ms)
  *@param    [in] siid: service id.
  *@param    [in] piid: property id.
  *@param    [in] newValue: property value.
- *@param    [in] stop_adv: When the object queue is sent out, it will SHUTDOWN BLE advertising
  *@param    [in] isUrgent: if enqueue this object into a high priority queue
  *@return   0: success, negetive value: failure
  */
-static inline int miio_ble_property_changed(uint16_t siid, uint16_t piid, property_value_t *newValue, uint8_t stop_adv, uint8_t isUrgent)
+static inline int miio_ble_property_changed(uint16_t siid, uint16_t piid, property_value_t *newValue, uint8_t isUrgent)
 {
-    int ret = mibeacon_property_changed(siid, piid, get_property_len(newValue), &(newValue->data), stop_adv, isUrgent);
-    if (newValue != NULL){
-        property_value_delete(newValue);
-    }
-    return ret;
+    return mibeacon_property_changed(siid, piid, newValue, isUrgent);
 }
 
 /**
@@ -447,28 +436,9 @@ static inline int miio_ble_property_changed(uint16_t siid, uint16_t piid, proper
  *@param    [in] isUrgent: if enqueue this object into a high priority queue
  *@return   0: success, negetive value: failure
  */
-static inline int miio_ble_event_occurred(uint16_t siid, uint16_t eiid, arguments_t *newArgs, uint8_t stop_adv, uint8_t isUrgent)
+static inline int miio_ble_event_occurred(uint16_t siid, uint16_t eiid, arguments_t *newArgs, uint8_t isUrgent)
 {
-    uint8_t p_num = (NULL == newArgs)? 0 : newArgs->size;
-    int ret = -1;
-    if(p_num > 0) {
-        uint8_t buff[9] = {0};
-        uint8_t len = 0;
-
-        for(int i = 0; i < p_num; i++){
-            property_value_t *newValue = newArgs->arguments[i].value;
-            memcpy(buff + len, &(newValue->data), get_property_len(newValue));
-            len += get_property_len(newValue);
-            if(len > 9)
-            {
-                return -1;
-            }
-        }
-
-        ret = mibeacon_event_occurred(siid, eiid, len, buff, stop_adv, isUrgent);
-    }
-
-    return ret;
+    return mibeacon_event_occurred(siid, eiid, newArgs, isUrgent);
 }
 
 static inline int miio_ble_get_registered_state(void)
