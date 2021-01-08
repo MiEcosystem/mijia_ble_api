@@ -129,24 +129,12 @@
 #define CRITICAL_SECTION_ENTER()    plt_critical_enter()
 #define CRITICAL_SECTION_EXIT()     plt_critical_exit(0)
 
-#ifndef SystemCoreClock
-#define SystemCoreClock 40000000
-#endif
-
-#define MIBLE_API_SYNC  1
-
-#ifndef LOG_IN_SEGGER_RTT
-#define MI_PRINTF(...)                   LOG_PRINT(MM_ID, LEVEL_ERROR, __VA_ARGS__)
-#define MI_HEXDUMP(base_addr, bytes)     LOG_DUMP(MM_ID, LEVEL_ERROR, base_addr, bytes)
+#if MI_LOG_ENABLED==1
+#define MI_PRINTF(...)                      mible_log_printf(__VA_ARGS__)
+#define MI_HEXDUMP(array_base, array_size)  mible_log_hexdump(array_base, array_size)
 #else
-#include "third_party/SEGGER_RTT/SEGGER_RTT.h"
-#define MI_PRINTF(...)     SEGGER_RTT_printf(0, __VA_ARGS__)
-#define MI_HEXDUMP(p, l)                                                       \
-do {                                                                           \
-    for (int i = 0; i < (l); i++)                                              \
-        SEGGER_RTT_printf(0, (i + 1) % 16 ? "%02X ":"%02X\n", ((char*)(p))[i]);\
-    if ( l % 16 ) SEGGER_RTT_printf(0, "\n");                                  \
-} while(0)
+#define MI_PRINTF(...)
+#define MI_HEXDUMP(base_addr, bytes)
 #endif
 
 #define TRACE_INIT(pin)

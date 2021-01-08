@@ -223,6 +223,17 @@ __WEAK mible_status_t mible_gap_scan_stop(void)
 }
 
 /**
+ * @brief   Get scan param
+ * @param   [out] scan_param: scan interval and window
+ * @return  MI_SUCCESS             Successfully stopped scanning procedure.
+ *          MI_ERR_INVALID_STATE   Not in scanning state.
+ * */
+__WEAK mible_status_t mible_gap_scan_param_get(mible_gap_scan_param_t *scan_param)
+{
+    return MI_SUCCESS;
+}
+
+/**
  * @brief   Start advertising
  * @param   [in] p_adv_param : pointer to advertising parameters, see
  * mible_gap_adv_param_t for details
@@ -605,6 +616,25 @@ __WEAK mible_status_t mible_timer_create(void** p_timer_id,
 }
 
 /**
+ * @brief   Create a timer.
+ * @param   [out] p_timer_id: a pointer to timer id address which can uniquely identify the timer.
+ *          [in] timeout_handler: a pointer to a function which can be
+ * called when the timer expires.
+ *          [in] mode: repeated or single shot.
+ * @return  MI_SUCCESS             If the timer was successfully created.
+ *          MI_ERR_INVALID_PARAM   Invalid timer id supplied.
+ *          MI_ERR_INVALID_STATE   timer module has not been initialized or the
+ * timer is running.
+ *          MI_ERR_NO_MEM          timer pool is full.
+ *
+ * */
+__WEAK mible_status_t mible_user_timer_create(void** p_timer_id,
+        mible_timer_handler timeout_handler, mible_timer_mode mode)
+{
+    return MI_SUCCESS;
+}
+
+/**
  * @brief   Delete a timer.
  * @param   [in] timer_id: timer id
  * @return  MI_SUCCESS             If the timer was successfully deleted.
@@ -892,3 +922,33 @@ __WEAK mible_status_t mible_upgrade_firmware(void)
 {
     return MI_ERR_BUSY;
 }
+
+/**
+ *@brief    reboot device.
+ *@return   0: success, negetive value: failure
+ */
+__WEAK mible_status_t mible_reboot(void)
+{
+    return MI_ERR_BUSY;
+}
+
+/**
+ *@brief    set node tx power.
+ *@param    [in] power : TX power in 0.1 dBm steps.
+ *@return   0: success, negetive value: failure
+ */
+__WEAK mible_status_t mible_set_tx_power(int16_t power)
+{
+    return MI_SUCCESS;
+}
+
+__WEAK int mible_log_printf(const char * sFormat, ...)
+{
+    return MI_SUCCESS;
+}
+
+__WEAK int mible_log_hexdump(void* array_base, uint16_t array_size)
+{
+    return MI_SUCCESS;
+}
+
