@@ -470,9 +470,30 @@ static inline int miio_ble_event_occurred(uint16_t siid, uint16_t eiid, argument
     return mibeacon_event_occurred(siid, eiid, newArgs, isUrgent);
 }
 
+/**
+ *@brief    get device registered state
+ *@return   1: registered, 0: not registered
+ */
 static inline int miio_ble_get_registered_state(void)
 {
     return mibeacon_get_registered_state();
+}
+
+/**
+ * @brief   mibeacon set adv_timeout to stop adv
+ *
+ * @param   [in] timeout: timeout to stop adv , number of milliseconds
+ *
+ * @note    timeout == 0  means to stop adv immediately
+ *
+ * @note    timeout == 0xFFFFFFFF  means not to stop adv
+ *
+ * @note    timeout == 30min (30*60*1000) is recommended
+ *
+ */
+static inline int miio_ble_set_adv_timeout(uint32_t timeout)
+{
+	return mibeacon_set_adv_timeout(timeout);
 }
 
 #endif
