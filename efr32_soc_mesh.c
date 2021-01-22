@@ -155,6 +155,8 @@ int mible_mesh_device_init_node(void)
  *                           - Bit 1: Response required. If nonzero client
  *                                    expects a response from the server.
  ******************************************************************************/
+#if defined(MI_MESH_TEMPLATE_LIGHTNESS) || defined(MI_MESH_TEMPLATE_LIGHTCTL) || defined(MI_MESH_TEMPLATE_ONE_KEY_SWITCH) \
+    || defined(MI_MESH_TEMPLATE_TWO_KEY_SWITCH) || defined(MI_MESH_TEMPLATE_THREE_KEY_SWITCH) || defined(MI_MESH_TEMPLATE_FAN)
 static void generic_request(uint16_t model_id,
                           uint16_t element_index,
                           uint16_t client_addr,
@@ -202,6 +204,7 @@ static void generic_request(uint16_t model_id,
 
     mible_mesh_event_callback(MIBLE_MESH_EVENT_GENERIC_MESSAGE_CB, &evt_generic_param);
 }
+#endif
 
 /***************************************************************************//**
  * Initialization of the models supported by this node.
@@ -611,6 +614,8 @@ int mible_mesh_node_generic_control(mible_mesh_access_message_t *param)
     int result = 0;
     struct mesh_generic_state current;
     switch(param->opcode.opcode){
+#if defined(MI_MESH_TEMPLATE_LIGHTNESS) || defined(MI_MESH_TEMPLATE_LIGHTCTL) || defined(MI_MESH_TEMPLATE_ONE_KEY_SWITCH) \
+    || defined(MI_MESH_TEMPLATE_TWO_KEY_SWITCH) || defined(MI_MESH_TEMPLATE_THREE_KEY_SWITCH) || defined(MI_MESH_TEMPLATE_FAN)
     case MIBLE_MESH_MSG_GENERIC_ONOFF_STATUS:
         MI_LOG_DEBUG("Generic onoff model message send. src %04x, dst %04x, opcode %04x, data:\n",
                 param->meta_data.src_addr, param->meta_data.dst_addr, param->opcode.opcode);
@@ -656,6 +661,7 @@ int mible_mesh_node_generic_control(mible_mesh_access_message_t *param)
                 param->meta_data.appkey_index, &current, &current, 0, 0);
         MI_ERR_CHECK(result);
         break;
+#endif
 #endif
     case MIBLE_MESH_MIOT_SPEC_STATUS:
     case MIBLE_MESH_SYNC_PROPS_REQ:
@@ -965,6 +971,8 @@ void mible_mesh_stack_event_handler(struct gecko_cmd_packet *evt)
         gecko_cmd_mesh_node_set_ivrecovery_mode(1);
         process_mesh_iv_update_event(evt->data.evt_mesh_node_ivrecovery_needed.network_ivindex, 0);
         break;
+#if defined(MI_MESH_TEMPLATE_LIGHTNESS) || defined(MI_MESH_TEMPLATE_LIGHTCTL) || defined(MI_MESH_TEMPLATE_ONE_KEY_SWITCH) \
+    || defined(MI_MESH_TEMPLATE_TWO_KEY_SWITCH) || defined(MI_MESH_TEMPLATE_THREE_KEY_SWITCH) || defined(MI_MESH_TEMPLATE_FAN)
     case gecko_evt_mesh_generic_server_client_request_id:
         MI_LOG_WARNING("[Stack event] server_client_request\r\n");
         mesh_lib_generic_server_event_handler(evt);
@@ -975,6 +983,7 @@ void mible_mesh_stack_event_handler(struct gecko_cmd_packet *evt)
         // the callback functions registered by application
         // mesh_lib_generic_server_event_handler(evt);
         break;
+#endif
     case gecko_evt_mesh_vendor_model_receive_id:
         MI_LOG_WARNING("[Stack event] vendor_model_receive\r\n");
         process_mesh_vendor_model_recv_event(evt);
@@ -1026,3 +1035,147 @@ void mible_mesh_stack_event_handler(struct gecko_cmd_packet *evt)
     }
 }
 
+/**
+ * Replace otp api and store mesh Certificate chain in NVM3.
+ */
+#include "cryptography/mi_mesh_otp.h"
+#include "cryptography/mi_mesh_otp_config.h"
+#include "nvm3.h"
+#include "nvm3_default.h"
+#define MIBLE_POTP_TAG_REC_ID_BASE          0x48
+#define MIBLE_POTP_DEV_REC_ID_BASE          0x49
+#define MIBLE_POTP_MANU_REC_ID_BASE         0x4A
+#define MIBLE_POTP_ROOT_REC_ID_BASE         0x4B
+#define MIBLE_POTP_DEV_PRI_REC_ID_BASE      0x4C
+#define MIBLE_POTP_MAC_REC_ID_BASE          0x4E
+#define MIBLE_POTP_MATA_REC_ID_BASE         0x4F
+
+#define MIBLE_POTP_TAG_SIZE                 8
+#define MIBLE_POTP_CERT_SIZE                512
+#define MIBLE_POTP_PRI_SIZE                 36
+#define MIBLE_POTP_MAC_SIZE                 6
+
+int mi_mesh_otp_seal_tag(uint8_t * base)
+{
+    otp_head_t head = {
+            .name       = "POTP",
+            .version    = 1,
+            .size       = POTP_FULL_SIZE
+    };
+
+    return nvm3_writeData(nvm3_defaultHandle, 0x44000 + MIBLE_POTP_TAG_REC_ID_BASE, (void*)&head, MIBLE_POTP_TAG_SIZE);
+}
+
+int mi_mesh_otp_write(uint16_t item_type, const uint8_t *p_in, uint16_t in_len)
+{
+    uint8_t buff[MIBLE_POTP_CERT_SIZE];
+    uint32_t type = MIBLE_POTP_MATA_REC_ID_BASE;
+
+    buff[0] = item_type;
+    buff[1] = item_type >> 8;
+    buff[2] = in_len;
+    buff[3] = in_len >> 8;
+    memcpy(buff+4, p_in, in_len);
+
+    if(item_type < 0x06){
+        type = MIBLE_POTP_TAG_REC_ID_BASE + item_type;
+    }else if(item_type == OTP_BLE_MAC){
+        type = MIBLE_POTP_MAC_REC_ID_BASE;
+    }else if(item_type == OTP_META_DATA){
+        type = MIBLE_POTP_MATA_REC_ID_BASE;
+    }else{
+        return -1;
+    }
+
+    return nvm3_writeData(nvm3_defaultHandle, 0x44000 + type, (void*)buff, in_len + 4);
+}
+
+int mi_mesh_otp_read(uint16_t item_type, uint8_t *p_out, uint16_t out_len)
+{
+    uint8_t buff[MIBLE_POTP_CERT_SIZE];
+    uint32_t type = MIBLE_POTP_MATA_REC_ID_BASE;
+
+    if(item_type < 0x06){
+        type = MIBLE_POTP_TAG_REC_ID_BASE + item_type;
+    }else if(item_type == OTP_BLE_MAC){
+        type = MIBLE_POTP_MAC_REC_ID_BASE;
+    }else if(item_type == OTP_META_DATA){
+        type = MIBLE_POTP_MATA_REC_ID_BASE;
+    }else{
+        return -1;
+    }
+
+    uint32_t result, nvm3_type, len;
+    result = nvm3_getObjectInfo(nvm3_defaultHandle, 0x44000 + type, &nvm3_type, (size_t *)&len);
+    MI_ERR_CHECK(result);
+    if(result == ECODE_NVM3_OK){
+        result = nvm3_readData(nvm3_defaultHandle, 0x44000 + type, (void *)buff, len);
+        MI_ERR_CHECK(result);
+    }
+    if(result != ECODE_NVM3_OK){
+        return -3;
+    }
+
+    otp_item_t *item = (otp_item_t *)buff;
+
+    if (p_out != NULL && item->len > len)
+        return -2;
+
+    if (p_out != NULL) {
+        memcpy(p_out, buff + offsetof(otp_item_t, value), item->len);
+    }
+
+    return item->len;
+}
+
+bool mi_mesh_otp_is_existed(void)
+{
+    uint32_t result, type, len;
+
+    result = nvm3_getObjectInfo(nvm3_defaultHandle, 0x44000 + MIBLE_POTP_ROOT_REC_ID_BASE, &type, (size_t *)&len);
+    MI_ERR_CHECK(result);
+    if(result){
+        MI_LOG_WARNING("root cert isn't existed!\n");
+        return false;
+    }
+
+    result = nvm3_getObjectInfo(nvm3_defaultHandle, 0x44000 + MIBLE_POTP_MANU_REC_ID_BASE, &type, (size_t *)&len);
+    MI_ERR_CHECK(result);
+    if(result){
+        MI_LOG_WARNING("manu cert isn't existed!\n");
+        return false;
+    }
+
+    result = nvm3_getObjectInfo(nvm3_defaultHandle, 0x44000 + MIBLE_POTP_DEV_REC_ID_BASE, &type, (size_t *)&len);
+    MI_ERR_CHECK(result);
+    if(result){
+        MI_LOG_WARNING("dev cert isn't existed!\n");
+        return false;
+    }
+
+    result = nvm3_getObjectInfo(nvm3_defaultHandle, 0x44000 + MIBLE_POTP_DEV_PRI_REC_ID_BASE, &type, (size_t *)&len);
+    MI_ERR_CHECK(result);
+    if(result){
+        MI_LOG_WARNING("dev pri isn't existed!\n");
+        return false;
+    }
+
+    result = nvm3_getObjectInfo(nvm3_defaultHandle, 0x44000 + MIBLE_POTP_TAG_REC_ID_BASE, &type, (size_t *)&len);
+    MI_ERR_CHECK(result);
+    if(result){
+        MI_LOG_WARNING("otp tag isn't existed!\n");
+        return false;
+    }
+
+    otp_head_t head;
+    MI_LOG_WARNING("nvm3_readData : actual size %d\n", len);
+    result = nvm3_readData(nvm3_defaultHandle, 0x44000 + MIBLE_POTP_TAG_REC_ID_BASE, (void *)&head, sizeof(otp_head_t));
+    MI_ERR_CHECK(result);
+
+    if( memcmp(head.name, "POTP", 4) == 0 &&
+        head.version == 1 &&
+        head.size == POTP_FULL_SIZE)
+        return true;
+    else
+        return false;
+}

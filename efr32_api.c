@@ -14,6 +14,7 @@
 #include "stdbool.h"
 
 #include "bg_gattdb_def.h"
+#include "mi_config.h"
 
 #define MAX_TASK_NUM                    4
 #define ADV_HANDLE                      0
