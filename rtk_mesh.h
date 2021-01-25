@@ -10,30 +10,23 @@
 * @version   v1.0
 * *********************************************************************************************************
 */
-#ifndef _RTK_COMMON_H_
-#define _RTK_COMMON_H_
+#ifndef _RTK_MESH_H_
+#define _RTK_MESH_H_
 
 #include <app_msg.h>
-#include <stdbool.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+/* the number of mijia mesh inner message */
+#define MI_INNER_MSG_NUM                         16
 
-#define MIBLE_API_MSG_NUM                           20
-#define MIBLE_MAX_TASK_NUM                          10
+void mi_mesh_start(uint8_t event_mi, void *event_queue);
+void mi_inner_msg_handle(uint8_t event);
+void mi_handle_gap_msg(T_IO_MSG *pmsg);
+void mi_startup_delay(void);
 
-/* mible api inner message type */
-#define MIBLE_API_MSG_TYPE_TIMEOUT                  0x00
-#define MIBLE_API_MSG_TYPE_ADV_TIMEOUT              0x01
+void get_device_id(uint8_t *pdid);
 
-void mible_api_init(uint8_t evt_type, void *pevent_queue);
-bool mible_api_inner_msg_send(T_IO_MSG *pmsg);
-void mible_api_inner_msg_handle(uint8_t event);
+void mi_gatts_init(void);
+void mi_gatts_suspend(void);
+void mi_gatts_resume(void);
 
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* _RTK_COMMON_H_ */
+#endif /* _RTK_MESH_H_ */

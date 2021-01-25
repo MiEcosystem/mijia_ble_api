@@ -18,7 +18,8 @@
 #include "rtk_common.h"
 
 #define DEFAULT_TIME_INTERVAL   0xFFFFFF
-#define MAX_TIMER_CONTEXT       16
+#define MAX_TIMER_CONTEXT       20
+#define USER_TIMER_INDEX        10
 
 typedef struct
 {
@@ -62,6 +63,42 @@ mible_status_t mible_timer_create(void **p_timer_id,
 
     uint8_t idx;
     for (idx = 0; idx < MAX_TIMER_CONTEXT; ++idx)
+    {
+        if (NULL == timer_context[idx].timer)
+        {
+            break;
+        }
+    }
+
+    if (idx >= MAX_TIMER_CONTEXT)
+    {
+        return MI_ERR_NO_MEM;
+    }
+
+    *p_timer_id = plt_timer_create("mi", DEFAULT_TIME_INTERVAL,
+                                   (mode == MIBLE_TIMER_SINGLE_SHOT) ? FALSE : TRUE,
+                                   0, mi_timeout_handler);
+    if (NULL == *p_timer_id)
+    {
+        return MI_ERR_RESOURCES;
+    }
+
+    timer_context[idx].timer = *p_timer_id;
+    timer_context[idx].timeout_handler = timeout_handler;
+
+    return MI_SUCCESS;
+}
+
+mible_status_t mible_user_timer_create(void **p_timer_id,
+                    mible_timer_handler timeout_handler, mible_timer_mode mode)
+{
+    if (NULL == p_timer_id)
+    {
+        return MI_ERR_INVALID_PARAM;
+    }
+
+    uint8_t idx;
+    for (idx = USER_TIMER_INDEX; idx < MAX_TIMER_CONTEXT; ++idx)
     {
         if (NULL == timer_context[idx].timer)
         {

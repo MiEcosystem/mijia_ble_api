@@ -12,11 +12,13 @@
 */
 #include <stdlib.h>
 #include "rtk_common.h"
+#include <gap_adv.h>
 #include <os_msg.h>
 #include <os_task.h>
 #include "mible_api.h"
 #define MI_LOG_MODULE_NAME "RTK_COMMON"
 #include "mible_log.h"
+#include "platform_misc.h"
 
 static void *mible_api_event_queue;
 static void *mible_api_io_queue;
@@ -81,4 +83,143 @@ bool mible_api_inner_msg_send(T_IO_MSG *pmsg)
     }
 
     return true;
+}
+
+#ifndef LOG_IN_SEGGER_RTT
+#include "platform_diagnose.h"
+#include "trace.h"
+#include <stdarg.h>
+#include <stdio.h>
+int mible_log_printf(const char * sFormat, ...)
+{
+    char buffer[256];
+    va_list ParamList;
+    
+    va_start(ParamList, sFormat);
+    vsprintf(buffer, sFormat, ParamList);
+    log_direct(COMBINE_TRACE_INFO(TYPE_BEE2, SUBTYPE_DIRECT, 0, 0), (const char*)buffer);
+    va_end(ParamList);
+    
+    return MI_SUCCESS;
+}
+
+int mible_log_hexdump(void* array_base, uint16_t array_size)
+{
+    do {\
+        static const char format[] TRACE_DATA = "[hex][%d] %b\n";\
+        log_buffer(COMBINE_TRACE_INFO(TYPE_BEE2, SUBTYPE_FORMAT, 0, 0), (uint32_t)format, 2, array_size, TRACE_BINARY(array_size, array_base));\
+    } while (0);
+
+    return MI_SUCCESS;
+}
+#else
+#include "third_party/SEGGER_RTT/SEGGER_RTT.h"
+#include <stdarg.h>
+extern int SEGGER_RTT_vprintf(unsigned BufferIndex, const char * sFormat,
+                                va_list * pParamList);
+int mible_log_printf(const char * sFormat, ...)
+{
+    va_list ParamList;
+    va_start(ParamList, sFormat);
+    SEGGER_RTT_vprintf(0, sFormat, &ParamList);
+    va_end(ParamList);
+
+    return MI_SUCCESS;
+}
+
+int mible_log_hexdump(void* array_base, uint16_t array_size)
+{
+    do {                                                                           \
+        for (int Mi_index = 0; Mi_index<(array_size); Mi_index++)                                       \
+            SEGGER_RTT_printf(0, (Mi_index+1)%16?"%02X ":"%02X\n", ((char*)(array_base))[Mi_index]);\
+        if (array_size%16) SEGGER_RTT_printf(0,"\n");                               \
+    } while(0);
+    return MI_SUCCESS;
+}
+#endif
+
+/**
+ *@brief    reboot device.
+ *@return   0: success, negetive value: failure
+ */
+mible_status_t mible_reboot(void)
+{
+    plt_reset(0);
+    return MI_SUCCESS;
+}
+
+/**
+ *@brief    set node tx power.
+ *@param    [in] power : TX power in 0.1 dBm steps.
+ *@return   0: success, negetive value: failure
+ */
+mible_status_t mible_set_tx_power(int16_t power)
+{
+    uint8_t tx_gain;
+
+    if(power <= -200){
+        // 0x30      -20 dBm
+        tx_gain = 0X30;
+    }else if(power <= 0){
+        // 0x80      0 dBm
+        tx_gain = 0X80;
+    }else if(power <= 30){
+        // 0x90      3 dBm
+        tx_gain = 0X90;
+    }else if(power <= 40){
+        // 0xA0      4 dBm
+        tx_gain = 0XA0;
+    }else{
+        // 0xD0      7.5 dBm
+        tx_gain = 0XD0;
+    }
+    le_adv_set_tx_power(GAP_ADV_TX_POW_SET_1M, tx_gain);
+    MI_LOG_DEBUG("set tx power 0x%x.\n", tx_gain);
+
+    return MI_SUCCESS;
+}
+
+/* TASK schedulor related function  */
+#include "common/queue.h"
+typedef struct {
+    mible_handler_t handler;
+    void *p_ctx;
+} mible_task_t;
+
+static mible_task_t task_buf[MIBLE_MAX_TASK_NUM];
+static queue_t task_queue = {0};
+/*
+ * @brief 	Post a task to a task quene, which can be executed in a right place(maybe a task in RTOS or while(1) in the main function).
+ * @param 	[in] handler: a pointer to function
+ * 			[in] p_ctx: function parameters
+ * @return 	MI_SUCCESS 				Successfully put the handler to quene.
+ * 			MI_ERR_NO_MEM			The task quene is full.
+ * 			MI_ERR_INVALID_PARAM    Handler is NULL
+ * */
+mible_status_t mible_task_post(mible_handler_t handler, void *p_ctx)
+{
+    mible_status_t ret = MI_SUCCESS;
+    if (task_queue.buf == NULL){
+        queue_init(&task_queue, task_buf,
+                   sizeof(task_buf) / sizeof(task_buf[0]), sizeof(task_buf[0]));
+    }
+
+    mible_task_t task = {
+        .handler = handler,
+        .p_ctx   = p_ctx,
+    };
+
+    ret = enqueue(&task_queue, &task);
+    if(ret != MI_SUCCESS){
+        MI_LOG_ERROR("mible_task_post fail %d.\n", ret);
+    }
+
+    return ret;
+}
+
+void mible_tasks_exec(void)
+{
+    mible_task_t task;
+    while(dequeue(&task_queue, &task) == MI_SUCCESS)
+        task.handler(task.p_ctx);
 }

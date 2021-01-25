@@ -168,6 +168,132 @@
 #define RECORD_ID_MESH_BASE                             0x20
 #define RECORD_ID_MESH_STATE                            (RECORD_ID_MESH_BASE + 1)
 
+#if defined ( __CC_ARM )
+/**
+ * @brief mible mesh model description.
+ */
+__PACKED typedef struct {
+    uint16_t model_id;
+    uint16_t company_id;
+} mible_mesh_model_id_t;
+
+/**
+ * @brief mible opcode description
+ * you can't omit bit flag 0b0, 0b10, 0b11 for opcode.
+ * Opcode   Format Notes
+ * 0xxxxxxx (excluding 01111111) 1-octet Opcodes
+ * 10xxxxxx xxxxxxxx 2-octet Opcodes
+ * 11xxxxxx zzzzzzzz 3-octet Opcodes
+ */
+__PACKED typedef struct {
+    uint16_t opcode;        /**< operation code, defined mesh profile 3.7.3.1 Operation codes */
+    uint16_t company_id;    /**< SIG ID: 0xFFFF */
+} mible_mesh_opcode_t;
+
+/**
+ * @brief mible mesh provisioning data description.
+ */
+__PACKED typedef struct {
+    uint8_t  devkey[16];
+    uint8_t  netkey[16];
+    uint16_t net_idx;
+    uint8_t  flags;
+    uint32_t iv;
+    uint16_t address;
+} mible_mesh_provisioning_data_t;
+
+/**
+ * @brief mible mesh iv info.
+ */
+__PACKED typedef struct {
+    uint32_t iv_index;  /**< mesh network iv index */
+    uint8_t  flags;     /**< IV Update Flag     0: Normal operation 1: IV Update active*/
+} mible_mesh_iv_t;
+
+/**
+ * @brief mesh message meta data.
+ */
+__PACKED typedef struct {
+    uint16_t src_addr;      /**< [mandatary]  source address */
+    uint16_t dst_addr;      /**< [mandatary]  maybe group address, or provisioner addr */
+    uint16_t appkey_index;  /**< [mandatary]  appkey index for this message */
+    uint16_t netkey_index;  /**< [optional]  if not, default value 0xFFFF */
+    int8_t   rssi;          /**< [optional]  if not, default value -1 */
+    uint8_t  ttl;           /**< [optional]  if not, default value 0 */
+    uint8_t  elem_index;    /**< [optional]  massage element index */
+} mible_mesh_message_meta_t;
+
+/**********************************************************************//**
+ * Config Message Status Definitions
+ **********************************************************************/
+
+/**
+ * @brief Mesh Config Relay Status event paramater type.
+ */
+__PACKED typedef struct {
+    uint8_t relay;
+    uint8_t relay_retrans_cnt;
+    uint8_t relay_retrans_intvlsteps;
+} mible_mesh_conf_relay_set_t;
+
+/**
+ * @brief Mesh Config Model Sublication Status event paramater type.
+ */
+__PACKED typedef struct {
+    uint16_t elem_addr;
+    uint16_t address;
+    mible_mesh_model_id_t model_id;
+} mible_mesh_conf_model_sub_set_t;
+
+/**
+ * @brief Mesh Model Client event paramater type.
+ * you should implement all status corresponsing to mible_mesh_node_*.
+ */
+__PACKED typedef struct {
+    mible_mesh_opcode_t opcode;
+    mible_mesh_message_meta_t meta_data;
+    __PACKED union{
+        mible_mesh_conf_relay_set_t     relay_set;
+        mible_mesh_conf_model_sub_set_t model_sub_set;
+    };
+}mible_mesh_config_status_t;
+
+/**
+ * @brief mesh message.
+ */
+__PACKED typedef struct {
+    mible_mesh_opcode_t opcode;
+    mible_mesh_message_meta_t meta_data;
+    uint16_t buf_len;       /* mesh raw data len*/
+    uint8_t* buf;           /* mesh raw data, see mesh profile 4.3 */
+} mible_mesh_access_message_t;
+
+__PACKED typedef struct {
+    uint8_t siid;
+    __PACKED union{
+        uint8_t piid;
+        uint8_t eiid;
+        uint8_t aiid;
+    };
+} mible_spec_id_t;
+
+__PACKED typedef struct {
+    uint8_t  siid;
+    uint8_t  piid;
+    uint16_t company_id;
+    uint16_t model_id;
+    uint16_t appkey_idx;
+    uint16_t element;
+} mible_mesh_template_map_t;
+
+__PACKED typedef struct {
+    uint8_t provisioned;
+    uint8_t lpn_node;
+    uint16_t address;
+    uint32_t ivi;
+    mible_mesh_template_map_t map[5];
+}mible_mesh_node_init_t;
+#elif defined   ( __GNUC__ )
 /**
  * @brief mible mesh model description.
  */
@@ -200,19 +326,6 @@ typedef struct __PACKED{
     uint32_t iv;
     uint16_t address;
 } mible_mesh_provisioning_data_t;
-
-/**
- * @brief ADD contains add and update operation.
- *        This is only used to mesh provisioner local opertions for mible_mesh_gateway_*.
- *        DO NOT BE USE TO mible_mesh_node_* functions.
- *        Firstly, you should execute get-operation,
- *        and then, according to get result, choose you really add or update method.
- *        if get-operation return null, you can call add method, otherwise, call update method.
- */
-typedef enum {
-    MIBLE_MESH_OP_ADD=0,
-    MIBLE_MESH_OP_DELETE,
-}mible_mesh_op_t;
 
 /**
  * @brief mible mesh iv info.
@@ -305,6 +418,20 @@ typedef struct __PACKED{
     uint32_t ivi;
     mible_mesh_template_map_t map[5];
 }mible_mesh_node_init_t;
+#endif
+
+/**
+ * @brief ADD contains add and update operation.
+ *        This is only used to mesh provisioner local opertions for mible_mesh_gateway_*.
+ *        DO NOT BE USE TO mible_mesh_node_* functions.
+ *        Firstly, you should execute get-operation,
+ *        and then, according to get result, choose you really add or update method.
+ *        if get-operation return null, you can call add method, otherwise, call update method.
+ */
+typedef enum {
+    MIBLE_MESH_OP_ADD=0,
+    MIBLE_MESH_OP_DELETE,
+}mible_mesh_op_t;
 
 typedef union {
     mible_mesh_node_init_t node_init;

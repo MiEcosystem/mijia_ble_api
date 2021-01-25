@@ -12,11 +12,13 @@
 */
 #include <string.h>
 #include "mible_api.h"
+#include "miio_user_api.h"
 #include "flash_device.h"
+#undef  MI_LOG_MODULE_NAME
 #define MI_LOG_MODULE_NAME "RTK_NVM"
 #include "mible_log.h"
-#include "mijia_mesh_config.h"
 #include "ftl.h"
+#include "ftl_map.h"
 #include "platform_types.h"
 #include "silent_dfu_flash.h"
 
@@ -24,12 +26,17 @@
 #include "otp.h"
 #include "platform_misc.h"
 
-#define CREATE_WHEN_WRITE            1
+#define CREATE_WHEN_WRITE           1
 
-#define MAX_RECORD_NUM               5
-#define INVALID_RECORD_INDEX         0xFF
-#define OFFSET_HEADER                MI_RECORD_OFFSET
-#define CALC_LEN(len)                (((len) + 3) / 4 * 4)
+#define SYS_RECORD_NUM              8
+#ifndef USER_RECORD_NUM
+#define USER_RECORD_NUM             5
+#endif
+
+#define MAX_RECORD_NUM              SYS_RECORD_NUM + USER_RECORD_NUM
+#define INVALID_RECORD_INDEX        0xFF
+#define OFFSET_HEADER               FTL_MAP_MI_RECORD_OFFSET_OFFSET
+#define CALC_LEN(len)               (((len) + 3) / 4 * 4)
 
 typedef struct
 {
@@ -41,12 +48,12 @@ typedef struct
 } record_t;
 static record_t records[MAX_RECORD_NUM];
 
-#define OFFSET_RECORD               (MI_RECORD_OFFSET + sizeof(records))
+#define OFFSET_RECORD               (FTL_MAP_MI_RECORD_OFFSET_OFFSET + sizeof(records))
 
 /* dfu releated parameters, support pasue and resume download */
 #define PATCH_SIZE                  (40 * 1024)
 #define SEC_BOOT_SIZE               (4 * 1024)
-#define OTA_RECORD_OFFSET           (MI_RECORD_OFFSET - 4)
+#define OTA_RECORD_OFFSET           (FTL_MAP_MI_RECORD_OFFSET_OFFSET - 4)
 
 typedef union
 {
@@ -118,6 +125,19 @@ mible_status_t mible_record_init(void)
 void mible_record_clear(void)
 {
     memset(records, 0, sizeof(records));
+    ftl_save((void *)records, OFFSET_HEADER, sizeof(records));
+}
+
+void mible_sys_record_clear(void)
+{
+    memset(records, 0, SYS_RECORD_NUM * sizeof(records[0]));
+    ftl_save((void *)records, OFFSET_HEADER, sizeof(records));
+}
+
+void mible_user_record_clear(void)
+{
+    memset((uint8_t *)records + SYS_RECORD_NUM * sizeof(records[0]),
+            0, USER_RECORD_NUM * sizeof(records[0]));
     ftl_save((void *)records, OFFSET_HEADER, sizeof(records));
 }
 
