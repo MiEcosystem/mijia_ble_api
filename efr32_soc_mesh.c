@@ -619,7 +619,7 @@ int mible_mesh_node_generic_control(mible_mesh_access_message_t *param)
     case MIBLE_MESH_MSG_GENERIC_ONOFF_STATUS:
         MI_LOG_DEBUG("Generic onoff model message send. src %04x, dst %04x, opcode %04x, data:\n",
                 param->meta_data.src_addr, param->meta_data.dst_addr, param->opcode.opcode);
-        MI_HEXDUMP(param->buf, param->buf_len);
+        MI_LOG_HEXDUMP(param->buf, param->buf_len);
         current.kind = mesh_generic_state_on_off;
         memcpy(&(current.on_off), param->buf, sizeof(uint8_t));
         result = mesh_lib_generic_server_update(MESH_GENERIC_ON_OFF_SERVER_MODEL_ID,
@@ -634,7 +634,7 @@ int mible_mesh_node_generic_control(mible_mesh_access_message_t *param)
     case MIBLE_MESH_MSG_LIGHT_LIGHTNESS_STATUS:
         MI_LOG_DEBUG("Light lightness model message send. src %04x, dst %04x, opcode %04x, data:\n",
                 param->meta_data.src_addr, param->meta_data.dst_addr, param->opcode.opcode);
-        MI_HEXDUMP(param->buf, param->buf_len);
+        MI_LOG_HEXDUMP(param->buf, param->buf_len);
         current.kind = mesh_lighting_state_lightness_actual;
         memcpy(&(current.lightness), param->buf, sizeof(uint16_t));
         result = mesh_lib_generic_server_update(MESH_LIGHTING_LIGHTNESS_SERVER_MODEL_ID,
@@ -650,7 +650,7 @@ int mible_mesh_node_generic_control(mible_mesh_access_message_t *param)
     case MIBLE_MESH_MSG_LIGHT_CTL_TEMPERATURE_STATUS:
         MI_LOG_DEBUG("Light lightness model message send. src %04x, dst %04x, opcode %04x, data:\n",
                 param->meta_data.src_addr, param->meta_data.dst_addr, param->opcode.opcode);
-        MI_HEXDUMP(param->buf, param->buf_len);
+        MI_LOG_HEXDUMP(param->buf, param->buf_len);
         current.kind = mesh_lighting_state_ctl_temperature;
         memcpy(&(current.ctl_temperature), param->buf, sizeof(uint32_t));
         result = mesh_lib_generic_server_update(MESH_LIGHTING_CTL_TEMPERATURE_SERVER_MODEL_ID,
@@ -672,7 +672,7 @@ int mible_mesh_node_generic_control(mible_mesh_access_message_t *param)
     case MIBLE_MESH_MIOT_SPEC_VENDOR_CONFIG_RSP:
         MI_LOG_DEBUG("VVVVVVVVVVVendor model message send. src %04x, dst %04x, opcode %04x, data:\n",
                 param->meta_data.src_addr, param->meta_data.dst_addr, param->opcode.opcode);
-        MI_HEXDUMP(param->buf, param->buf_len);
+        MI_LOG_HEXDUMP(param->buf, param->buf_len);
         result = gecko_cmd_mesh_vendor_model_send(0, MIBLE_MESH_COMPANY_ID_XIAOMI,
                 MIBLE_MESH_MIOT_SPEC_SERVER_MODEL, param->meta_data.dst_addr, 0,
                 param->meta_data.appkey_index, 0, param->opcode.opcode&0x3F, 1,
@@ -935,6 +935,7 @@ static void process_soft_timer_event(struct gecko_cmd_packet *evt)
  * Handling of stack events. Both BLuetooth LE and Bluetooth mesh events are handled here.
  */
 static uint8_t mesh_scan_level;
+int mi_mesh_otp_carry_nvm3(void);
 void mible_mesh_stack_event_handler(struct gecko_cmd_packet *evt)
 {
     uint16_t result;
@@ -947,6 +948,9 @@ void mible_mesh_stack_event_handler(struct gecko_cmd_packet *evt)
         process_soft_timer_event(evt);
         break;
     case gecko_evt_system_boot_id:
+#if USE_CARRY_CERT==2
+        mi_mesh_otp_carry_nvm3();
+#endif
         MI_LOG_WARNING("[Stack event] gecko_evt_system_boot_id\n");
         mi_service_init();
         mible_set_tx_power(85);
@@ -1039,7 +1043,6 @@ void mible_mesh_stack_event_handler(struct gecko_cmd_packet *evt)
  * Replace otp api and store mesh Certificate chain in NVM3.
  */
 #include "cryptography/mi_mesh_otp.h"
-#include "cryptography/mi_mesh_otp_config.h"
 #include "nvm3.h"
 #include "nvm3_default.h"
 #define MIBLE_POTP_TAG_REC_ID_BASE          0x48
@@ -1179,3 +1182,146 @@ bool mi_mesh_otp_is_existed(void)
     else
         return false;
 }
+
+#if USE_CARRY_CERT==2
+#define POTP_CARRY_BASE             ((uint8_t*)0x76000UL)
+#include "cryptography/mi_mesh_otp.h"
+
+static uint8_t *find_item2(uint8_t *p_base, uint16_t item_type)
+{
+    /* Check POTP header */
+    otp_head_t head = {0};
+    mible_nvm_read(&head, sizeof(head), (uint32_t)p_base);
+    if (memcmp(head.name, "POTP", 4) != 0) {
+        MI_LOG_ERROR("no mesh otp found.\n");
+        return NULL;
+    } else if (head.version > 1) {
+        MI_LOG_ERROR("this version is not supported.\n");
+        return NULL;
+    }
+
+    /* Find TYPE item */
+    otp_item_t item;
+    uint8_t* item_addr = p_base + sizeof(otp_head_t);
+    mible_nvm_read(&item, 4, (uint32_t)item_addr);
+    while(item.type != item_type && item_addr < POTP_CARRY_BASE+POTP_FULL_SIZE) {
+        item_addr += offsetof(otp_item_t, value) + CEIL_DIV(item.len, 4) * 4;
+        mible_nvm_read(&item, 4, (uint32_t)item_addr);
+    }
+
+    if (item_addr > POTP_CARRY_BASE + POTP_FULL_SIZE)
+        return NULL;
+    else
+        return item_addr;
+}
+
+static int mi_mesh_otp_read2(uint16_t item_type, uint8_t *p_out, uint16_t len)
+{
+    uint8_t *p = find_item2(POTP_CARRY_BASE, item_type);
+
+    if (p == NULL)
+        return -1;
+
+    otp_item_t item;
+    mible_nvm_read(&item, sizeof(otp_item_t), (uint32_t)p);
+
+    if (p_out != NULL && item.len > len)
+        return -2;
+
+    if (p_out != NULL) {
+        p += offsetof(otp_item_t, value);
+        mible_nvm_read(p_out, item.len, (uint32_t)p);
+    }
+
+    return item.len;
+
+}
+
+static bool mi_mesh_otp_is_existed2(void)
+{
+    otp_head_t head_data;
+    mible_nvm_read((void *)(&head_data), sizeof(head_data), (uint32_t)POTP_CARRY_BASE);
+    otp_head_t *head = &head_data;
+    if( memcmp(head->name, "POTP", 4) == 0 &&
+        head->version == 1 &&
+        head->size == POTP_FULL_SIZE)
+        return true;
+    else
+        return false;
+}
+
+int mi_mesh_otp_carry_nvm3(void)
+{
+    int errno = 0,len;
+    uint8_t buff_cert[512];
+
+#if 1
+    if (!mi_mesh_otp_is_existed())
+#endif
+    {
+        MI_LOG_WARNING("NVM3 can't find POTP\n");
+        if(!mi_mesh_otp_is_existed2()){
+            MI_LOG_ERROR("can't find potp in %d\n", (uint32_t)POTP_CARRY_BASE);
+            return -1;
+        }
+
+        bd_addr new_mac = {0};
+        if(sizeof(new_mac.addr) != mi_mesh_otp_read(OTP_BLE_MAC, new_mac.addr, sizeof(new_mac.addr)))
+        {
+            len = mi_mesh_otp_read2(OTP_BLE_MAC, new_mac.addr, sizeof(new_mac.addr));
+            MI_ERR_CHECK(len);
+            if(len == sizeof(new_mac.addr)){
+                MI_LOG_WARNING("Set bt Mac :\n");
+                MI_LOG_HEXDUMP(new_mac.addr, 6);
+                errno = mi_mesh_otp_write(OTP_BLE_MAC, new_mac.addr, len);
+                MI_ERR_CHECK(errno);
+                gecko_cmd_system_set_bt_address(new_mac);
+                MI_LOG_WARNING("mesh_node_reset\n");
+                errno = mible_mesh_node_reset();
+                MI_ERR_CHECK(errno);
+                errno = mible_reboot();
+                MI_ERR_CHECK(errno);
+                return -2;
+            }else{
+                return -3;
+            }
+        }
+
+        MI_LOG_WARNING("carry mesh otp\n");
+        errno = mi_mesh_otp_seal_tag(POTP_CARRY_BASE);
+        MI_ERR_CHECK(errno);
+
+        len = mi_mesh_otp_read2(OTP_ROOT_CERT, buff_cert, sizeof(buff_cert));
+        MI_ERR_CHECK(len);
+        if(len > 0){
+            errno = mi_mesh_otp_write(OTP_ROOT_CERT, buff_cert, len);
+            MI_ERR_CHECK(errno);
+        }
+
+        len = mi_mesh_otp_read2(OTP_MANU_CERT, buff_cert, sizeof(buff_cert));
+        MI_ERR_CHECK(len);
+        if(len > 0){
+            errno = mi_mesh_otp_write(OTP_MANU_CERT, buff_cert, len);
+            MI_ERR_CHECK(errno);
+        }
+
+        len = mi_mesh_otp_read2(OTP_DEV_CERT, buff_cert, sizeof(buff_cert));
+        MI_ERR_CHECK(len);
+        if(len > 0){
+            errno = mi_mesh_otp_write(OTP_DEV_CERT, buff_cert, len);
+            MI_ERR_CHECK(errno);
+        }
+
+        len = mi_mesh_otp_read2(OTP_DEV_CERT_PRI, buff_cert, sizeof(buff_cert));
+        MI_ERR_CHECK(len);
+        if(len > 0){
+            errno = mi_mesh_otp_write(OTP_DEV_CERT_PRI, buff_cert, len);
+            MI_ERR_CHECK(errno);
+        }
+
+        errno = mi_mesh_otp_verify();
+    }
+
+    return errno;
+}
+#endif

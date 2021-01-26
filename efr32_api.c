@@ -16,7 +16,7 @@
 #include "bg_gattdb_def.h"
 #include "mi_config.h"
 
-#define MAX_TASK_NUM                    4
+#define MAX_TASK_NUM                    10
 #define ADV_HANDLE                      0
 #define CHAR_TABLE_NUM                  8
 #define CHAR_DATA_LEN_MAX               20
@@ -362,10 +362,12 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt)
                     connect_param_for_retry = 0xFF;
                 }
             }
-        }else if(evt->data.evt_system_external_signal.extsignals & MIBLE_TASK_BIT_MASK){
+        }
+/*
+        else if(evt->data.evt_system_external_signal.extsignals & MIBLE_TASK_BIT_MASK){
             mible_tasks_exec();
         }
-
+*/
     break;
 
     }
