@@ -30,7 +30,7 @@ extern "C" {
 void mible_api_init(uint8_t evt_type, void *pevent_queue);
 bool mible_api_inner_msg_send(T_IO_MSG *pmsg);
 void mible_api_inner_msg_handle(uint8_t event);
-
+void mi_task_start(uint8_t event_mi, void *pevent_queue);
 
 #ifdef __cplusplus
 }

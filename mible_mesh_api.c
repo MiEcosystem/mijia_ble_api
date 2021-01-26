@@ -121,6 +121,11 @@ __WEAK int mible_mesh_device_get_relay(uint8_t *enabled, uint8_t *count, uint8_t
     return 0;
 }
 
+__WEAK int mible_mesh_device_get_seq(uint16_t element, uint32_t* seq, uint32_t* iv, uint8_t* flags)
+{
+    return 0;
+}
+
 __WEAK int mible_mesh_device_update_iv_info(uint32_t iv_index, uint8_t flags)
 {
     // sync and load iv_index from application

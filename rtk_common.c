@@ -180,46 +180,46 @@ mible_status_t mible_set_tx_power(int16_t power)
 }
 
 /* TASK schedulor related function  */
-#include "common/queue.h"
 typedef struct {
     mible_handler_t handler;
     void *p_ctx;
 } mible_task_t;
 
-static mible_task_t task_buf[MIBLE_MAX_TASK_NUM];
-static queue_t task_queue = {0};
-/*
- * @brief 	Post a task to a task quene, which can be executed in a right place(maybe a task in RTOS or while(1) in the main function).
- * @param 	[in] handler: a pointer to function
- * 			[in] p_ctx: function parameters
- * @return 	MI_SUCCESS 				Successfully put the handler to quene.
- * 			MI_ERR_NO_MEM			The task quene is full.
- * 			MI_ERR_INVALID_PARAM    Handler is NULL
- * */
-mible_status_t mible_task_post(mible_handler_t handler, void *p_ctx)
+static void *evt_queue_handle;
+static void *mi_queue_handle;
+static uint8_t mi_task_event;
+
+mible_status_t mible_task_post(mible_handler_t handler, void *arg)
 {
-    mible_status_t ret = MI_SUCCESS;
-    if (task_queue.buf == NULL){
-        queue_init(&task_queue, task_buf,
-                   sizeof(task_buf) / sizeof(task_buf[0]), sizeof(task_buf[0]));
+    mible_task_t event;
+    event.handler = handler;
+    event.p_ctx = arg;
+
+    if (os_msg_send(mi_queue_handle, &event, 0))
+    {
+        uint8_t event_mi = mi_task_event;
+        os_msg_send(evt_queue_handle, &event_mi, 0);
+        return MI_SUCCESS;
     }
-
-    mible_task_t task = {
-        .handler = handler,
-        .p_ctx   = p_ctx,
-    };
-
-    ret = enqueue(&task_queue, &task);
-    if(ret != MI_SUCCESS){
-        MI_LOG_ERROR("mible_task_post fail %d.\n", ret);
+    else
+    {
+        return MI_ERR_INTERNAL;
     }
-
-    return ret;
 }
 
 void mible_tasks_exec(void)
 {
-    mible_task_t task;
-    while(dequeue(&task_queue, &task) == MI_SUCCESS)
-        task.handler(task.p_ctx);
+    mible_task_t event;
+
+    if (os_msg_recv(mi_queue_handle, &event, 0) && event.handler != NULL)
+    {
+        event.handler(event.p_ctx);
+    }
+}
+
+void mi_task_start(uint8_t event_mi, void *pevent_queue)
+{
+    mi_task_event = event_mi;
+    evt_queue_handle = pevent_queue;
+    os_msg_queue_create(&mi_queue_handle, MIBLE_MAX_TASK_NUM, sizeof(mible_task_t));
 }

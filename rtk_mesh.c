@@ -822,6 +822,30 @@ int mible_mesh_device_get_relay(uint8_t *enabled, uint8_t *count, uint8_t *step)
 }
 
 /**
+ *@brief    get seq number.
+ *@param    [in] element : model element
+ *@param    [out] seq : current sequence numer
+ *@param    [out] iv_index : current IV Index
+ *@param    [out] flags : IV Update Flag
+ *@return   0: success, negetive value: failure
+ */
+int mible_mesh_device_get_seq(uint16_t element, uint32_t* seq, uint32_t* iv, uint8_t* flags)
+{
+    if (PROV_NODE == mesh_node.node_state){
+        if(NULL != seq)
+            *seq = mesh_node.seq;
+        if(NULL != iv)
+            *iv = mesh_node.iv_index;
+        if(NULL != flags)
+            *flags = mesh_node.iv_update_flag;
+        MI_LOG_DEBUG("Seq %u, Iv %u, flags %u\n", mesh_node.seq,
+                        mesh_node.iv_index, mesh_node.iv_update_flag);
+        return 0;
+    }
+    return -1;
+}
+
+/**
  *@brief    update iv index, .
  *@param    [in] iv_index : current IV Index
  *@param    [in] flags : contains the Key Refresh Flag and IV Update Flag
@@ -1072,8 +1096,8 @@ uint64_t mible_mesh_get_exact_systicks(void)
 {
     //TODO: need 1s poll timer
     uint32_t ticks = RTC_GetCounter() - rtc_cnt;
-    //MI_LOG_DEBUG("mible_mesh_get_exact_systicks %lld ms\n", systime*1000 + ticks*1000/32768);
-    return (uint64_t)systime*1000 + ticks*1000/32768;
+    //MI_LOG_DEBUG("mible_mesh_get_exact_systicks system %d, ticks %d\n", systime*1000, ticks);
+    return (uint64_t)systime*1000 + ticks;
 }
 
 void mi_inner_msg_handle(uint8_t event)
