@@ -52,6 +52,9 @@
 /* relay parallel max number */
 #define MI_GAP_SCHED_RELAY_PARALLEL_MAX_NUM      5
 
+#define MI_GATT_TIMEOUT                         20000
+#define MI_REGSUCC_TIMEOUT                      5000
+
 /* mi inner message type */
 typedef enum
 {
@@ -83,6 +86,10 @@ static uint8_t is_provisioned = 0;
 /* mible state, avoid multiple initialize */
 static bool mible_start = FALSE;
 static bool is_initialized = false;
+/* connect paramenters */
+static uint16_t mible_conn_handle = 0xFFFF;
+/* connect timer */
+static void *mible_conn_timer = NULL;
 
 extern mible_status_t mible_record_init(void);
 extern T_GAP_CAUSE le_vendor_set_priority(T_GAP_VENDOR_PRIORITY_PARAM *p_priority_param);
@@ -739,6 +746,7 @@ int mible_mesh_device_provsion_done(void)
     prov_cb_data_t droppable_data;
     droppable_data.pb_generic_cb_type = PB_GENERIC_CB_MSG;
     prov_cb(PROV_CB_TYPE_COMPLETE, droppable_data);
+    mible_timer_start(mible_conn_timer, MI_REGSUCC_TIMEOUT, NULL);
     return 0;
 }
 
@@ -771,7 +779,7 @@ int mible_mesh_device_unprovsion_done(void)
 int mible_mesh_device_login_done(uint8_t status)
 {
     MI_LOG_INFO("LOGIN SUCCESS, stop TIMER_ID_CONN_TIMEOUT\n");
-    return 0;
+    return mible_timer_stop(mible_conn_timer);
 }
 
 /**
@@ -1249,6 +1257,15 @@ static void poll_second_timeout_handle(void *pargs)
     MI_LOG_DEBUG("systime: %u\n!", (uint32_t)systime);
 }
 
+static void mible_conn_timeout_cb(void *p_context)
+{
+    MI_LOG_INFO("[mible_conn_timeout_cb]disconnect handle: %04x\r\n", mible_conn_handle);
+    if (0xFFFF != mible_conn_handle)
+    {
+        mible_gap_disconnect(mible_conn_handle);
+    }
+}
+
 void mi_handle_gap_msg(T_IO_MSG *pmsg)
 {
     T_LE_GAP_MSG gap_msg;
@@ -1319,6 +1336,22 @@ void mi_handle_gap_msg(T_IO_MSG *pmsg)
                 le_get_conn_param(GAP_PARAM_CONN_TIMEOUT, &param.connect.conn_param.conn_sup_timeout, conn_id);
 
                 mible_gap_event_callback(MIBLE_GAP_EVT_CONNECTED, &param);
+                if (NULL == mible_conn_timer)
+                {
+                    mible_status_t status = mible_timer_create(&mible_conn_timer, mible_conn_timeout_cb,
+                                                               MIBLE_TIMER_SINGLE_SHOT);
+                    if (MI_SUCCESS != status)
+                    {
+                        MI_LOG_ERROR("mible_conn_timer: fail, timer is not created");
+                        return;
+                    }
+                    else
+                    {
+                        MI_LOG_DEBUG("mible_conn_timer: succ, timer is created");
+                    }
+                }
+                mible_conn_handle = conn_id;
+                mible_timer_start(mible_conn_timer, MI_GATT_TIMEOUT, NULL);
             }
             else if (conn_state == GAP_CONN_STATE_DISCONNECTED)
             {
@@ -1337,6 +1370,8 @@ void mi_handle_gap_msg(T_IO_MSG *pmsg)
                 }
 
                 mible_gap_event_callback(MIBLE_GAP_EVT_DISCONNECT, &param);
+                mible_conn_handle = 0xFFFF;
+                mible_timer_stop(mible_conn_timer);
             }
         }
         break;
