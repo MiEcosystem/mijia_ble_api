@@ -51,6 +51,7 @@ static inline int miio_system_restore(void)
     return mible_reboot();
 }
 
+#if defined(MI_MESH_ENABLED)
 /**
  *@brief    get system time.
  *@return   systicks in ms.
@@ -59,6 +60,7 @@ static inline uint64_t miio_system_get_time(void)
 {
     return mible_mesh_get_exact_systicks();
 }
+#endif
 
 /**
  *@brief    set mibeacon advertising timeout, after timeout advertising will stop.
