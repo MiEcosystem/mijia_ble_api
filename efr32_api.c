@@ -363,11 +363,9 @@ void mible_stack_event_handler(struct gecko_cmd_packet *evt)
                 }
             }
         }
-/*
         else if(evt->data.evt_system_external_signal.extsignals & MIBLE_TASK_BIT_MASK){
             mible_tasks_exec();
         }
-*/
     break;
 
     }

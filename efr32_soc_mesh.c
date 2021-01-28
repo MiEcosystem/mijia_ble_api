@@ -447,6 +447,28 @@ int mible_mesh_device_get_relay(uint8_t *enabled, uint8_t *count, uint8_t *step)
 }
 
 /**
+ *@brief    get seq number.
+ *@param    [in] element : model element
+ *@param    [out] seq : current sequence numer
+ *@param    [out] iv_index : current IV Index
+ *@param    [out] flags : IV Update Flag
+ *@return   0: success, negetive value: failure
+ */
+int mible_mesh_device_get_seq(uint16_t element, uint32_t* seq, uint32_t* iv, uint8_t* flags)
+{
+    if(is_provisioned){
+        if(seq != NULL)
+            *seq = gecko_cmd_mesh_test_get_element_seqnum(element)->seqnum;
+        if(iv != NULL)
+            *iv = gecko_cmd_mesh_node_get_ivupdate_state()->ivindex;
+        if(flags != NULL)
+            *flags = gecko_cmd_mesh_node_get_ivupdate_state()->state;
+        return 0;
+    }
+    return -1;
+}
+
+/**
  *@brief    update iv index, .
  *@param    [in] iv_index : current IV Index
  *@param    [in] flags : contains the Key Refresh Flag and IV Update Flag
@@ -905,7 +927,7 @@ static void process_soft_timer_event(struct gecko_cmd_packet *evt)
         non_mesh_event_cnt = 0;
         // procedures run periodic
         if (is_provisioned && systime % 1800 == 0) {
-#if defined(MI_MESH_TEMPLATE_LIGHTNESS) || defined(MI_MESH_TEMPLATE_ONE_KEY_SWITCH) || defined(MI_MESH_TEMPLATE_FAN)
+#if defined(MI_MESH_TEMPLATE_LIGHTNESS) || defined(MI_MESH_TEMPLATE_ONE_KEY_SWITCH) || defined(MI_MESH_TEMPLATE_FAN) || defined(MI_MESH_TEMPLATE_CLOUD)
             uint32_t seq_remain = gecko_cmd_mesh_node_get_seq_remaining(0)->count;
 #elif defined(MI_MESH_TEMPLATE_TWO_KEY_SWITCH) || defined(MI_MESH_TEMPLATE_LIGHTCTL)
             uint32_t seq_remain = MIN(gecko_cmd_mesh_node_get_seq_remaining(0)->count,
