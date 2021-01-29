@@ -956,6 +956,7 @@ static void process_soft_timer_event(struct gecko_cmd_packet *evt)
 /**
  * Handling of stack events. Both BLuetooth LE and Bluetooth mesh events are handled here.
  */
+#define USE_DUMMY_CERT  0
 static uint8_t mesh_scan_level;
 int mi_mesh_otp_carry_nvm3(void);
 void mible_mesh_stack_event_handler(struct gecko_cmd_packet *evt)
@@ -972,6 +973,23 @@ void mible_mesh_stack_event_handler(struct gecko_cmd_packet *evt)
     case gecko_evt_system_boot_id:
 #if USE_CARRY_CERT==2
         mi_mesh_otp_carry_nvm3();
+#endif
+#if USE_DUMMY_CERT==1
+    {
+        extern unsigned char dev_mac[6];
+
+        bd_addr new_mac = {0};
+        memcpy(new_mac.addr, dev_mac, 6);
+
+        bd_addr curr_mac = gecko_cmd_system_get_bt_address()->address;
+        MI_LOG_HEXDUMP(&curr_mac, 6);
+        if (memcmp(curr_mac.addr, new_mac.addr, 6) != 0) {
+            gecko_cmd_system_set_bt_address(new_mac);
+            gecko_cmd_system_reset(0);
+        }
+    }
+    result = mi_mesh_otp_program_simulation();
+    MI_ERR_CHECK(result);
 #endif
         MI_LOG_WARNING("[Stack event] gecko_evt_system_boot_id\n");
         mi_service_init();
