@@ -377,7 +377,7 @@ typedef struct __PACKED{
 typedef struct __PACKED{
     mible_mesh_opcode_t opcode;
     mible_mesh_message_meta_t meta_data;
-    union{
+    union __PACKED{
         mible_mesh_conf_relay_set_t     relay_set;
         mible_mesh_conf_model_sub_set_t model_sub_set;
     };
@@ -395,7 +395,7 @@ typedef struct __PACKED{
 
 typedef struct __PACKED{
     uint8_t siid;
-    union{
+    union __PACKED{
         uint8_t piid;
         uint8_t eiid;
         uint8_t aiid;
