@@ -641,6 +641,7 @@ int mible_mesh_device_init_stack(void)
     
     /** restore light ahead since it may restore the fatory setting */
     //light_flash_restore();
+    mible_record_init();
 
     /* use segment message to response configuration */
     //cfg_server_resp_with_seg_msg(TRUE);
@@ -1293,7 +1294,7 @@ void mi_handle_gap_msg(T_IO_MSG *pmsg)
         
             //TODO: HAVE_MSC
             //mi_scheduler_init(MI_SCHEDULER_INTERVAL, mi_schd_event_handler, &lib_cfg);
-            mible_record_init();
+            //mible_record_init();
             mi_gatts_init();
 
             mible_mesh_event_callback(MIBLE_MESH_EVENT_STACK_INIT_DONE, NULL);
