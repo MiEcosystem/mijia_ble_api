@@ -914,13 +914,38 @@ static void process_mesh_iv_update_event(uint32_t iv_index, uint8_t flags)
     mible_mesh_event_callback(MIBLE_MESH_EVENT_IV_UPDATE, &mesh_iv);
 }
 
+#if defined(WATCH_DOG_ENABLE) && WATCH_DOG_ENABLE
+#include "em_wdog.h"
+#include "em_cmu.h"
+/**************************************************************************//**
+ * @brief Watchdog initialization
+ *****************************************************************************/
+void initWDOG(void)
+{
+  // Enable clock for the WDOG module
+  CMU_ClockEnable(cmuClock_WDOG0, true);
+
+  // Watchdog Initialize settings
+  WDOG_Init_TypeDef wdogInit = WDOG_INIT_DEFAULT;
+  CMU_ClockSelectSet(cmuClock_WDOG0, cmuSelect_ULFRCO); /* ULFRCO as clock source */
+  wdogInit.debugRun = true;
+  wdogInit.em3Run = true;
+  wdogInit.perSel = wdogPeriod_16k; // 16385 clock cycles of a 1kHz clock  ~16 seconds period
+
+  // Initializing watchdog with chosen settings
+  WDOG_Init(&wdogInit);
+}
+#endif
+
 static void process_soft_timer_event(struct gecko_cmd_packet *evt)
 {
     switch (evt->data.evt_hardware_soft_timer.handle) {
     case TIMER_ID_POLL_SECOND:
         systime ++;
         rtc_cnt = RTCC_CounterGet();
-
+#if defined(WATCH_DOG_ENABLE) && WATCH_DOG_ENABLE
+        WDOG_Feed();
+#endif
         MI_LOG_DEBUG("events: mesh %3d, others %3d. systime: %u\n",
                     mesh_event_cnt, non_mesh_event_cnt, (uint32_t)systime);
         mesh_event_cnt = 0;
@@ -971,6 +996,10 @@ void mible_mesh_stack_event_handler(struct gecko_cmd_packet *evt)
         process_soft_timer_event(evt);
         break;
     case gecko_evt_system_boot_id:
+#if defined(WATCH_DOG_ENABLE) && WATCH_DOG_ENABLE
+        // Configure and Initialize the Watchdog timer
+        initWDOG();
+#endif
 #if USE_CARRY_CERT==2
         mi_mesh_otp_carry_nvm3();
 #endif
