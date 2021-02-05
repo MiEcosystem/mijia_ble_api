@@ -1026,6 +1026,7 @@ int mible_mesh_device_set_sub_address(mible_mesh_op_t op, uint16_t element, uint
         MI_LOG_DEBUG("mi_sub_address: unsub model(0x%08x-%d) group address(%d)", model_id, element, sub_addr);
         mesh_model_unsub(pmodel, sub_addr);
     }
+    mesh_flash_store(MESH_FLASH_PARAMS_MODEL_SUBSCRIBE_ADDR, pmodel);
     return 0;
 }
 
